@@ -178,6 +178,13 @@
   .stoppill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#F2E3E2;color:#9A3B36;border-radius:5px;padding:2px 7px;vertical-align:2px}
   .shopcars{display:flex;flex-direction:column;gap:7px}
   .shopcar{display:flex;align-items:center;gap:10px}
+  .scinfo{flex:1;min-width:0}
+  .crmbtn{flex-shrink:0;border:1px solid var(--action);background:#fff;color:var(--action);
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;border-radius:8px;
+    padding:7px 11px;cursor:pointer;transition:all .14s;white-space:nowrap}
+  .crmbtn:hover{background:var(--action);color:#fff}
+  .crmbtn:disabled{cursor:default}
+  .crmbtn.done{border-color:var(--win);color:var(--win);background:var(--win-soft)}
   .thumb-sm{width:42px;height:32px;border-radius:6px;object-fit:cover;background:#E9ECE9;display:block;flex-shrink:0}
   .thumb-sm.ph{display:flex;align-items:center;justify-content:center;color:#B7BEB8}
   .scname{font-weight:600;font-size:13px;line-height:1.2}
@@ -525,8 +532,10 @@
           var cars="";
           (s.watched||[]).forEach(function(v){
             cars+='<div class="shopcar">'+photoTag(v.photoUrl,"thumb-sm")
-              +'<div><div class="scname">'+[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")+'</div>'
-              +'<div class="scprice">'+dollars(v.priceCents)+'</div></div></div>';
+              +'<div class="scinfo"><div class="scname">'+[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")+'</div>'
+              +'<div class="scprice">'+dollars(v.priceCents)+'</div></div>'
+              +'<button class="crmbtn" data-w="'+s.watcherId+'" data-vin="'+v.vin+'" data-veh="'+(v.vehicleId||'')+'">Push to CRM</button>'
+              +'</div>';
           });
           var phoneDisp = s.phone ? s.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3") : "";
           var stopped = s.smsStatus==="stopped" ? '<span class="stoppill">Opted out</span>' : '';
@@ -547,6 +556,22 @@
           +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Tap a number to call. Hot = watching multiple cars or clicking alerts.</p>'
           +'<div class="shoplist">'+list+'</div>'
         +'</div>';
+      // Wire the "Push to CRM" buttons.
+      modal.querySelectorAll(".crmbtn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var wId=btn.getAttribute("data-w"), vId=btn.getAttribute("data-veh");
+          if(!vId){ btn.textContent="No vehicle id"; return; }
+          btn.disabled=true; btn.textContent="Sending…";
+          fetch(API+"/dash/"+SLUG+"/push-crm",{
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({watcherId:wId, vehicleId:vId})
+          }).then(function(r){return r.json();}).then(function(res){
+            if(res.sent){ btn.textContent="✓ Sent to CRM"; btn.classList.add("done"); }
+            else if(res.skipped==="already_sent"){ btn.textContent="Already sent"; btn.classList.add("done"); }
+            else { btn.textContent="Failed — retry"; btn.disabled=false; }
+          }).catch(function(){ btn.textContent="Failed — retry"; btn.disabled=false; });
+        });
+      });
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
   document.getElementById("shoppersCard").addEventListener("click", openShoppers);
