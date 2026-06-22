@@ -164,6 +164,28 @@
   .soldwatch .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px;line-height:1}
   .soldwatch .n.hot{color:var(--redline)} .soldwatch .n.cold{color:#A6AEA8}
   .soldwatch .wl{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)}
+  /* Shopper / lead list */
+  .shoplist{display:flex;flex-direction:column;gap:12px}
+  .shopper{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .shophead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .shopphone{font-family:'Barlow Condensed';font-weight:700;font-size:19px;color:var(--action);text-decoration:none;letter-spacing:.01em}
+  .shopphone:hover{text-decoration:underline}
+  .shopmeta{font-size:11px;color:var(--slate);font-weight:600;text-align:right;white-space:nowrap;padding-top:4px}
+  .scorepill{display:inline-block;font-family:'Barlow Condensed';font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:2px 8px;vertical-align:2px}
+  .scorepill.hot{background:var(--red-soft);color:var(--redline)}
+  .scorepill.warm{background:var(--amber-soft);color:#9A6700}
+  .scorepill.cool{background:var(--used-soft);color:var(--slate)}
+  .stoppill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#F2E3E2;color:#9A3B36;border-radius:5px;padding:2px 7px;vertical-align:2px}
+  .shopcars{display:flex;flex-direction:column;gap:7px}
+  .shopcar{display:flex;align-items:center;gap:10px}
+  .thumb-sm{width:42px;height:32px;border-radius:6px;object-fit:cover;background:#E9ECE9;display:block;flex-shrink:0}
+  .thumb-sm.ph{display:flex;align-items:center;justify-content:center;color:#B7BEB8}
+  .scname{font-weight:600;font-size:13px;line-height:1.2}
+  .scprice{font-family:'Barlow Condensed';font-weight:600;font-size:13px;color:var(--slate)}
+  .wlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+  .wrow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+  .wrow:last-child{border-bottom:0}
+  .wsince{font-size:11px;color:var(--slate);font-weight:600}
 
   @media (max-width:640px){
     .stats .stat .n{font-size:24px}
@@ -177,6 +199,21 @@
 </style>
 </head>
 <body>
+<div id="gate" style="position:fixed;inset:0;z-index:200;background:#14181D;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:340px;text-align:center">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:13px;background:#fff;margin-bottom:18px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg>
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:#fff;letter-spacing:.02em">LotPulse</div>
+    <div style="color:#8A929B;font-size:14px;margin:6px 0 22px">Enter your access code</div>
+    <input id="gateInput" type="password" inputmode="numeric" placeholder="Access code" autocomplete="off"
+      style="width:100%;font-family:'Barlow',sans-serif;font-size:17px;text-align:center;letter-spacing:.1em;color:#14181D;background:#fff;border:0;border-radius:11px;padding:15px;margin-bottom:10px;outline:none">
+    <div id="gateErr" style="color:#FF8A84;font-size:13px;height:18px;margin-bottom:8px"></div>
+    <button id="gateBtn" style="width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:11px;padding:15px;font-family:'Barlow',sans-serif;font-weight:700;font-size:16px">Unlock dashboard</button>
+  </div>
+</div>
+<div id="app" style="display:none">
+
 <div class="shell">
   <div class="top">
     <div class="wordmark">
@@ -191,7 +228,7 @@
 
   <div class="stats">
     <div class="stat"><div class="n" id="s-watchers">—</div><div class="l">Active<br>watchers</div></div>
-    <div class="stat"><div class="n red" id="s-leads">—</div><div class="l">Unique<br>shoppers</div></div>
+    <div class="stat stat-clickable" id="shoppersCard" role="button" tabindex="0"><div class="n red" id="s-leads">—</div><div class="l">Unique<br>shoppers</div><div class="seehint">See who →</div></div>
     <div class="stat"><div class="n" id="s-texts">—</div><div class="l">Texts sent<br>7 days</div></div>
     <div class="stat stat-clickable" id="soldCard" role="button" tabindex="0"><div class="n green" id="s-sold">—</div><div class="l">Sold<br>30 days</div><div class="seehint">See which →</div></div>
   </div>
@@ -230,11 +267,39 @@
     LotPulse · Demand intelligence for your lot
   </div>
 </div>
+</div>
 
 <div class="scrim" id="scrim"></div>
 <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
 
 <script>
+  // ── Access gate ──
+  // Simple shared code. Not high security (data lives behind the API), but it
+  // keeps the dashboard — and customer phone numbers — from showing to anyone
+  // who lands on the URL. Change ACCESS_CODE to rotate it.
+  var ACCESS_CODE = "bigo2026";
+  function unlockApp(){
+    document.getElementById("gate").style.display="none";
+    document.getElementById("app").style.display="block";
+    if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); }
+  }
+  (function gate(){
+    try{ if(sessionStorage.getItem("lp_ok")==="1"){ /* unlock after defs below */ window.__lpUnlock=true; } }catch(e){}
+    var input=document.getElementById("gateInput"), btn=document.getElementById("gateBtn"), err=document.getElementById("gateErr");
+    function attempt(){
+      if(input.value===ACCESS_CODE){
+        try{ sessionStorage.setItem("lp_ok","1"); }catch(e){}
+        unlockApp();
+      } else {
+        err.textContent="Incorrect code. Try again.";
+        input.value=""; input.focus();
+      }
+    }
+    btn.addEventListener("click",attempt);
+    input.addEventListener("keydown",function(e){ if(e.key==="Enter") attempt(); });
+    setTimeout(function(){ input.focus(); },200);
+  })();
+
   var API = "https://lotpulse-q249.onrender.com";
   var SLUG = "big-o-cdjr";
   var state = { board: [], cond: "all", sort: "watchers", view: "list" };
@@ -378,8 +443,26 @@
             +'<div class="mstat"><div class="n">'+dollars(v.priceCents)+'</div><div class="l">Current price</div></div>'
           +'</div>'
           +'<div class="mph-title">Price history</div><ul class="phistory">'+histHtml+'</ul>'
+          +'<div id="vehWatchers"></div>'
           +(v.vdpUrl?'<a class="mlink" href="'+v.vdpUrl+'" target="_blank" rel="noopener">View on dealer site →</a>':'')
         +'</div>';
+      // Load who is watching this specific car (the per-vehicle slice).
+      if(v.watchers>0){
+        fetch(API+"/dash/"+SLUG+"/vehicle/"+vin+"/watchers").then(function(r){return r.json();}).then(function(wd){
+          var ws=(wd&&wd.watchers)||[];
+          if(!ws.length) return;
+          var rows="";
+          ws.forEach(function(w){
+            var phoneDisp=w.phone?w.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+            var since=new Date(w.watchingSince).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+            var stopped=w.smsStatus==="stopped"?'<span class="stoppill">Opted out</span>':'';
+            rows+='<div class="wrow"><a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
+              +'<span class="wsince">since '+since+' '+stopped+'</span></div>';
+          });
+          var el=document.getElementById("vehWatchers");
+          if(el) el.innerHTML='<div class="mph-title">Who\'s watching</div><div class="wlist">'+rows+'</div>';
+        }).catch(function(){});
+      }
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
   function closeDetail(){ document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
@@ -422,6 +505,53 @@
   document.getElementById("soldCard").addEventListener("click", openSold);
   document.getElementById("soldCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openSold(); } });
 
+  // ── Shoppers (lead list) ──
+  function scoreBadge(s){
+    var label = s==="hot"?"Hot":s==="warm"?"Warm":"Cool";
+    return '<span class="scorepill '+s+'">'+label+'</span>';
+  }
+  function openShoppers(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/dash/"+SLUG+"/shoppers").then(function(r){return r.json();}).then(function(d){
+      if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
+      var shoppers=d.shoppers||[];
+      var list="";
+      if(!shoppers.length){
+        list='<div class="state">No shoppers watching yet.</div>';
+      } else {
+        shoppers.forEach(function(s){
+          var cars="";
+          (s.watched||[]).forEach(function(v){
+            cars+='<div class="shopcar">'+photoTag(v.photoUrl,"thumb-sm")
+              +'<div><div class="scname">'+[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")+'</div>'
+              +'<div class="scprice">'+dollars(v.priceCents)+'</div></div></div>';
+          });
+          var phoneDisp = s.phone ? s.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3") : "";
+          var stopped = s.smsStatus==="stopped" ? '<span class="stoppill">Opted out</span>' : '';
+          list+='<div class="shopper">'
+            +'<div class="shophead">'
+              +'<div><a class="shopphone" href="tel:'+s.phone+'">'+phoneDisp+'</a> '+scoreBadge(s.score)+' '+stopped+'</div>'
+              +'<div class="shopmeta">'+s.activeWatches+(s.activeWatches===1?' car':' cars')
+                +(s.alertClicks>0?' · '+s.alertClicks+' click'+(s.alertClicks===1?'':'s'):'')+'</div>'
+            +'</div>'
+            +'<div class="shopcars">'+cars+'</div>'
+          +'</div>';
+        });
+      }
+      modal.innerHTML=
+        '<div class="mbody">'
+          +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="mph-title" style="margin-top:0">Shoppers watching your lot</div>'
+          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Tap a number to call. Hot = watching multiple cars or clicking alerts.</p>'
+          +'<div class="shoplist">'+list+'</div>'
+        +'</div>';
+    }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
+  }
+  document.getElementById("shoppersCard").addEventListener("click", openShoppers);
+  document.getElementById("shoppersCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openShoppers(); } });
+
   document.getElementById("tabs").addEventListener("click", function(e){
     var b=e.target.closest(".tab"); if(!b) return;
     state.cond=b.getAttribute("data-cond");
@@ -442,8 +572,8 @@
       document.getElementById("updated").textContent="offline";
     });
   }
-  refresh();
-  setInterval(loadSummary, 30000);
+  // Start only after unlock. If this session already passed the gate, unlock now.
+  if(window.__lpUnlock){ unlockApp(); }
 </script>
 </body>
 </html>
