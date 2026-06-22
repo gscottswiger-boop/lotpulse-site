@@ -115,8 +115,18 @@
     host.style.cssText = "display:block;margin:16px 0;";
 
     var anchor = pickAnchor();
-    if (!anchor) return;
-    anchor.parentNode.insertBefore(host, anchor.nextSibling);
+    if (!anchor || !anchor.el || !anchor.el.parentNode) return;
+
+    if (anchor.position === "before") {
+      anchor.el.parentNode.insertBefore(host, anchor.el);
+    } else if (anchor.position === "prepend") {
+      anchor.el.insertBefore(host, anchor.el.firstChild);
+    } else if (anchor.position === "append") {
+      anchor.el.appendChild(host);
+    } else {
+      // default: after the anchor element
+      anchor.el.parentNode.insertBefore(host, anchor.el.nextSibling);
+    }
 
     var root = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
     root.innerHTML = widgetHtml(demand);
@@ -126,16 +136,35 @@
 
   // Where to drop the widget: explicit selector override, else after the price,
   // else after the first H1 on the page.
+  // Where to drop the widget. Priority order:
+  //   1. Explicit anchorSelector from config (always wins if it matches)
+  //   2. Dealer Inspire's purpose-built custom-HTML CTA slots (the right rail)
+  //   3. The price-box CTA container itself
+  //   4. Generic price element, then H1 — last-resort fallbacks
+  // We also choose whether to insert BEFORE or AFTER the anchor via data flag.
   function pickAnchor() {
     if (ANCHOR_SELECTOR) {
       var custom = document.querySelector(ANCHOR_SELECTOR);
-      if (custom) return custom;
+      if (custom) return { el: custom, position: CONFIG.anchorPosition || "after" };
     }
-    var priceSel = "[class*='price'],[data-price],[itemprop='price']";
-    var price = document.querySelector(priceSel);
-    if (price) return price;
+    // Dealer Inspire: dedicated injection slots in the pricing CTA stack.
+    var diSlots = [
+      "[data-testid='vehicle-cta-4']",
+      "[data-testid='vehicle-cta-3']",
+      "[data-testid='vehicle-cta-2']",
+      "[data-testid='vehicle-cta-1']",
+      ".vdp-price-box__cta",
+      ".vdp-price-box"
+    ];
+    for (var i = 0; i < diSlots.length; i++) {
+      var slot = document.querySelector(diSlots[i]);
+      if (slot) return { el: slot, position: "after" };
+    }
+    // Generic fallbacks (other platforms / unknown layouts).
+    var price = document.querySelector("[itemprop='price'],[data-price]");
+    if (price) return { el: price, position: "after" };
     var h1 = document.querySelector("h1");
-    return h1 || document.body.firstElementChild;
+    return { el: h1 || document.body.firstElementChild, position: "after" };
   }
 
   function dollars(cents) {
