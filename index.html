@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LotPulse — Dealer Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --porcelain:#F6F7F5; --card:#FFFFFF; --ink:#14181D; --slate:#5C6670;
+    --line:#E4E7E4; --line-soft:#EFF1EE; --action:#1F4FE0; --action-deep:#1740B8;
+    --amber:#F5A300; --amber-soft:#FFF4DC; --redline:#DE3730; --red-soft:#FDEAE9;
+    --win:#1E8E5A; --win-soft:#EAF6EF;
+    --new:#1F4FE0; --new-soft:#E8EEFE;
+    --used:#5C6670; --used-soft:#EEF0EE;
+    --cpo:#1E8E5A; --cpo-soft:#E7F4EC;
+    --radius:14px; --shadow:0 1px 2px rgba(20,24,29,.05),0 8px 28px rgba(20,24,29,.07);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Barlow',system-ui,sans-serif;background:var(--porcelain);color:var(--ink);line-height:1.45;min-height:100vh;-webkit-text-size-adjust:100%}
+  .shell{max-width:960px;margin:0 auto;padding:0 16px 80px}
+
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 4px 16px;gap:12px;flex-wrap:wrap}
+  .wordmark{display:flex;align-items:center;gap:10px}
+  .wm-pulse{width:32px;height:32px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .wm-text{font-family:'Barlow Condensed';font-weight:700;font-size:22px;letter-spacing:.03em}
+  .wm-text em{font-style:normal;color:var(--redline)}
+  .rooftop{text-align:right;margin-left:auto}
+  .rooftop .r1{font-family:'Barlow Condensed';font-weight:600;font-size:16px;letter-spacing:.05em;text-transform:uppercase}
+  .rooftop .r2{font-size:11px;color:var(--slate);display:flex;align-items:center;gap:5px;justify-content:flex-end}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--win);animation:blink 2s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
+  .stat{padding:16px 10px 14px;text-align:center}
+  .stat + .stat{border-left:1px solid var(--line)}
+  .stat .n{font-family:'Barlow Condensed';font-weight:700;font-size:30px;line-height:1}
+  .stat .n.red{color:var(--redline)} .stat .n.green{color:var(--win)}
+  .stat .l{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin-top:6px;line-height:1.3}
+  .stat-clickable{cursor:pointer;position:relative;transition:background .12s}
+  .stat-clickable:hover{background:var(--porcelain)}
+  .stat-clickable:focus-visible{outline:3px solid var(--amber);outline-offset:-3px}
+  .seehint{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--win);margin-top:5px;opacity:0;transition:opacity .12s}
+  .stat-clickable:hover .seehint{opacity:1}
+
+  .controls{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px}
+  .tab{border:0;background:transparent;cursor:pointer;font-family:'Barlow Condensed';font-weight:600;
+    font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);
+    padding:7px 13px;border-radius:8px;transition:all .14s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .tab .ct{font-family:'Barlow';font-size:11px;font-weight:600;background:var(--porcelain);
+    color:var(--slate);border-radius:20px;padding:1px 7px}
+  .tab.active{background:var(--ink);color:#fff}
+  .tab.active .ct{background:rgba(255,255,255,.2);color:#fff}
+  .tab.new.active{background:var(--new)} .tab.used.active{background:var(--used)} .tab.cpo.active{background:var(--cpo)}
+  .tab:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+  .spacer{flex:1}
+  .selectwrap{position:relative}
+  select{appearance:none;-webkit-appearance:none;font-family:'Barlow';font-size:13px;font-weight:600;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 32px 9px 13px;cursor:pointer}
+  .selectwrap::after{content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;border-right:2px solid var(--slate);
+    border-bottom:2px solid var(--slate);transform:translateY(-65%) rotate(45deg);pointer-events:none}
+  .viewtog{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .viewtog button{border:0;background:transparent;cursor:pointer;padding:8px 11px;color:var(--slate);display:flex;align-items:center}
+  .viewtog button.active{background:var(--ink);color:#fff}
+
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px;margin-bottom:11px}
+  .sec-head h2{font-family:'Barlow Condensed';font-weight:700;font-size:19px;letter-spacing:.1em;text-transform:uppercase}
+  .sec-head .meta{font-size:11.5px;color:var(--slate)}
+
+  .badge{display:inline-block;font-family:'Barlow Condensed';font-weight:600;font-size:11px;letter-spacing:.07em;
+    text-transform:uppercase;border-radius:5px;padding:2px 8px;line-height:1.5}
+  .badge.new{background:var(--new-soft);color:var(--new)}
+  .badge.used{background:var(--used-soft);color:var(--used)}
+  .badge.certified{background:var(--cpo-soft);color:var(--cpo)}
+
+  .board{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .row{display:grid;grid-template-columns:58px minmax(0,1.6fr) 92px 62px minmax(80px,1fr) 50px;gap:12px;align-items:center;padding:11px 16px;cursor:pointer;transition:background .12s}
+  .row:hover{background:var(--porcelain)}
+  .row + .row{border-top:1px solid var(--line-soft)}
+  .row.head{padding:9px 16px;background:var(--porcelain);font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);cursor:default}
+  .row.head:hover{background:var(--porcelain)}
+  .thumb{width:58px;height:44px;border-radius:7px;object-fit:cover;background:#E9ECE9;display:block}
+  .thumb.ph{display:flex;align-items:center;justify-content:center;color:#B7BEB8}
+  .veh-cell .vm{font-weight:600;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .veh-cell .vs{font-family:'IBM Plex Mono';font-size:10px;color:var(--slate);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .price{font-family:'Barlow Condensed';font-weight:600;font-size:16px;text-align:right}
+  .price small{display:block;font-family:'Barlow';font-weight:500;font-size:9px;color:var(--slate);text-decoration:line-through}
+  .dol{font-family:'Barlow Condensed';font-weight:600;font-size:16px;text-align:center}
+  .dol small{display:block;font-family:'Barlow';font-weight:500;font-size:9px;letter-spacing:.05em;color:var(--slate);text-transform:uppercase}
+  .dol.warn{color:var(--redline)}
+  .tach{display:flex;gap:2.5px}
+  .tach i{height:16px;flex:1;max-width:9px;border-radius:2px;background:#E9ECE9}
+  .tach i.on{background:var(--amber)} .tach i.on.hi{background:var(--redline)}
+  .wnum{display:flex;align-items:baseline;gap:3px;justify-content:flex-end}
+  .wnum .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px}
+  .wnum .n.hot{color:var(--redline)} .wnum .n.warm{color:#C77F00} .wnum .n.cold{color:#A6AEA8}
+  .row.flagged{background:#FFFBF2}
+  .flag-pill{display:inline-block;background:var(--amber-soft);color:#9A6700;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px}
+  .flag-pill.hot{background:var(--red-soft);color:var(--redline)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .gcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s}
+  .gcard:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(20,24,29,.08),0 14px 36px rgba(20,24,29,.1)}
+  .gphoto{position:relative;aspect-ratio:16/10;background:#E9ECE9;overflow:hidden}
+  .gphoto img{width:100%;height:100%;object-fit:cover;display:block}
+  .gphoto .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#B7BEB8}
+  .gphoto .wbadge{position:absolute;top:10px;right:10px;background:rgba(20,24,29,.86);color:#fff;border-radius:20px;
+    padding:4px 10px;font-family:'Barlow Condensed';font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
+  .gphoto .wbadge.hot{background:var(--redline)}
+  .gphoto .cbadge{position:absolute;top:10px;left:10px}
+  .gbody{padding:12px 14px 14px}
+  .gtitle{font-weight:600;font-size:15px;line-height:1.2;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gsub{font-family:'IBM Plex Mono';font-size:10px;color:var(--slate);margin-bottom:10px}
+  .grow{display:flex;align-items:center;justify-content:space-between}
+  .gprice{font-family:'Barlow Condensed';font-weight:700;font-size:20px}
+  .gprice small{font-family:'Barlow';font-weight:500;font-size:11px;color:var(--slate);text-decoration:line-through;margin-left:5px}
+  .gdays{font-size:11px;color:var(--slate);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .gdays.warn{color:var(--redline)}
+  .gtach{display:flex;gap:3px;margin-top:11px}
+  .gtach i{height:7px;flex:1;border-radius:2px;background:#E9ECE9}
+  .gtach i.on{background:var(--amber)} .gtach i.on.hi{background:var(--redline)}
+
+  .state{padding:48px 20px;text-align:center;color:var(--slate);font-size:14px}
+  .audit{margin-top:18px;padding:0 6px;font-size:11px;color:#A6AEA8;text-align:center;line-height:1.6}
+
+  .scrim{position:fixed;inset:0;background:rgba(16,20,24,.5);opacity:0;pointer-events:none;transition:opacity .22s;z-index:50}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .modal{position:fixed;z-index:60;background:var(--card);box-shadow:0 20px 60px rgba(20,24,29,.25);
+    left:50%;top:50%;transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;
+    width:min(560px,calc(100vw - 32px));max-height:90vh;overflow:auto;border-radius:18px;transition:all .22s cubic-bezier(.32,.72,.2,1)}
+  .modal.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+  .mphoto{position:relative;aspect-ratio:16/9;background:#E9ECE9}
+  .mphoto img{width:100%;height:100%;object-fit:cover;display:block}
+  .mphoto .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#B7BEB8}
+  .mclose{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;
+    background:rgba(20,24,29,.7);color:#fff;cursor:pointer;font-size:18px;line-height:1;backdrop-filter:blur(4px)}
+  .mbody{padding:18px 20px 22px}
+  .mtitle{font-family:'Barlow Condensed';font-weight:700;font-size:24px;line-height:1.1;margin-bottom:6px}
+  .mmeta{font-family:'IBM Plex Mono';font-size:11px;color:var(--slate);margin-bottom:14px}
+  .mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .mstat{background:var(--porcelain);border-radius:10px;padding:12px;text-align:center}
+  .mstat .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px;line-height:1}
+  .mstat .n.hot{color:var(--redline)}
+  .mstat .l{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);margin-top:5px}
+  .mph-title{font-family:'Barlow Condensed';font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:4px 0 9px}
+  .phistory{list-style:none;margin-bottom:18px}
+  .phistory li{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px solid var(--line-soft)}
+  .phistory li:last-child{border-bottom:0}
+  .phistory .pdate{color:var(--slate);font-size:12px}
+  .phistory .pdrop{color:var(--win);font-weight:600;font-size:12px}
+  .mlink{display:block;text-align:center;background:var(--action);color:#fff;text-decoration:none;font-weight:700;font-size:15px;border-radius:11px;padding:14px;transition:background .15s}
+  .mlink:hover{background:var(--action-deep)}
+  .mclose-dark{background:var(--porcelain);color:var(--ink)}
+  .soldlist{display:flex;flex-direction:column;gap:2px}
+  .soldrow{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+  .soldrow:last-child{border-bottom:0}
+  .soldinfo .vm{font-weight:600;font-size:14px;line-height:1.2}
+  .soldinfo .vs{font-family:'IBM Plex Mono';font-size:10px;color:var(--slate);margin-top:3px;display:flex;align-items:center;gap:6px}
+  .soldwatch{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+  .soldwatch .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px;line-height:1}
+  .soldwatch .n.hot{color:var(--redline)} .soldwatch .n.cold{color:#A6AEA8}
+  .soldwatch .wl{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)}
+
+  @media (max-width:640px){
+    .stats .stat .n{font-size:24px}
+    .row{grid-template-columns:48px minmax(0,1.5fr) 60px minmax(56px,.8fr) 40px;gap:9px;padding:10px 12px}
+    .row .dol{display:none}
+    .row.head .dol{display:none}
+    .thumb{width:48px;height:38px}
+    .tach i{max-width:7px;height:14px}
+  }
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="wordmark">
+      <div class="wm-pulse"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg></div>
+      <div class="wm-text">Lot<em>Pulse</em></div>
+    </div>
+    <div class="rooftop">
+      <div class="r1" id="dealerName">Loading…</div>
+      <div class="r2"><span class="live-dot"></span><span id="updated">connecting</span></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="s-watchers">—</div><div class="l">Active<br>watchers</div></div>
+    <div class="stat"><div class="n red" id="s-leads">—</div><div class="l">Unique<br>shoppers</div></div>
+    <div class="stat"><div class="n" id="s-texts">—</div><div class="l">Texts sent<br>7 days</div></div>
+    <div class="stat stat-clickable" id="soldCard" role="button" tabindex="0"><div class="n green" id="s-sold">—</div><div class="l">Sold<br>30 days</div><div class="seehint">See which →</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-cond="all">All <span class="ct" id="ct-all">0</span></button>
+      <button class="tab new" data-cond="new">New <span class="ct" id="ct-new">0</span></button>
+      <button class="tab used" data-cond="used">Used <span class="ct" id="ct-used">0</span></button>
+      <button class="tab cpo" data-cond="certified">Certified <span class="ct" id="ct-certified">0</span></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="selectwrap">
+      <select id="sort" aria-label="Sort vehicles">
+        <option value="watchers">Most watched</option>
+        <option value="days">Longest on lot</option>
+        <option value="price_hi">Price: high to low</option>
+        <option value="price_lo">Price: low to high</option>
+      </select>
+    </div>
+    <div class="viewtog" id="viewtog">
+      <button data-view="list" class="active" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+      <button data-view="grid" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+    </div>
+  </div>
+
+  <div class="sec-head">
+    <h2>Demand Board</h2>
+    <div class="meta" id="boardMeta">Loading…</div>
+  </div>
+
+  <div id="boardWrap"><div class="board"><div class="state">Loading inventory…</div></div></div>
+
+  <div class="audit">
+    Demand updates as shoppers watch vehicles on your site.<br>
+    LotPulse · Demand intelligence for your lot
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+
+<script>
+  var API = "https://lotpulse-q249.onrender.com";
+  var SLUG = "big-o-cdjr";
+  var state = { board: [], cond: "all", sort: "watchers", view: "list" };
+
+  function dollars(c){ return c==null ? "—" : "$"+(c/100).toLocaleString("en-US",{maximumFractionDigits:0}); }
+  function vehLabel(v){ return [v.year,v.make,v.model,v.trim].filter(Boolean).join(" "); }
+  function heatClass(w){ return w>=5?"hot":w>=2?"warm":"cold"; }
+  function condClass(c){ return c==="new"?"new":c==="certified"?"certified":"used"; }
+  function condLabel(c){ return c==="certified"?"Certified":c==="new"?"New":"Used"; }
+  function photoTag(url, cls){
+    var ph='<div class="'+cls+' ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>';
+    if(url) return '<img class="'+cls+'" src="'+url+'" loading="lazy" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">'+ph.replace('ph"','ph" style="display:none"');
+    return ph;
+  }
+
+  function loadSummary(){
+    return fetch(API+"/dash/"+SLUG+"/summary").then(function(r){return r.json();}).then(function(d){
+      if(d.error) throw new Error(d.error);
+      document.getElementById("dealerName").textContent = d.dealer.name;
+      document.getElementById("updated").textContent = "Live · just now";
+      document.getElementById("s-watchers").textContent = d.stats.activeWatchers;
+      document.getElementById("s-leads").textContent = d.stats.uniqueWatchers;
+      document.getElementById("s-texts").textContent = d.stats.texts7d;
+      document.getElementById("s-sold").textContent = d.stats.sold30d;
+    });
+  }
+
+  function loadBoard(){
+    return fetch(API+"/dash/"+SLUG+"/board?limit=300").then(function(r){return r.json();}).then(function(d){
+      if(d.error) throw new Error(d.error);
+      state.board = d.board || [];
+      updateCounts();
+      render();
+    });
+  }
+
+  function updateCounts(){
+    var c={all:state.board.length,new:0,used:0,certified:0};
+    state.board.forEach(function(v){ if(c[v.condition]!=null) c[v.condition]++; });
+    document.getElementById("ct-all").textContent=c.all;
+    document.getElementById("ct-new").textContent=c.new;
+    document.getElementById("ct-used").textContent=c.used;
+    document.getElementById("ct-certified").textContent=c.certified;
+  }
+
+  function visibleRows(){
+    var rows = state.board.slice();
+    if(state.cond!=="all") rows=rows.filter(function(v){return v.condition===state.cond;});
+    rows.sort(function(a,b){
+      if(state.sort==="watchers") return b.watchers-a.watchers || b.daysOnLot-a.daysOnLot;
+      if(state.sort==="days") return b.daysOnLot-a.daysOnLot;
+      if(state.sort==="price_hi") return (b.priceCents||0)-(a.priceCents||0);
+      if(state.sort==="price_lo") return (a.priceCents||0)-(b.priceCents||0);
+      return 0;
+    });
+    return rows;
+  }
+
+  function tachSegs(w, n){ var s=""; for(var i=0;i<n;i++){ var c=i<w?(i>=5?"on hi":"on"):""; s+='<i class="'+c+'"></i>'; } return s; }
+
+  function render(){
+    var rows = visibleRows();
+    document.getElementById("boardMeta").textContent =
+      rows.length+" vehicles"+(state.cond!=="all"?" · "+condLabel(state.cond):"");
+    var wrap = document.getElementById("boardWrap");
+    if(!rows.length){ wrap.innerHTML='<div class="board"><div class="state">No vehicles in this view.</div></div>'; return; }
+    wrap.innerHTML = state.view==="list" ? renderList(rows) : renderGrid(rows);
+    wrap.querySelectorAll("[data-vin]").forEach(function(el){
+      el.addEventListener("click", function(){ openDetail(el.getAttribute("data-vin")); });
+    });
+  }
+
+  function renderList(rows){
+    var h='<div class="board"><div class="row head"><div></div><div>Vehicle</div>'
+      +'<div style="text-align:right">Price</div><div style="text-align:center">Days</div>'
+      +'<div>Demand</div><div style="text-align:right">Watch</div></div>';
+    rows.forEach(function(v){
+      var pill = v.flag==="problem"?'<span class="flag-pill">Problem</span>':v.flag==="hot"?'<span class="flag-pill hot">Hot</span>':'';
+      var msrp = (v.msrpCents && v.msrpCents>v.priceCents)?'<small>'+dollars(v.msrpCents)+'</small>':'';
+      h+='<div class="row'+(v.flag?' flagged':'')+'" data-vin="'+v.vin+'">'
+        +'<div>'+photoTag(v.photoUrl,"thumb")+'</div>'
+        +'<div class="veh-cell"><div class="vm">'+vehLabel(v)+'</div>'
+          +'<div class="vs"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span>'
+          +(v.stockNumber?'#'+v.stockNumber:'')+' '+pill+'</div></div>'
+        +'<div class="price">'+dollars(v.priceCents)+msrp+'</div>'
+        +'<div class="dol'+(v.daysOnLot>=60?' warn':'')+'">'+v.daysOnLot+'<small>days</small></div>'
+        +'<div class="tach">'+tachSegs(v.watchers,12)+'</div>'
+        +'<div class="wnum"><span class="n '+heatClass(v.watchers)+'">'+v.watchers+'</span></div>'
+        +'</div>';
+    });
+    return h+'</div>';
+  }
+
+  function renderGrid(rows){
+    var h='<div class="grid">';
+    rows.forEach(function(v){
+      var hot = v.watchers>=5;
+      var msrp=(v.msrpCents && v.msrpCents>v.priceCents)?'<small>'+dollars(v.msrpCents)+'</small>':'';
+      h+='<div class="gcard" data-vin="'+v.vin+'">'
+        +'<div class="gphoto">'+photoTag(v.photoUrl,"")
+          +'<div class="cbadge"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span></div>'
+          +'<div class="wbadge'+(hot?' hot':'')+'">'
+            +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+            +v.watchers+'</div>'
+        +'</div>'
+        +'<div class="gbody"><div class="gtitle">'+vehLabel(v)+'</div>'
+          +'<div class="gsub">'+(v.stockNumber?'#'+v.stockNumber+' · ':'')+'VIN '+v.vin.slice(-8)+'</div>'
+          +'<div class="grow"><div class="gprice">'+dollars(v.priceCents)+msrp+'</div>'
+            +'<div class="gdays'+(v.daysOnLot>=60?' warn':'')+'">'+v.daysOnLot+' days</div></div>'
+          +'<div class="gtach">'+tachSegs(v.watchers,14)+'</div>'
+        +'</div></div>';
+    });
+    return h+'</div>';
+  }
+
+  function openDetail(vin){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/dash/"+SLUG+"/vehicle/"+vin).then(function(r){return r.json();}).then(function(d){
+      if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
+      var v=d.vehicle, hist=d.priceHistory||[];
+      var histHtml="";
+      for(var i=0;i<hist.length;i++){
+        var drop = i>0 ? hist[i-1].priceCents - hist[i].priceCents : 0;
+        var dt = new Date(hist[i].observedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+        histHtml+='<li><span class="pdate">'+dt+'</span><span>'+dollars(hist[i].priceCents)
+          +(drop>0?' <span class="pdrop">▼ '+dollars(drop)+'</span>':'')+'</span></li>';
+      }
+      if(!histHtml) histHtml='<li><span class="pdate">No changes yet</span><span>'+dollars(v.priceCents)+'</span></li>';
+      modal.innerHTML=
+        '<div class="mphoto">'+photoTag(v.photoUrl,"")
+          +'<button class="mclose" onclick="closeDetail()" aria-label="Close">×</button></div>'
+        +'<div class="mbody">'
+          +'<div class="mtitle">'+vehLabel(v)+'</div>'
+          +'<div class="mmeta"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span> '
+            +(v.stockNumber?'&nbsp;#'+v.stockNumber+' · ':'')+'VIN '+v.vin+'</div>'
+          +'<div class="mstats">'
+            +'<div class="mstat"><div class="n '+(v.watchers>=5?"hot":"")+'">'+v.watchers+'</div><div class="l">Watching</div></div>'
+            +'<div class="mstat"><div class="n">'+v.daysOnLot+'</div><div class="l">Days on lot</div></div>'
+            +'<div class="mstat"><div class="n">'+dollars(v.priceCents)+'</div><div class="l">Current price</div></div>'
+          +'</div>'
+          +'<div class="mph-title">Price history</div><ul class="phistory">'+histHtml+'</ul>'
+          +(v.vdpUrl?'<a class="mlink" href="'+v.vdpUrl+'" target="_blank" rel="noopener">View on dealer site →</a>':'')
+        +'</div>';
+    }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
+  }
+  function closeDetail(){ document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
+  document.getElementById("scrim").addEventListener("click", closeDetail);
+  window.closeDetail = closeDetail;
+
+  // ── Sold list ──
+  function openSold(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/dash/"+SLUG+"/sold?days=30").then(function(r){return r.json();}).then(function(d){
+      if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
+      var sold=d.sold||[];
+      var rows="";
+      if(!sold.length){
+        rows='<div class="state">No vehicles sold in the last 30 days yet.</div>';
+      } else {
+        sold.forEach(function(v){
+          var dt=new Date(v.soldAt).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+          var w=v.totalWatchers;
+          rows+='<div class="soldrow">'
+            +'<div>'+photoTag(v.photoUrl,"thumb")+'</div>'
+            +'<div class="soldinfo"><div class="vm">'+vehLabel(v)+'</div>'
+              +'<div class="vs"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span> sold '+dt+'</div></div>'
+            +'<div class="soldwatch"><span class="n '+(w>=1?"hot":"cold")+'">'+w+'</span>'
+              +'<span class="wl">'+(w===1?"watcher":"watchers")+'</span></div>'
+            +'</div>';
+        });
+      }
+      modal.innerHTML=
+        '<div class="mbody">'
+          +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="mph-title" style="margin-top:0">Sold · last 30 days</div>'
+          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Each car\'s peak watcher count — demand that preceded the sale.</p>'
+          +'<div class="soldlist">'+rows+'</div>'
+        +'</div>';
+    }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
+  }
+  document.getElementById("soldCard").addEventListener("click", openSold);
+  document.getElementById("soldCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openSold(); } });
+
+  document.getElementById("tabs").addEventListener("click", function(e){
+    var b=e.target.closest(".tab"); if(!b) return;
+    state.cond=b.getAttribute("data-cond");
+    document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+    b.classList.add("active"); render();
+  });
+  document.getElementById("sort").addEventListener("change", function(e){ state.sort=e.target.value; render(); });
+  document.getElementById("viewtog").addEventListener("click", function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    state.view=b.getAttribute("data-view");
+    document.querySelectorAll("#viewtog button").forEach(function(t){t.classList.remove("active");});
+    b.classList.add("active"); render();
+  });
+
+  function refresh(){
+    Promise.all([loadSummary(), loadBoard()]).catch(function(e){
+      document.getElementById("boardWrap").innerHTML='<div class="board"><div class="state">Could not load data: '+e.message+'</div></div>';
+      document.getElementById("updated").textContent="offline";
+    });
+  }
+  refresh();
+  setInterval(loadSummary, 30000);
+</script>
+</body>
+</html>
