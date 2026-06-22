@@ -178,7 +178,8 @@
     var tach = "";
     for (var i = 0; i < 14; i++) {
       var cls = i < watchers ? (i >= 5 ? "seg on hi" : "seg on") : "seg";
-      tach += '<i class="' + cls + '"></i>';
+      // stagger the fill animation per segment
+      tach += '<i class="' + cls + '" style="--d:' + (i * 38) + 'ms"></i>';
     }
     var intelDays = days != null
       ? '<div class="cell"><div class="num">' + days + '</div><div class="lbl">Days listed</div></div>'
@@ -188,53 +189,77 @@
     + '<style>'
     + ':host,*{box-sizing:border-box}'
     + '.card{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;'
-    +   'background:#fff;border:1px solid #E4E7E4;border-radius:14px;overflow:hidden;'
-    +   'box-shadow:0 1px 2px rgba(20,24,29,.05),0 8px 28px rgba(20,24,29,.07);max-width:520px}'
-    + '.intel{display:flex;border-bottom:1px solid #E4E7E4}'
+    +   'background:#fff;border:1px solid #E6E9EE;border-radius:18px;overflow:hidden;'
+    +   'box-shadow:0 1px 2px rgba(20,24,29,.04),0 12px 32px rgba(31,79,224,.10);max-width:520px;'
+    +   'animation:lpRise .5s cubic-bezier(.2,.7,.2,1) both}'
+    + '@keyframes lpRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+    // trust header strip
+    + '.hd{display:flex;align-items:center;gap:8px;padding:13px 16px;'
+    +   'background:linear-gradient(180deg,#F5F8FF,#fff);border-bottom:1px solid #EDF1F7}'
+    + '.hd .spark{width:26px;height:26px;border-radius:8px;background:#1F4FE0;flex-shrink:0;'
+    +   'display:flex;align-items:center;justify-content:center}'
+    + '.hd .hdt{font-weight:700;font-size:14.5px;color:#14181D;letter-spacing:-.01em}'
+    + '.hd .hds{font-size:11.5px;color:#5C6670;margin-top:1px}'
+    + '.intel{display:flex;border-bottom:1px solid #EDF1F7}'
     + '.cell{flex:1;padding:13px 8px;text-align:center}'
-    + '.cell + .cell{border-left:1px solid #E4E7E4}'
-    + '.num{font-weight:700;font-size:22px;line-height:1;color:#14181D}'
-    + '.num.hot{color:#DE3730}'
+    + '.cell + .cell{border-left:1px solid #EDF1F7}'
+    + '.num{font-weight:800;font-size:23px;line-height:1;color:#14181D;letter-spacing:-.02em}'
+    + '.num.hot{color:#1F4FE0}'
     + '.lbl{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#5C6670;margin-top:5px}'
-    + '.tachrow{display:flex;align-items:center;gap:12px;padding:15px 16px 4px}'
+    + '.tachrow{display:flex;align-items:center;gap:12px;padding:16px 16px 6px}'
     + '.tach{display:flex;gap:3px;flex:1}'
-    + '.seg{height:9px;flex:1;border-radius:2px;background:#E9ECE9}'
-    + '.seg.on{background:#F5A300}.seg.on.hi{background:#DE3730}'
+    + '.seg{height:10px;flex:1;border-radius:3px;background:#EAEDF2;transform:scaleY(.6);'
+    +   'animation:lpSeg .4s ease both;animation-delay:var(--d,0ms)}'
+    + '@keyframes lpSeg{to{transform:scaleY(1)}}'
+    + '.seg.on{background:#F5A300}.seg.on.hi{background:#1F4FE0}'
     + '.wc{display:flex;align-items:baseline;gap:6px;white-space:nowrap}'
-    + '.wc .n{font-weight:700;font-size:24px;color:#DE3730}'
+    + '.wc .n{font-weight:800;font-size:25px;color:#1F4FE0;letter-spacing:-.02em}'
     + '.wc .t{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5C6670}'
-    + '.note{padding:2px 16px 0;font-size:12.5px;color:#5C6670}'
-    + '.cta{padding:14px 16px 15px}'
-    + '.btn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:11px;'
-    +   'padding:16px;font-size:17px;font-weight:700;font-family:inherit;'
-    +   'display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s}'
-    + '.btn:hover{background:#1740B8}'
-    + '.btn.watching{background:#1E8E5A}'
-    + '.sub{margin-top:9px;text-align:center;font-size:12px;color:#5C6670}'
-    + '.brand{border-top:1px solid #E4E7E4;padding:8px 16px;text-align:center;'
-    +   'font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#A6AEA8;font-weight:600}'
+    + '.note{padding:2px 16px 0;font-size:13px;color:#5C6670;font-weight:500}'
+    + '.cta{padding:14px 16px 16px}'
+    + '.btn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:13px;'
+    +   'padding:17px;font-size:17px;font-weight:700;font-family:inherit;letter-spacing:-.01em;'
+    +   'display:flex;align-items:center;justify-content:center;gap:10px;'
+    +   'box-shadow:0 4px 14px rgba(31,79,224,.32);transition:transform .12s,box-shadow .15s,background .15s}'
+    + '.btn:hover{background:#1740B8;box-shadow:0 6px 20px rgba(31,79,224,.4)}'
+    + '.btn:active{transform:translateY(1px) scale(.995)}'
+    + '.btn.watching{background:#1E8E5A;box-shadow:0 4px 14px rgba(30,142,90,.3)}'
+    // reassurance row under button — the no-pressure promise, made loud
+    + '.promise{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:11px;flex-wrap:wrap}'
+    + '.promise span{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#3A434D;font-weight:600}'
+    + '.promise svg{flex-shrink:0;color:#1E8E5A}'
+    + '.sub{margin-top:9px;text-align:center;font-size:12px;color:#5C6670;display:none}'
+    + '.brand{border-top:1px solid #EDF1F7;padding:9px 16px;text-align:center;'
+    +   'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#AEB6BF;font-weight:600}'
     // sheet
-    + '.scrim{position:fixed;inset:0;background:rgba(16,20,24,.45);opacity:0;pointer-events:none;'
-    +   'transition:opacity .2s;z-index:2147483646}'
+    + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
+    +   'transition:opacity .22s;z-index:2147483646}'
     + '.scrim.open{opacity:1;pointer-events:auto}'
     + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:520px;margin:0 auto;'
-    +   'background:#fff;border-radius:20px 20px 0 0;padding:10px 20px 24px;'
-    +   'transform:translateY(105%);transition:transform .26s cubic-bezier(.32,.72,.2,1);'
-    +   'box-shadow:0 -12px 48px rgba(20,24,29,.18);font-family:inherit}'
+    +   'background:#fff;border-radius:24px 24px 0 0;padding:10px 22px 26px;'
+    +   'transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.2,1);'
+    +   'box-shadow:0 -16px 56px rgba(13,18,28,.22);font-family:inherit}'
     + '.sheet.open{transform:translateY(0)}'
-    + '.grab{width:38px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 16px}'
-    + '.sheet h3{font-size:21px;font-weight:700;color:#14181D;margin:0 0 5px}'
-    + '.sheet p{font-size:14px;color:#5C6670;margin:0 0 16px}'
-    + '.field{display:flex;align-items:center;gap:10px;border:1.5px solid #E4E7E4;border-radius:11px;'
-    +   'padding:14px;margin-bottom:12px}'
-    + '.field:focus-within{border-color:#1F4FE0}'
-    + '.field .cc{font-weight:600;color:#5C6670;font-size:15px}'
-    + '.field input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:500;'
+    + '.grab{width:40px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 18px}'
+    + '.sheet h3{font-size:23px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.02em;line-height:1.15}'
+    + '.sheet .psub{font-size:14px;color:#5C6670;margin:0 0 16px}'
+    + '.perks{list-style:none;margin:0 0 18px;padding:0}'
+    + '.perks li{display:flex;gap:11px;align-items:center;font-size:14px;color:#2A323A;padding:6px 0}'
+    + '.perks .pk{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;'
+    +   'justify-content:center;background:#EAF1FF;color:#1F4FE0}'
+    + '.field{display:flex;align-items:center;gap:10px;border:1.5px solid #E4E7E4;border-radius:13px;'
+    +   'padding:15px 15px;margin-bottom:12px;transition:border-color .15s,box-shadow .15s}'
+    + '.field:focus-within{border-color:#1F4FE0;box-shadow:0 0 0 4px rgba(31,79,224,.12)}'
+    + '.field .cc{font-weight:700;color:#5C6670;font-size:15px}'
+    + '.field input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:600;'
     +   'color:#14181D;background:transparent;min-width:0}'
-    + '.fine{font-size:10.5px;line-height:1.5;color:#9AA29C;margin-top:11px}'
-    + '.err{color:#DE3730;font-size:13px;margin-bottom:10px;display:none}'
+    + '.fine{font-size:10.5px;line-height:1.5;color:#9AA29C;margin-top:12px}'
+    + '.err{color:#DE3730;font-size:13px;font-weight:600;margin-bottom:10px;display:none}'
     + '</style>'
     + '<div class="card">'
+    +   '<div class="hd"><div class="spark">'
+    +     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg>'
+    +   '</div><div><div class="hdt">Track this price</div><div class="hds">No haggling. No salesperson. Just a text.</div></div></div>'
     +   '<div class="intel">'
     +     '<div class="cell"><div class="num hot" id="lp-wn">' + watchers + '</div><div class="lbl">Watching now</div></div>'
     +     intelDays
@@ -247,21 +272,31 @@
     +       '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
     +       '<span id="lp-lbl">Watch this car</span>'
     +     '</button>'
-    +     '<div class="sub" id="lp-sub">Free price-drop alerts by text. No calls.</div>'
+    +     '<div class="promise" id="lp-promise">'
+    +       '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>No calls</span>'
+    +       '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>No spam</span>'
+    +       '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Cancel anytime</span>'
+    +     '</div>'
+    +     '<div class="sub" id="lp-sub"></div>'
     +   '</div>'
-    +   '<div class="brand">Demand data · LotPulse</div>'
+    +   '<div class="brand">Powered by LotPulse</div>'
     + '</div>'
     + '<div class="scrim" id="lp-scrim"></div>'
     + '<div class="sheet" id="lp-sheet" role="dialog" aria-modal="true">'
     +   '<div class="grab"></div>'
     +   '<h3>Get a text when this price drops</h3>'
-    +   '<p>Just your number. No salesperson will call you.</p>'
+    +   '<p class="psub">Drop your number. No salesperson will ever call you.</p>'
+    +   '<ul class="perks">'
+    +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>Price drops — you hear first, before the listing updates</li>'
+    +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>Demand alerts — know when others start watching</li>'
+    +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Sold notice — never chase a car that\'s already gone</li>'
+    +   '</ul>'
     +   '<div class="err" id="lp-err"></div>'
     +   '<div class="field"><span class="cc">+1</span>'
-    +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="lp-phone" autocomplete="tel"></div>'
+    +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="lp-phone" autocomplete="tel" name="tel"></div>'
     +   '<button class="btn" id="lp-confirm">'
     +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
-    +     'Watch it</button>'
+    +     'Start watching</button>'
     +   '<div class="fine" id="lp-fine"></div>'
     + '</div>';
   }
@@ -315,9 +350,12 @@
         }
         watching = true;
         closeSheet();
-        root.getElementById("lp-lbl").textContent = "Watching — alerts on";
+        root.getElementById("lp-lbl").textContent = "Watching — we'll text you";
         btn.classList.add("watching");
-        root.getElementById("lp-sub").textContent = "We'll text you first. Reply STOP anytime.";
+        var promiseEl = root.getElementById("lp-promise");
+        if (promiseEl) promiseEl.style.display = "none";
+        var subEl = root.getElementById("lp-sub");
+        if (subEl) { subEl.style.display = "block"; subEl.textContent = "You're all set. Reply STOP anytime."; }
         var n = (res.json && res.json.watchers) != null ? res.json.watchers : (demand.watchers + 1);
         root.getElementById("lp-wn").textContent = n;
         root.getElementById("lp-wn2").textContent = n;
@@ -337,10 +375,39 @@
       return;
     }
     apiGet("/v1/vehicle/" + vin + "/demand").then(function (demand) {
-      mountWidget(vin, demand || { watchers: 0 });
+      mountWhenAnchorReady(vin, demand || { watchers: 0 });
     }).catch(function (e) {
       console.warn("[LotPulse] demand fetch failed:", e);
     });
+  }
+
+  // Some Dealer Inspire pages build the right-rail CTA slots late. Rather than
+  // mount once and give up, watch the DOM for up to ~6s and inject the moment
+  // the anchor exists. This makes placement robust across new/used/slow pages.
+  function mountWhenAnchorReady(vin, demand) {
+    if (document.getElementById("lotpulse-widget-host")) return; // already mounted
+    var anchor = pickAnchor();
+    if (anchor && anchor.el && anchor.el.parentNode) {
+      mountWidget(vin, demand);
+      return;
+    }
+    var tries = 0;
+    var obs = new MutationObserver(function () {
+      if (document.getElementById("lotpulse-widget-host")) { obs.disconnect(); return; }
+      var a = pickAnchor();
+      if (a && a.el && a.el.parentNode) {
+        obs.disconnect();
+        mountWidget(vin, demand);
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    // Safety stop after ~6s so we don't observe forever.
+    var iv = setInterval(function () {
+      tries++;
+      if (document.getElementById("lotpulse-widget-host") || tries > 12) {
+        clearInterval(iv); obs.disconnect();
+      }
+    }, 500);
   }
 
   // VDPs often render late (SPA-style). Wait for DOM, then give it a beat.
