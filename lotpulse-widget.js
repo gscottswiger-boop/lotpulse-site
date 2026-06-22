@@ -254,7 +254,7 @@
     + '<div class="scrim" id="lp-scrim"></div>'
     + '<div class="sheet" id="lp-sheet" role="dialog" aria-modal="true">'
     +   '<div class="grab"></div>'
-    +   '<h3>Get a text when this car moves</h3>'
+    +   '<h3>Get a text when this price drops</h3>'
     +   '<p>Just your number. No salesperson will call you.</p>'
     +   '<div class="err" id="lp-err"></div>'
     +   '<div class="field"><span class="cc">+1</span>'
