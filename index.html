@@ -190,8 +190,9 @@
   .scname{font-weight:600;font-size:13px;line-height:1.2}
   .scprice{font-family:'Barlow Condensed';font-weight:600;font-size:13px;color:var(--slate)}
   .wlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
-  .wrow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+  .wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
   .wrow:last-child{border-bottom:0}
+  .wrl{display:flex;flex-direction:column;gap:2px;min-width:0}
   .wsince{font-size:11px;color:var(--slate);font-weight:600}
 
   @media (max-width:640px){
@@ -463,11 +464,31 @@
             var phoneDisp=w.phone?w.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
             var since=new Date(w.watchingSince).toLocaleDateString("en-US",{month:"short",day:"numeric"});
             var stopped=w.smsStatus==="stopped"?'<span class="stoppill">Opted out</span>':'';
-            rows+='<div class="wrow"><a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
-              +'<span class="wsince">since '+since+' '+stopped+'</span></div>';
+            rows+='<div class="wrow">'
+              +'<div class="wrl"><a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
+                +'<span class="wsince">since '+since+' '+stopped+'</span></div>'
+              +'<button class="crmbtn" data-w="'+w.watcherId+'" data-veh="'+(w.vehicleId||'')+'">Push to CRM</button>'
+              +'</div>';
           });
           var el=document.getElementById("vehWatchers");
-          if(el) el.innerHTML='<div class="mph-title">Who\'s watching</div><div class="wlist">'+rows+'</div>';
+          if(el){
+            el.innerHTML='<div class="mph-title">Who\'s watching</div><div class="wlist">'+rows+'</div>';
+            el.querySelectorAll(".crmbtn").forEach(function(btn){
+              btn.addEventListener("click", function(){
+                var wId=btn.getAttribute("data-w"), vId=btn.getAttribute("data-veh");
+                if(!vId){ btn.textContent="No vehicle id"; return; }
+                btn.disabled=true; btn.textContent="Sending…";
+                fetch(API+"/dash/"+SLUG+"/push-crm",{
+                  method:"POST", headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({watcherId:wId, vehicleId:vId})
+                }).then(function(r){return r.json();}).then(function(res){
+                  if(res.sent){ btn.textContent="✓ Sent to CRM"; btn.classList.add("done"); }
+                  else if(res.skipped==="already_sent"){ btn.textContent="Already sent"; btn.classList.add("done"); }
+                  else { btn.textContent="Failed — retry"; btn.disabled=false; }
+                }).catch(function(){ btn.textContent="Failed — retry"; btn.disabled=false; });
+              });
+            });
+          }
         }).catch(function(){});
       }
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
