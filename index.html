@@ -323,11 +323,28 @@
     return ph;
   }
 
+  function timeAgo(iso){
+    if(!iso) return "never";
+    var s=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+    if(s<60) return "just now";
+    if(s<3600) return Math.floor(s/60)+" min ago";
+    if(s<86400){ var h=Math.floor(s/3600); return h+(h===1?" hour ago":" hours ago"); }
+    var d=Math.floor(s/86400); return d+(d===1?" day ago":" days ago");
+  }
   function loadSummary(){
     return fetch(API+"/dash/"+SLUG+"/summary").then(function(r){return r.json();}).then(function(d){
       if(d.error) throw new Error(d.error);
       document.getElementById("dealerName").textContent = d.dealer.name;
-      document.getElementById("updated").textContent = "Live · just now";
+      // Inventory freshness, from the real feed_sync record.
+      var up=document.getElementById("updated");
+      if(d.lastSync && d.lastSync.at){
+        var dot=document.querySelector(".live-dot");
+        var stale = (Date.now()-new Date(d.lastSync.at).getTime()) > 36*3600*1000; // >36h
+        if(dot) dot.style.background = d.lastSync.status==="failed" ? "var(--redline)" : (stale ? "#C9A227" : "var(--win)");
+        up.textContent = "Inventory updated "+timeAgo(d.lastSync.at);
+      } else {
+        up.textContent = "Awaiting first sync";
+      }
       document.getElementById("s-watchers").textContent = d.stats.activeWatchers;
       document.getElementById("s-leads").textContent = d.stats.uniqueWatchers;
       document.getElementById("s-texts").textContent = d.stats.texts7d;
