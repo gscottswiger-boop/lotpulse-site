@@ -281,35 +281,49 @@
 <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
 
 <script>
+  // ── Which dealer? ──
+  // Each dealer gets a link like https://login.lotpulse.io/?dealer=their-slug.
+  // Falls back to Big O so the original bookmark/link still works unchanged.
+  var SLUG = new URLSearchParams(location.search).get("dealer") || "big-o-cdjr";
+  var API = "https://lotpulse-q249.onrender.com";
+
   // ── Access gate ──
-  // Simple shared code. Not high security (data lives behind the API), but it
-  // keeps the dashboard — and customer phone numbers — from showing to anyone
-  // who lands on the URL. Change ACCESS_CODE to rotate it.
-  var ACCESS_CODE = "bigo2026";
+  // The code is validated server-side, per dealer — nothing sensitive sits in
+  // this page's source, and each dealer has their own code (set during
+  // onboarding, rotatable via /admin/set-access-code).
   function unlockApp(){
     document.getElementById("gate").style.display="none";
     document.getElementById("app").style.display="block";
     if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); }
   }
   (function gate(){
-    try{ if(sessionStorage.getItem("lp_ok")==="1"){ /* unlock after defs below */ window.__lpUnlock=true; } }catch(e){}
+    var sessionKey = "lp_ok_" + SLUG;
+    try{ if(sessionStorage.getItem(sessionKey)==="1"){ window.__lpUnlock=true; } }catch(e){}
     var input=document.getElementById("gateInput"), btn=document.getElementById("gateBtn"), err=document.getElementById("gateErr");
     function attempt(){
-      if(input.value===ACCESS_CODE){
-        try{ sessionStorage.setItem("lp_ok","1"); }catch(e){}
-        unlockApp();
-      } else {
-        err.textContent="Incorrect code. Try again.";
-        input.value=""; input.focus();
-      }
+      btn.disabled=true;
+      fetch(API+"/dash/"+SLUG+"/unlock",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code:input.value})
+      }).then(function(r){return r.json();}).then(function(res){
+        btn.disabled=false;
+        if(res.ok){
+          try{ sessionStorage.setItem(sessionKey,"1"); }catch(e){}
+          unlockApp();
+        } else {
+          err.textContent = res.error || "Incorrect code. Try again.";
+          input.value=""; input.focus();
+        }
+      }).catch(function(){
+        btn.disabled=false;
+        err.textContent="Couldn't reach LotPulse. Check your connection.";
+      });
     }
     btn.addEventListener("click",attempt);
     input.addEventListener("keydown",function(e){ if(e.key==="Enter") attempt(); });
     setTimeout(function(){ input.focus(); },200);
   })();
 
-  var API = "https://lotpulse-q249.onrender.com";
-  var SLUG = "big-o-cdjr";
   var state = { board: [], cond: "all", sort: "watchers", view: "list" };
 
   function dollars(c){ return c==null ? "—" : "$"+(c/100).toLocaleString("en-US",{maximumFractionDigits:0}); }
