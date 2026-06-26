@@ -223,6 +223,17 @@
     +   'box-shadow:0 4px 14px rgba(31,79,224,.32);transition:transform .12s,box-shadow .15s,background .15s}'
     + '.btn:hover{background:#1740B8;box-shadow:0 6px 20px rgba(31,79,224,.4)}'
     + '.btn:active{transform:translateY(1px) scale(.995)}'
+    + '.btn:disabled{background:#C7D3EE;cursor:not-allowed;box-shadow:none}'
+    + '.btn:disabled:hover{background:#C7D3EE}'
+    // explicit, unchecked-by-default consent checkbox (required by carrier review)
+    + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
+    + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:21px;height:21px;'
+    +   'flex-shrink:0;margin-top:1px;border:2px solid #C7CDD6;border-radius:6px;cursor:pointer;'
+    +   'position:relative;transition:background .12s,border-color .12s}'
+    + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
+    + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
+    +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
+    + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
     + '.btn.watching{background:#1E8E5A;box-shadow:0 4px 14px rgba(30,142,90,.3)}'
     // reassurance row under button — the no-pressure promise, made loud
     + '.promise{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:11px;flex-wrap:wrap}'
@@ -294,7 +305,11 @@
     +   '<div class="err" id="lp-err"></div>'
     +   '<div class="field"><span class="cc">+1</span>'
     +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="lp-phone" autocomplete="tel" name="tel"></div>'
-    +   '<button class="btn" id="lp-confirm">'
+    +   '<div class="consent" id="lp-consent-row">'
+    +     '<input type="checkbox" id="lp-consent">'
+    +     '<label for="lp-consent" id="lp-consent-label"></label>'
+    +   '</div>'
+    +   '<button class="btn" id="lp-confirm" disabled>'
     +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
     +     'Start watching</button>'
     +   '<div class="fine" id="lp-fine"></div>'
@@ -309,20 +324,34 @@
     var confirm = root.getElementById("lp-confirm");
     var err = root.getElementById("lp-err");
     var fine = root.getElementById("lp-fine");
+    var consent = root.getElementById("lp-consent");
+    var consentLabel = root.getElementById("lp-consent-label");
     var watching = false;
 
-    // Consent fine print (kept in sync with what the server stores).
-    fine.textContent =
-      "By tapping Watch it, you agree to receive automated marketing texts about this "
-      + "vehicle from this dealer. Consent is not a condition of purchase. Msg & data rates "
-      + "may apply. Reply STOP to opt out, HELP for help.";
+    // The core consent statement lives on the checkbox label — this is the
+    // thing the shopper actively checks, unchecked by default, separate from
+    // the submit button. Short mechanics (rates, STOP/HELP) stay as fine print.
+    consentLabel.textContent =
+      "I agree to receive automated marketing text messages about this vehicle "
+      + "from this dealer at the number above. Consent is not a condition of purchase.";
+    fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
-    function openSheet() { sheet.classList.add("open"); scrim.classList.add("open");
-      setTimeout(function () { phone.focus(); }, 280); }
+    function openSheet() {
+      sheet.classList.add("open"); scrim.classList.add("open");
+      // Reset consent state every time the sheet opens — never silently
+      // pre-checked, and the button starts disabled until actively checked.
+      consent.checked = false;
+      confirm.disabled = true;
+      setTimeout(function () { phone.focus(); }, 280);
+    }
     function closeSheet() { sheet.classList.remove("open"); scrim.classList.remove("open"); }
 
     btn.addEventListener("click", function () { if (!watching) openSheet(); });
     scrim.addEventListener("click", closeSheet);
+
+    consent.addEventListener("change", function () {
+      confirm.disabled = !consent.checked;
+    });
 
     phone.addEventListener("input", function (e) {
       var d = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -334,6 +363,13 @@
 
     confirm.addEventListener("click", function () {
       err.style.display = "none";
+      // Defensive check — the button is disabled until checked, but never
+      // trust client-side disabled state alone for a consent requirement.
+      if (!consent.checked) {
+        err.textContent = "Please check the box to confirm you'd like text alerts.";
+        err.style.display = "block";
+        return;
+      }
       var raw = phone.value.replace(/\D/g, "");
       if (raw.length !== 10) {
         err.textContent = "Enter a valid 10-digit mobile number.";
