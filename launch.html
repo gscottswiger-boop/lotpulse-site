@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LotPulse — Dealer Launch</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --porcelain:#F6F7F5; --card:#FFFFFF; --ink:#14181D; --slate:#5C6670;
+    --line:#E4E7E4; --line-soft:#EFF1EE; --action:#1F4FE0; --action-deep:#1740B8;
+    --win:#1E8E5A; --win-soft:#EAF6EF; --redline:#DE3730; --red-soft:#FDEAE9;
+    --amber:#F5A300; --amber-soft:#FFF4DC;
+    --radius:14px; --shadow:0 1px 2px rgba(20,24,29,.05),0 8px 28px rgba(20,24,29,.07);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Barlow',system-ui,sans-serif;background:var(--porcelain);color:var(--ink);line-height:1.45;min-height:100vh}
+  .shell{max-width:680px;margin:0 auto;padding:0 16px 80px}
+  .top{display:flex;align-items:center;gap:10px;padding:22px 4px 6px}
+  .wm-pulse{width:32px;height:32px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center}
+  .wm-text{font-family:'Barlow Condensed';font-weight:700;font-size:21px;letter-spacing:.02em}
+  .wm-text em{font-style:normal;color:var(--redline)}
+  .pagetitle{font-size:14px;color:var(--slate);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-left:auto}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 22px 24px;margin-top:18px}
+  .card h2{font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:.02em;margin-bottom:4px}
+  .card .sub{font-size:13px;color:var(--slate);margin-bottom:16px}
+
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--slate);margin-bottom:5px;letter-spacing:.02em}
+  .field{margin-bottom:14px}
+  input[type=text],input[type=password],input[type=email],input[type=url],select{
+    width:100%;font-family:'Barlow';font-size:15px;color:var(--ink);background:var(--porcelain);
+    border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;outline:none;transition:border-color .15s}
+  input:focus,select:focus{border-color:var(--action)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hint{font-size:11.5px;color:#9AA29C;margin-top:4px}
+
+  .btn{width:100%;border:0;cursor:pointer;background:var(--action);color:#fff;border-radius:11px;
+    padding:14px;font-size:15.5px;font-weight:700;font-family:'Barlow';transition:background .15s}
+  .btn:hover{background:var(--action-deep)}
+  .btn:disabled{background:#C7D3EE;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--action);border:1.5px solid var(--action);padding:9px;font-size:13px}
+  .btn.ghost:hover{background:#EAF1FF}
+
+  .steplog{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+  .stepline{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--slate);padding:9px 12px;border-radius:9px;background:var(--porcelain)}
+  .stepline.ok{background:var(--win-soft);color:#155C3C}
+  .stepline.fail{background:var(--red-soft);color:#9A2E29}
+  .stepline.pending{background:var(--porcelain)}
+  .stepline .dot{width:8px;height:8px;border-radius:50%;background:#C7CDD6;flex-shrink:0}
+  .stepline.ok .dot{background:var(--win)}
+  .stepline.fail .dot{background:var(--redline)}
+  .stepline.pending .dot{background:var(--amber);animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .results{display:none}
+  .results.show{display:block}
+  .kv{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:14px;margin-bottom:14px}
+  .kv .k{color:var(--slate);font-weight:600}
+  .kv .v{font-family:'IBM Plex Mono';font-size:13px;word-break:break-all}
+  .copybox{position:relative;background:var(--ink);border-radius:10px;padding:14px 44px 14px 14px;margin:10px 0}
+  .copybox pre{font-family:'IBM Plex Mono';font-size:12px;color:#D9F0E2;white-space:pre-wrap;word-break:break-all;line-height:1.6}
+  .copybtn{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.12);border:0;color:#fff;
+    border-radius:7px;padding:6px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Barlow'}
+  .copybtn:hover{background:rgba(255,255,255,.22)}
+  .copybtn.done{background:var(--win)}
+  .summarygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+  .summarygrid .cell{background:var(--porcelain);border-radius:9px;padding:10px;text-align:center}
+  .summarygrid .cell .n{font-family:'Barlow Condensed';font-weight:700;font-size:20px}
+  .summarygrid .cell .l{font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate);margin-top:3px}
+  .checklist{margin-top:18px;display:flex;flex-direction:column;gap:9px}
+  .checklist a{color:var(--action);text-decoration:none;font-weight:600}
+  .checklist li{font-size:13.5px;color:var(--ink);display:flex;gap:9px}
+  .checklist li::before{content:"→";color:var(--action);font-weight:700}
+
+  .warn{background:var(--amber-soft);border:1px solid #F3D9A6;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#7A5300;margin-bottom:16px;line-height:1.5}
+  .err{background:var(--red-soft);color:#9A2E29;border-radius:10px;padding:11px 13px;font-size:13px;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="wm-pulse"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg></div>
+    <div class="wm-text">Lot<em>Pulse</em></div>
+    <div class="pagetitle">Dealer Launch</div>
+  </div>
+
+  <div class="card">
+    <h2>Admin token</h2>
+    <div class="sub">Add <code>ADMIN_TOKEN</code> back to the API service in Render, paste it here, run this page, then remove it from Render again. Never stored — you'll re-enter it next time.</div>
+    <div class="field">
+      <input type="password" id="token" placeholder="Paste ADMIN_TOKEN" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>New dealer</h2>
+    <div class="sub">Fill in what you know from the dealer. Everything here is what <code>/admin/onboard-dealer</code> needs.</div>
+
+    <div class="field">
+      <label for="name">Dealer name</label>
+      <input type="text" id="name" placeholder="Smith Honda">
+    </div>
+    <div class="field">
+      <label for="slug">Slug <span style="font-weight:400;color:#9AA29C">(used in URLs — auto-filled, editable)</span></label>
+      <input type="text" id="slug" placeholder="smith-honda">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="platform">Inventory feed format</label>
+        <select id="platform">
+          <option value="hoot">Hoot</option>
+          <option value="dealer_inspire">Dealer Inspire</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="state">State</label>
+        <input type="text" id="state" placeholder="SC" maxlength="2">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="timezone">Timezone</label>
+        <select id="timezone">
+          <option value="America/New_York">Eastern</option>
+          <option value="America/Chicago">Central</option>
+          <option value="America/Denver">Mountain</option>
+          <option value="America/Phoenix">Mountain (no DST)</option>
+          <option value="America/Los_Angeles">Pacific</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="websiteHost">Website host <span style="font-weight:400;color:#9AA29C">(optional)</span></label>
+        <input type="text" id="websiteHost" placeholder="www.smithhonda.com">
+      </div>
+    </div>
+    <div class="field">
+      <label for="feedUrl">Inventory feed URL</label>
+      <input type="url" id="feedUrl" placeholder="https://...">
+      <div class="hint">The CSV/feed link from their inventory provider. Contains a token — never gets committed anywhere, only sent to the API.</div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="accessCode">Dashboard access code <span style="font-weight:400;color:#9AA29C">(optional)</span></label>
+        <input type="text" id="accessCode" placeholder="Auto-generated if blank">
+      </div>
+      <div class="field">
+        <label for="crmEmail">CRM lead email <span style="font-weight:400;color:#9AA29C">(optional)</span></label>
+        <input type="email" id="crmEmail" placeholder="leads@dealer.com">
+      </div>
+    </div>
+
+    <div class="err" id="formErr"></div>
+    <button class="btn" id="launchBtn">Launch dealer →</button>
+
+    <div class="steplog" id="steplog"></div>
+  </div>
+
+  <div class="card results" id="results">
+    <h2>Ready</h2>
+    <div class="sub" id="resultsSub"></div>
+
+    <div class="summarygrid" id="summaryGrid"></div>
+
+    <div class="kv">
+      <div class="k">Public key</div><div class="v" id="r-publickey">—</div>
+      <div class="k">Access code</div><div class="v" id="r-accesscode">—</div>
+      <div class="k">Dashboard</div><div class="v"><a href="#" id="r-dashurl" target="_blank">—</a></div>
+    </div>
+
+    <label>GTM Custom HTML tag — paste into the dealer's GTM container</label>
+    <div class="copybox">
+      <button class="copybtn" id="copyGtm">Copy</button>
+      <pre id="gtmSnippet"></pre>
+    </div>
+
+    <ul class="checklist">
+      <li>Install the GTM tag above in <strong>their</strong> Google Tag Manager, test-only trigger first</li>
+      <li>Test in GTM Preview on a real VDP before publishing</li>
+      <li>Share the dashboard link + access code with whoever needs it</li>
+      <li>When ready: point their real CRM with <code>/admin/set-crm-email</code></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  var API = "https://lotpulse-q249.onrender.com";
+
+  // Auto-slugify the name into the slug field, but stop once the user edits
+  // slug directly so we never clobber a manual choice.
+  var slugTouched = false;
+  document.getElementById("slug").addEventListener("input", function(){ slugTouched = true; });
+  document.getElementById("name").addEventListener("input", function(e){
+    if (slugTouched) return;
+    document.getElementById("slug").value = e.target.value.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  });
+
+  function setStep(id, label, state){
+    var log = document.getElementById("steplog");
+    var el = document.getElementById("step-" + id);
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "step-" + id;
+      el.className = "stepline";
+      log.appendChild(el);
+    }
+    el.className = "stepline" + (state ? " " + state : "");
+    el.innerHTML = '<span class="dot"></span><span>' + label + '</span>';
+  }
+
+  function apiCall(path, token, body){
+    return fetch(API + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify(body || {})
+    }).then(function(r){ return r.json().then(function(json){ return { ok: r.ok, status: r.status, json: json }; }); });
+  }
+
+  document.getElementById("launchBtn").addEventListener("click", function(){
+    var err = document.getElementById("formErr");
+    err.style.display = "none";
+    document.getElementById("steplog").innerHTML = "";
+    document.getElementById("results").classList.remove("show");
+
+    var token = document.getElementById("token").value.trim();
+    var name = document.getElementById("name").value.trim();
+    var slug = document.getElementById("slug").value.trim();
+    var platform = document.getElementById("platform").value;
+    var state = document.getElementById("state").value.trim();
+    var timezone = document.getElementById("timezone").value;
+    var websiteHost = document.getElementById("websiteHost").value.trim();
+    var feedUrl = document.getElementById("feedUrl").value.trim();
+    var accessCode = document.getElementById("accessCode").value.trim();
+    var crmEmail = document.getElementById("crmEmail").value.trim();
+
+    if (!token || !name || !slug || !feedUrl) {
+      err.textContent = "Token, dealer name, slug, and feed URL are all required.";
+      err.style.display = "block";
+      return;
+    }
+
+    var btn = document.getElementById("launchBtn");
+    btn.disabled = true; btn.textContent = "Launching…";
+
+    setStep("onboard", "Saving dealer record…", "pending");
+    apiCall("/admin/onboard-dealer", token, {
+      name: name, slug: slug, platform: platform, state: state || null,
+      timezone: timezone, website_host: websiteHost || null, feed_url: feedUrl,
+      access_code: accessCode || undefined
+    }).then(function(onboardRes){
+      if (!onboardRes.ok || !onboardRes.json.ok) {
+        setStep("onboard", "Saving dealer record — failed: " + (onboardRes.json.error || onboardRes.status), "fail");
+        throw new Error("onboard_failed");
+      }
+      setStep("onboard", "Dealer record saved", "ok");
+      var dealer = onboardRes.json;
+
+      setStep("sync", "Pulling initial inventory…", "pending");
+      return apiCall("/admin/sync/" + slug, token, {}).then(function(syncRes){
+        if (!syncRes.ok || !syncRes.json.ok) {
+          setStep("sync", "Inventory sync — failed: " + (syncRes.json.error || syncRes.status), "fail");
+          // Not fatal to the whole flow — dealer record exists, sync can be retried.
+          return { dealer: dealer, sync: null };
+        }
+        var s = syncRes.json.summary;
+        setStep("sync", "Inventory synced — " + s.added + " added, " + s.updated + " updated", "ok");
+        return { dealer: dealer, sync: syncRes.json };
+      });
+    }).then(function(combined){
+      if (!crmEmail) return combined;
+      setStep("crm", "Setting CRM lead email…", "pending");
+      return apiCall("/admin/set-crm-email", token, { slug: slug, email: crmEmail }).then(function(crmRes){
+        setStep("crm", crmRes.ok ? "CRM lead email set" : "CRM email — failed", crmRes.ok ? "ok" : "fail");
+        return combined;
+      });
+    }).then(function(combined){
+      renderResults(combined.dealer, combined.sync);
+    }).catch(function(e){
+      if (e.message !== "onboard_failed") {
+        err.textContent = "Something went wrong: " + e.message;
+        err.style.display = "block";
+      }
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "Launch dealer →";
+    });
+  });
+
+  function renderResults(dealer, sync){
+    document.getElementById("resultsSub").textContent = dealer.dealer.name + " is live in the database.";
+
+    var grid = document.getElementById("summaryGrid");
+    if (sync && sync.summary) {
+      var s = sync.summary;
+      grid.innerHTML =
+        '<div class="cell"><div class="n">' + s.rowsInFeed + '</div><div class="l">In feed</div></div>' +
+        '<div class="cell"><div class="n">' + s.added + '</div><div class="l">Added</div></div>' +
+        '<div class="cell"><div class="n">' + s.updated + '</div><div class="l">Updated</div></div>' +
+        '<div class="cell"><div class="n">' + s.priceDrops + '</div><div class="l">Price drops</div></div>';
+    } else {
+      grid.innerHTML = '<div class="cell" style="grid-column:1/-1"><div class="l">Sync didn\'t complete — retry from /admin/sync/' + dealer.dealer.slug + '</div></div>';
+    }
+
+    document.getElementById("r-publickey").textContent = dealer.publicKey;
+    document.getElementById("r-accesscode").textContent = dealer.dashboardAccessCode;
+    var dashLink = document.getElementById("r-dashurl");
+    dashLink.textContent = dealer.dashboardUrl;
+    dashLink.href = dealer.dashboardUrl;
+
+    document.getElementById("gtmSnippet").textContent =
+      '<script>\n' +
+      '  window.__lotpulseConfig = {\n' +
+      '    apiBase: "' + API + '",\n' +
+      '    publicKey: "' + dealer.publicKey + '"\n' +
+      '  };\n' +
+      '<\/script>\n' +
+      '<script src="https://lotpulse-site.onrender.com/lotpulse-widget.js"><\/script>';
+
+    document.getElementById("results").classList.add("show");
+    document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  document.getElementById("copyGtm").addEventListener("click", function(){
+    var text = document.getElementById("gtmSnippet").textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      var b = document.getElementById("copyGtm");
+      b.textContent = "Copied!"; b.classList.add("done");
+      setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("done"); }, 1800);
+    });
+  });
+</script>
+</body>
+</html>
