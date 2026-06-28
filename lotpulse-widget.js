@@ -651,7 +651,7 @@
   }
 
   function mountSrpButton(vin, cardEl) {
-    if (cardEl.querySelector('[data-lp-srp="' + vin + '"]')) return; // already mounted
+    if (cardEl.querySelector('[data-lp-srp="' + vin + '"]')) return false; // already mounted
 
     var stack = findCtaStack(cardEl);
     var btn = document.createElement("button");
@@ -666,12 +666,22 @@
       btn.setAttribute("data-lp-mode", "button");
       btn.textContent = "\uD83D\uDC41 Watch \u2014 Get Price Alerts";
       btn.style.cssText =
-        "display:block;width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;"
+        "display:block;width:100%;flex-shrink:0;flex-basis:auto;border:0;cursor:pointer;"
+        + "background:#1F4FE0;color:#fff;"
         + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
         + "font-size:13px;font-weight:700;letter-spacing:.01em;padding:10px 12px;"
         + "border-radius:2px;margin-top:1px;transition:background .15s;";
       btn.addEventListener("mouseenter", function () { btn.style.background = "#1740B8"; });
       btn.addEventListener("mouseleave", function () { btn.style.background = "#1F4FE0"; });
+      // This stack is sized by Dealer Inspire to fit exactly the 2 buttons
+      // it ships with — confirmed by measuring it at ~95px tall, almost
+      // exactly 2 buttons' worth. Adding a 3rd button without forcing the
+      // container to grow gets silently clipped or squashed to nothing,
+      // which is consistent with everything mounting correctly (per the
+      // console logs) while staying invisible on screen.
+      stack.style.height = "auto";
+      stack.style.maxHeight = "none";
+      stack.style.overflow = "visible";
       stack.appendChild(btn);
     } else {
       // No native CTA stack on this template — fall back to a small
@@ -699,15 +709,18 @@
       var sheetHost = ensureSrpSheet();
       if (sheetHost._lpOpen) sheetHost._lpOpen();
     });
+    return true;
   }
 
   function mountAllSrp(found) {
     found.forEach(function (entry) {
       var card = findCardContainer(entry.el);
       var hadHit = card && card.classList && card.classList.contains("hit");
-      mountSrpButton(entry.vin, card);
-      console.log("[LotPulse] mounted on " + entry.vin
-        + " (card boundary: " + (hadHit ? ".hit" : "generic-fallback") + ")");
+      var didMount = mountSrpButton(entry.vin, card);
+      if (didMount) {
+        console.log("[LotPulse] mounted on " + entry.vin
+          + " (card boundary: " + (hadHit ? ".hit" : "generic-fallback") + ")");
+      }
     });
   }
 
