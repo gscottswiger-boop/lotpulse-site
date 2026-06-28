@@ -403,18 +403,308 @@
     });
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // SRP (search-results / inventory-listing) mode
+  // ════════════════════════════════════════════════════════════════════════
+  // Activates ONLY when boot() finds no single VDP-style VIN. Renders a small
+  // "Watch" icon over each vehicle card instead of the full VDP widget, and
+  // every icon shares ONE bottom sheet (rather than one sheet per card) so a
+  // 30-listing page doesn't end up with 30 duplicate sheets in the DOM.
+  //
+  // HONEST CAVEAT: this is a v1 written without having inspected a real Big O
+  // search-results page yet (same situation the VDP widget was in before we
+  // saw an actual price-box layout — and that took two rounds to place
+  // correctly). It anchors only to vehicles exposed via data-vin-style
+  // attributes per card, because that's the only signal that also gives us a
+  // DOM element to attach near. If the real SRP turns out to expose VINs only
+  // via a JSON-LD ItemList with no per-card attribute, this needs a follow-up
+  // pass once we see the actual markup — same as VDP's anchor logic did.
+  // ════════════════════════════════════════════════════════════════════════
+
+  function findAllVins() {
+    var out = [], seen = {};
+    var els = document.querySelectorAll("[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber']");
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var raw = el.getAttribute("data-vin") || el.getAttribute("data-vehicle-vin") ||
+                el.getAttribute("content") || el.textContent;
+      var vin = cleanVin(raw);
+      if (vin && !seen[vin]) { seen[vin] = true; out.push({ vin: vin, el: el }); }
+    }
+    return out;
+  }
+
+  // Walk up from a VIN's source element to find the card boundary. Dealer
+  // Inspire's listing template wraps each result in <div class="hit"> —
+  // confirmed against a real Big O search-results page — so prefer that.
+  // Other platforms won't have it, so fall back to the generic "nearest
+  // ancestor with a photo" heuristic, same proxy logic as before.
+  function findCardContainer(el) {
+    var node = el;
+    for (var i = 0; i < 8 && node; i++) {
+      if (node.classList && node.classList.contains("hit")) return node;
+      node = node.parentElement;
+    }
+    node = el;
+    for (var j = 0; j < 6 && node; j++) {
+      if (node.querySelector && node.querySelector("img")) return node;
+      node = node.parentElement;
+    }
+    return el.parentElement || el;
+  }
+
+  // Within a card, find its native CTA button stack if it has one — Dealer
+  // Inspire's is `.hit-additional-ctas`, holding "Get Your Lowest Price" /
+  // "View Details" as full-width stacked buttons. Joining that stack with a
+  // matching button looks native and stays compact; falling back to a
+  // floating icon (below) is for templates with no such stack.
+  function findCtaStack(cardEl) {
+    var stack = cardEl.querySelector(".hit-additional-ctas");
+    if (stack) return stack;
+    var ctaEl = cardEl.querySelector("[data-testid^='vehicle-cta-']");
+    return ctaEl ? ctaEl.parentElement : null;
+  }
+
+  var srpSheetHost = null;
+  var srpActiveVin = null;
+
+  function ensureSrpSheet() {
+    if (srpSheetHost) return srpSheetHost;
+    var host = document.createElement("div");
+    host.id = "lotpulse-srp-sheet-host";
+    document.body.appendChild(host);
+    var root = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
+    root.innerHTML = srpSheetHtml();
+    wireSrpSheet(root, host);
+    srpSheetHost = host;
+    return host;
+  }
+
+  function srpSheetHtml() {
+    // Same visual language and consent pattern as the VDP sheet — unchecked
+    // checkbox gating a disabled submit button (carrier requirement, 30925).
+    return ''
+      + '<style>'
+      + ':host,*{box-sizing:border-box}'
+      + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
+      +   'transition:opacity .22s;z-index:2147483646}'
+      + '.scrim.open{opacity:1;pointer-events:auto}'
+      + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:480px;margin:0 auto;'
+      +   'background:#fff;border-radius:24px 24px 0 0;padding:10px 22px 26px;'
+      +   'transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.2,1);'
+      +   'box-shadow:0 -16px 56px rgba(13,18,28,.22);'
+      +   'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}'
+      + '.sheet.open{transform:translateY(0)}'
+      + '.grab{width:40px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 18px}'
+      + 'h3{font-size:21px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.02em}'
+      + '.psub{font-size:14px;color:#5C6670;margin:0 0 16px}'
+      + '.field{display:flex;align-items:center;gap:10px;border:1.5px solid #E4E7E4;border-radius:13px;'
+      +   'padding:15px;margin-bottom:12px}'
+      + '.field:focus-within{border-color:#1F4FE0;box-shadow:0 0 0 4px rgba(31,79,224,.12)}'
+      + '.cc{font-weight:700;color:#5C6670;font-size:15px}'
+      + 'input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:600;'
+      +   'color:#14181D;background:transparent;min-width:0}'
+      + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
+      + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:21px;height:21px;'
+      +   'flex-shrink:0;margin-top:1px;border:2px solid #C7CDD6;border-radius:6px;cursor:pointer;'
+      +   'position:relative}'
+      + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
+      + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
+      +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
+      + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
+      + '.btn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:13px;'
+      +   'padding:16px;font-size:16px;font-weight:700;font-family:inherit}'
+      + '.btn:disabled{background:#C7D3EE;cursor:not-allowed}'
+      + '.fine{font-size:10.5px;line-height:1.5;color:#9AA29C;margin-top:11px}'
+      + '.err{color:#DE3730;font-size:13px;font-weight:600;margin-bottom:10px;display:none}'
+      + '</style>'
+      + '<div class="scrim" id="s-scrim"></div>'
+      + '<div class="sheet" id="s-sheet" role="dialog" aria-modal="true">'
+      +   '<div class="grab"></div>'
+      +   '<h3>Get a text when this price drops</h3>'
+      +   '<p class="psub">Drop your number. No salesperson will ever call you.</p>'
+      +   '<div class="err" id="s-err"></div>'
+      +   '<div class="field"><span class="cc">+1</span>'
+      +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="s-phone" autocomplete="tel" name="tel"></div>'
+      +   '<div class="consent"><input type="checkbox" id="s-consent">'
+      +     '<label for="s-consent" id="s-consent-label"></label></div>'
+      +   '<button class="btn" id="s-confirm" disabled>Start watching</button>'
+      +   '<div class="fine" id="s-fine"></div>'
+      + '</div>';
+  }
+
+  function wireSrpSheet(root, host) {
+    var scrim = root.getElementById("s-scrim");
+    var sheet = root.getElementById("s-sheet");
+    var phone = root.getElementById("s-phone");
+    var consent = root.getElementById("s-consent");
+    var consentLabel = root.getElementById("s-consent-label");
+    var confirm = root.getElementById("s-confirm");
+    var err = root.getElementById("s-err");
+    var fine = root.getElementById("s-fine");
+
+    consentLabel.textContent =
+      "I agree to receive automated marketing text messages about this vehicle "
+      + "from this dealer at the number above. Consent is not a condition of purchase.";
+    fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
+
+    function open() {
+      sheet.classList.add("open"); scrim.classList.add("open");
+      consent.checked = false; confirm.disabled = true;
+      err.style.display = "none"; phone.value = "";
+      setTimeout(function () { phone.focus(); }, 280);
+    }
+    function close() { sheet.classList.remove("open"); scrim.classList.remove("open"); }
+    host._lpOpen = open; // exposed so per-card icon clicks can trigger this shared sheet
+
+    scrim.addEventListener("click", close);
+    consent.addEventListener("change", function () { confirm.disabled = !consent.checked; });
+    phone.addEventListener("input", function (e) {
+      var d = e.target.value.replace(/\D/g, "").slice(0, 10);
+      var out = d;
+      if (d.length > 6) out = "(" + d.slice(0, 3) + ") " + d.slice(3, 6) + "-" + d.slice(6);
+      else if (d.length > 3) out = "(" + d.slice(0, 3) + ") " + d.slice(3);
+      e.target.value = out;
+    });
+
+    confirm.addEventListener("click", function () {
+      err.style.display = "none";
+      if (!consent.checked) {
+        err.textContent = "Please check the box to confirm you'd like text alerts.";
+        err.style.display = "block";
+        return;
+      }
+      var raw = phone.value.replace(/\D/g, "");
+      if (raw.length !== 10) {
+        err.textContent = "Enter a valid 10-digit mobile number.";
+        err.style.display = "block";
+        return;
+      }
+      if (!srpActiveVin) return;
+      confirm.disabled = true;
+      apiPost("/v1/watch", { vin: srpActiveVin, phone: raw }).then(function () {
+        close();
+        var el = document.querySelector('[data-lp-srp="' + srpActiveVin + '"]');
+        if (el) {
+          el.style.background = "#1E8E5A";
+          if (el.getAttribute("data-lp-mode") === "button") {
+            el.textContent = "\u2713 Watching \u2014 We'll text you";
+          } else {
+            el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" '
+              + 'stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+              + '<polyline points="20 6 9 17 4 12"/></svg>';
+          }
+        }
+      }).catch(function (e) {
+        confirm.disabled = false;
+        err.textContent = (e && e.message) || "Something went wrong. Try again.";
+        err.style.display = "block";
+      });
+    });
+  }
+
+  function mountSrpButton(vin, cardEl) {
+    if (cardEl.querySelector('[data-lp-srp="' + vin + '"]')) return; // already mounted
+
+    var stack = findCtaStack(cardEl);
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("data-lp-srp", vin);
+
+    if (stack) {
+      // Join the card's own CTA button stack — same width/rhythm as "Get
+      // Your Lowest Price" / "View Details", so it reads as part of the
+      // page instead of a foreign overlay. This is the slim, compelling
+      // version: one clear line, no extra height.
+      btn.setAttribute("data-lp-mode", "button");
+      btn.textContent = "\uD83D\uDC41 Watch \u2014 Get Price Alerts";
+      btn.style.cssText =
+        "display:block;width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;"
+        + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
+        + "font-size:13px;font-weight:700;letter-spacing:.01em;padding:10px 12px;"
+        + "border-radius:2px;margin-top:1px;transition:background .15s;";
+      btn.addEventListener("mouseenter", function () { btn.style.background = "#1740B8"; });
+      btn.addEventListener("mouseleave", function () { btn.style.background = "#1F4FE0"; });
+      stack.appendChild(btn);
+    } else {
+      // No native CTA stack on this template — fall back to a small
+      // floating icon over the photo rather than guessing at button styling.
+      btn.setAttribute("data-lp-mode", "icon");
+      btn.setAttribute("title", "Watch this car \u2014 get a text if the price drops");
+      btn.style.cssText =
+        "position:absolute;top:10px;right:10px;z-index:50;width:38px;height:38px;border-radius:50%;"
+        + "background:rgba(20,24,29,.78);display:flex;align-items:center;justify-content:center;"
+        + "cursor:pointer;backdrop-filter:blur(4px);transition:transform .12s,background .15s;padding:0;";
+      btn.innerHTML =
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" '
+        + 'stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>'
+        + '<circle cx="12" cy="12" r="3"/></svg>';
+      btn.addEventListener("mouseenter", function () { btn.style.transform = "scale(1.08)"; });
+      btn.addEventListener("mouseleave", function () { btn.style.transform = "scale(1)"; });
+      var cs = window.getComputedStyle(cardEl);
+      if (cs.position === "static") cardEl.style.position = "relative";
+      cardEl.appendChild(btn);
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation(); // don't follow the card's own link-through
+      srpActiveVin = vin;
+      var sheetHost = ensureSrpSheet();
+      if (sheetHost._lpOpen) sheetHost._lpOpen();
+    });
+  }
+
+  function mountAllSrp(found) {
+    found.forEach(function (entry) {
+      mountSrpButton(entry.vin, findCardContainer(entry.el));
+    });
+  }
+
+  // Some listing grids render cards a beat after our first check (lazy
+  // load), and a single VDP never needs this, so this is bounded — same
+  // ~6s safety window as the VDP anchor-wait, not an indefinite observer.
+  var srpWatchStarted = false;
+  function watchSrpForLateCards() {
+    if (srpWatchStarted) return;
+    srpWatchStarted = true;
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      var found = findAllVins();
+      if (found.length) mountAllSrp(found);
+      if (tries > 12) clearInterval(iv);
+    }, 500);
+  }
+
   // ── Boot ────────────────────────────────────────────────────────────────────
   function boot() {
-    var vin = findVin();
-    if (!vin) {
-      // Not a VDP (or VIN not found) — do nothing, stay invisible.
+    // Check for a LISTING page (many vehicles) before a single VDP. A real
+    // VDP only ever has one VIN-bearing element; a listing grid has many.
+    // Checking multiplicity FIRST is the fix for a real bug: findVin()'s
+    // single-result early-return was grabbing just the page's FIRST card and
+    // mounting the full VDP widget into that one card's CTA slot on
+    // search-results pages — because Dealer Inspire reuses the same
+    // `vehicle-cta-N` naming on SRP cards that it uses on VDP price boxes.
+    var initial = findAllVins();
+    if (initial.length >= 2) {
+      mountAllSrp(initial);
+      watchSrpForLateCards();
       return;
     }
-    apiGet("/v1/vehicle/" + vin + "/demand").then(function (demand) {
-      mountWhenAnchorReady(vin, demand || { watchers: 0 });
-    }).catch(function (e) {
-      console.warn("[LotPulse] demand fetch failed:", e);
-    });
+
+    var vin = findVin();
+    if (vin) {
+      apiGet("/v1/vehicle/" + vin + "/demand").then(function (demand) {
+        mountWhenAnchorReady(vin, demand || { watchers: 0 });
+      }).catch(function (e) {
+        console.warn("[LotPulse] demand fetch failed:", e);
+      });
+      return;
+    }
+
+    // Neither matched yet — could be a slow-loading listing page whose cards
+    // haven't rendered. Give it a bounded retry instead of giving up.
+    watchSrpForLateCards();
   }
 
   // Some Dealer Inspire pages build the right-rail CTA slots late. Rather than
