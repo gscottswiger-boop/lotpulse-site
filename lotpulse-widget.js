@@ -227,8 +227,9 @@
     + '.btn:disabled:hover{background:#C7D3EE}'
     // explicit, unchecked-by-default consent checkbox (required by carrier review)
     + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
-    + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:21px;height:21px;'
-    +   'flex-shrink:0;margin-top:1px;border:2px solid #C7CDD6;border-radius:6px;cursor:pointer;'
+    + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:23px;height:23px;'
+    +   'flex-shrink:0;margin-top:0;border:2.5px solid #8A93A3;border-radius:6px;cursor:pointer;'
+    +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);'
     +   'position:relative;transition:background .12s,border-color .12s}'
     + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
     + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
@@ -505,8 +506,9 @@
       + 'input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:600;'
       +   'color:#14181D;background:transparent;min-width:0}'
       + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
-      + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:21px;height:21px;'
-      +   'flex-shrink:0;margin-top:1px;border:2px solid #C7CDD6;border-radius:6px;cursor:pointer;'
+      + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:23px;height:23px;'
+      +   'flex-shrink:0;margin-top:0;border:2.5px solid #8A93A3;border-radius:6px;cursor:pointer;'
+      +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);'
       +   'position:relative}'
       + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
       + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
@@ -672,7 +674,9 @@
       tries++;
       var found = findAllVins();
       if (found.length) mountAllSrp(found);
-      if (tries > 12) clearInterval(iv);
+      // ~12s window — longer than the VDP anchor-wait, since listing grids
+      // are more likely to lazy-load and mobile may render a beat slower.
+      if (tries > 24) clearInterval(iv);
     }, 500);
   }
 
