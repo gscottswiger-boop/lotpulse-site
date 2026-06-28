@@ -225,14 +225,19 @@
     + '.btn:active{transform:translateY(1px) scale(.995)}'
     + '.btn:disabled{background:#C7D3EE;cursor:not-allowed;box-shadow:none}'
     + '.btn:disabled:hover{background:#C7D3EE}'
-    // explicit, unchecked-by-default consent checkbox (required by carrier review)
-    + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
-    + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:23px;height:23px;'
-    +   'flex-shrink:0;margin-top:0;border:2.5px solid #8A93A3;border-radius:6px;cursor:pointer;'
-    +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);'
-    +   'position:relative;transition:background .12s,border-color .12s}'
-    + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
-    + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
+    // Explicit, unchecked-by-default consent checkbox (carrier requirement).
+    // The real <input> is fully hidden (not just restyled) and a plain <span>
+    // draws the visible box — appearance:none on a native checkbox isn't
+    // reliably honored in every browser (privacy-hardened engines especially),
+    // so this avoids depending on that entirely.
+    + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer;position:relative}'
+    + '.consent input[type=checkbox]{position:absolute;left:0;top:0;width:23px;height:23px;'
+    +   'margin:0;opacity:0;cursor:pointer;z-index:2}'
+    + '.consent .cbx{width:23px;height:23px;flex-shrink:0;border:2.5px solid #8A93A3;border-radius:6px;'
+    +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);position:relative;'
+    +   'transition:background .12s,border-color .12s}'
+    + '.consent input[type=checkbox]:checked + .cbx{background:#1F4FE0;border-color:#1F4FE0}'
+    + '.consent input[type=checkbox]:checked + .cbx::after{content:"";position:absolute;left:6px;top:2px;'
     +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
     + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
     + '.btn.watching{background:#1E8E5A;box-shadow:0 4px 14px rgba(30,142,90,.3)}'
@@ -308,6 +313,7 @@
     +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="lp-phone" autocomplete="tel" name="tel"></div>'
     +   '<div class="consent" id="lp-consent-row">'
     +     '<input type="checkbox" id="lp-consent">'
+    +     '<span class="cbx" aria-hidden="true"></span>'
     +     '<label for="lp-consent" id="lp-consent-label"></label>'
     +   '</div>'
     +   '<button class="btn" id="lp-confirm" disabled>'
@@ -424,6 +430,7 @@
 
   function findAllVins() {
     var out = [], seen = {};
+    // Method 1: grid-view template — VIN sits in a real attribute.
     var els = document.querySelectorAll("[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber']");
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
@@ -431,6 +438,16 @@
                 el.getAttribute("content") || el.textContent;
       var vin = cleanVin(raw);
       if (vin && !seen[vin]) { seen[vin] = true; out.push({ vin: vin, el: el }); }
+    }
+    // Method 2: Dealer Inspire's list-view template (confirmed on a real Big
+    // O mobile page) prints "VIN: <vin>" as plain text inside
+    // [data-testid='vin-number'] instead of an attribute. No attribute to
+    // read here — pull the VIN out of the text itself.
+    var vinTextEls = document.querySelectorAll("[data-testid='vin-number']");
+    for (var k = 0; k < vinTextEls.length; k++) {
+      var m = (vinTextEls[k].textContent || "").match(/\b([A-HJ-NPR-Z0-9]{17})\b/);
+      var vin2 = m ? cleanVin(m[1]) : null;
+      if (vin2 && !seen[vin2]) { seen[vin2] = true; out.push({ vin: vin2, el: vinTextEls[k] }); }
     }
     return out;
   }
@@ -505,13 +522,13 @@
       + '.cc{font-weight:700;color:#5C6670;font-size:15px}'
       + 'input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:600;'
       +   'color:#14181D;background:transparent;min-width:0}'
-      + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer}'
-      + '.consent input[type=checkbox]{appearance:none;-webkit-appearance:none;width:23px;height:23px;'
-      +   'flex-shrink:0;margin-top:0;border:2.5px solid #8A93A3;border-radius:6px;cursor:pointer;'
-      +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);'
-      +   'position:relative}'
-      + '.consent input[type=checkbox]:checked{background:#1F4FE0;border-color:#1F4FE0}'
-      + '.consent input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;'
+      + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer;position:relative}'
+      + '.consent input[type=checkbox]{position:absolute;left:0;top:0;width:23px;height:23px;'
+      +   'margin:0;opacity:0;cursor:pointer;z-index:2}'
+      + '.consent .cbx{width:23px;height:23px;flex-shrink:0;border:2.5px solid #8A93A3;border-radius:6px;'
+      +   'background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.08);position:relative}'
+      + '.consent input[type=checkbox]:checked + .cbx{background:#1F4FE0;border-color:#1F4FE0}'
+      + '.consent input[type=checkbox]:checked + .cbx::after{content:"";position:absolute;left:6px;top:2px;'
       +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
       + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
       + '.btn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:13px;'
@@ -529,6 +546,7 @@
       +   '<div class="field"><span class="cc">+1</span>'
       +     '<input type="tel" inputmode="tel" placeholder="(555) 555-0134" id="s-phone" autocomplete="tel" name="tel"></div>'
       +   '<div class="consent"><input type="checkbox" id="s-consent">'
+      +     '<span class="cbx" aria-hidden="true"></span>'
       +     '<label for="s-consent" id="s-consent-label"></label></div>'
       +   '<button class="btn" id="s-confirm" disabled>Start watching</button>'
       +   '<div class="fine" id="s-fine"></div>'
