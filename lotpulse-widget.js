@@ -498,16 +498,40 @@
     return el.parentElement || el;
   }
 
+  // True if an element is genuinely rendered on screen right now — not just
+  // present in the DOM. display:none, visibility:hidden, or a hidden
+  // ancestor all fail this. Needed because some dealer templates keep a
+  // SECOND, hidden copy of the CTA stack in the DOM (for a different
+  // breakpoint), and a plain querySelector can't tell the two apart.
+  function isVisible(el) {
+    if (!el) return false;
+    var cs = window.getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") return false;
+    return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+  }
+
   // Within a card, find its native CTA button stack if it has one — Dealer
   // Inspire's is `.hit-additional-ctas`, holding "Get Your Lowest Price" /
   // "View Details" as full-width stacked buttons. Joining that stack with a
   // matching button looks native and stays compact; falling back to a
   // floating icon (below) is for templates with no such stack.
+  //
+  // IMPORTANT: a card can contain MORE THAN ONE element matching this
+  // selector (e.g. a hidden duplicate for another breakpoint) — picking the
+  // first match blindly can land our button in a container that's never
+  // actually shown, which mounts cleanly with zero errors and is still
+  // invisible. So this checks every match and returns the first VISIBLE one.
   function findCtaStack(cardEl) {
-    var stack = cardEl.querySelector(".hit-additional-ctas");
-    if (stack) return stack;
-    var ctaEl = cardEl.querySelector("[data-testid^='vehicle-cta-']");
-    return ctaEl ? ctaEl.parentElement : null;
+    var stacks = cardEl.querySelectorAll(".hit-additional-ctas");
+    for (var i = 0; i < stacks.length; i++) {
+      if (isVisible(stacks[i])) return stacks[i];
+    }
+    var ctaEls = cardEl.querySelectorAll("[data-testid^='vehicle-cta-']");
+    for (var j = 0; j < ctaEls.length; j++) {
+      var parent = ctaEls[j].parentElement;
+      if (parent && isVisible(parent)) return parent;
+    }
+    return null; // nothing usable — caller falls back to the icon overlay
   }
 
   var srpSheetHost = null;
@@ -712,6 +736,33 @@
     return true;
   }
 
+  // Reports the button's actual rendered state — removes the need to keep
+  // guessing at CSS causes. Tells us in one line whether it's collapsed to
+  // zero size, actively hidden via display/visibility/opacity, or visible
+  // but clipped by a specific named ancestor with overflow:hidden.
+  function reportGeometry(vin, btn) {
+    var rect = btn.getBoundingClientRect();
+    var cs = window.getComputedStyle(btn);
+    var clipper = null;
+    var node = btn.parentElement;
+    for (var i = 0; i < 10 && node; i++) {
+      var ncs = window.getComputedStyle(node);
+      var nRect = node.getBoundingClientRect();
+      var hidesOverflow = ncs.overflow === "hidden" || ncs.overflowY === "hidden";
+      var ancestorBottom = nRect.top + nRect.height;
+      var btnBottom = rect.top + rect.height;
+      if (hidesOverflow && ancestorBottom < btnBottom - 1) {
+        clipper = (node.className || node.tagName) + " (ancestor h=" + Math.round(nRect.height) + "px, overflow=" + ncs.overflow + ")";
+        break;
+      }
+      node = node.parentElement;
+    }
+    console.log("[LotPulse] geometry for " + vin + ": "
+      + "w=" + Math.round(rect.width) + " h=" + Math.round(rect.height)
+      + " display=" + cs.display + " visibility=" + cs.visibility + " opacity=" + cs.opacity
+      + (clipper ? " | CLIPPED BY: " + clipper : " | no clipping ancestor found in first 10 levels"));
+  }
+
   function mountAllSrp(found) {
     found.forEach(function (entry) {
       var card = findCardContainer(entry.el);
@@ -720,6 +771,8 @@
       if (didMount) {
         console.log("[LotPulse] mounted on " + entry.vin
           + " (card boundary: " + (hadHit ? ".hit" : "generic-fallback") + ")");
+        var mountedBtn = card.querySelector('[data-lp-srp="' + entry.vin + '"]');
+        if (mountedBtn) reportGeometry(entry.vin, mountedBtn);
       }
     });
   }
