@@ -428,16 +428,44 @@
   // pass once we see the actual markup — same as VDP's anchor logic did.
   // ════════════════════════════════════════════════════════════════════════
 
+  // True if walking up from el reaches a <div class="hit"> ancestor — the
+  // real card boundary. Used below to prefer well-anchored discoveries.
+  function hasHitAncestor(el) {
+    var node = el;
+    for (var i = 0; i < 8 && node; i++) {
+      if (node.classList && node.classList.contains("hit")) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
   function findAllVins() {
-    var out = [], seen = {};
+    var out = [], indexOf = {}; // vin -> index in out[]
+
+    // Some Big O pages emit the SAME vin twice: once on a sibling wrapper
+    // (data-vehicle-vin, NOT inside .hit — a bad anchor) and once as plain
+    // text properly nested inside .hit (a good anchor). Whichever method
+    // below runs first must not "lock in" a bad anchor and block the good
+    // one from ever overriding it — so dedup by quality, not by arrival order.
+    function consider(vin, el) {
+      if (!vin) return;
+      var verified = hasHitAncestor(el);
+      if (indexOf.hasOwnProperty(vin)) {
+        var idx = indexOf[vin];
+        if (verified && !out[idx].verified) out[idx] = { vin: vin, el: el, verified: true };
+        return;
+      }
+      indexOf[vin] = out.length;
+      out.push({ vin: vin, el: el, verified: verified });
+    }
+
     // Method 1: grid-view template — VIN sits in a real attribute.
     var els = document.querySelectorAll("[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber']");
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
       var raw = el.getAttribute("data-vin") || el.getAttribute("data-vehicle-vin") ||
                 el.getAttribute("content") || el.textContent;
-      var vin = cleanVin(raw);
-      if (vin && !seen[vin]) { seen[vin] = true; out.push({ vin: vin, el: el }); }
+      consider(cleanVin(raw), el);
     }
     // Method 2: Dealer Inspire's list-view template (confirmed on a real Big
     // O mobile page) prints "VIN: <vin>" as plain text inside
@@ -446,8 +474,7 @@
     var vinTextEls = document.querySelectorAll("[data-testid='vin-number']");
     for (var k = 0; k < vinTextEls.length; k++) {
       var m = (vinTextEls[k].textContent || "").match(/\b([A-HJ-NPR-Z0-9]{17})\b/);
-      var vin2 = m ? cleanVin(m[1]) : null;
-      if (vin2 && !seen[vin2]) { seen[vin2] = true; out.push({ vin: vin2, el: vinTextEls[k] }); }
+      consider(m ? cleanVin(m[1]) : null, vinTextEls[k]);
     }
     return out;
   }
@@ -676,7 +703,11 @@
 
   function mountAllSrp(found) {
     found.forEach(function (entry) {
-      mountSrpButton(entry.vin, findCardContainer(entry.el));
+      var card = findCardContainer(entry.el);
+      var hadHit = card && card.classList && card.classList.contains("hit");
+      mountSrpButton(entry.vin, card);
+      console.log("[LotPulse] mounted on " + entry.vin
+        + " (card boundary: " + (hadHit ? ".hit" : "generic-fallback") + ")");
     });
   }
 
@@ -688,13 +719,21 @@
     if (srpWatchStarted) return;
     srpWatchStarted = true;
     var tries = 0;
+    var everFound = false;
     var iv = setInterval(function () {
       tries++;
       var found = findAllVins();
-      if (found.length) mountAllSrp(found);
+      if (found.length) { everFound = true; mountAllSrp(found); }
       // ~12s window — longer than the VDP anchor-wait, since listing grids
       // are more likely to lazy-load and mobile may render a beat slower.
-      if (tries > 24) clearInterval(iv);
+      if (tries > 24) {
+        clearInterval(iv);
+        if (!everFound) {
+          console.warn("[LotPulse] gave up after 12s — found 0 vehicles on this page. "
+            + "Either this isn't an inventory page, or the VIN markup here doesn't "
+            + "match any known pattern yet.");
+        }
+      }
     }, 500);
   }
 
@@ -708,7 +747,9 @@
     // search-results pages — because Dealer Inspire reuses the same
     // `vehicle-cta-N` naming on SRP cards that it uses on VDP price boxes.
     var initial = findAllVins();
+    console.log("[LotPulse] initial page scan: " + initial.length + " vehicle(s) detected");
     if (initial.length >= 2) {
+      console.log("[LotPulse] SRP mode active");
       mountAllSrp(initial);
       watchSrpForLateCards();
       return;
@@ -716,6 +757,7 @@
 
     var vin = findVin();
     if (vin) {
+      console.log("[LotPulse] VDP mode active, vin=" + vin);
       apiGet("/v1/vehicle/" + vin + "/demand").then(function (demand) {
         mountWhenAnchorReady(vin, demand || { watchers: 0 });
       }).catch(function (e) {
@@ -726,6 +768,7 @@
 
     // Neither matched yet — could be a slow-loading listing page whose cards
     // haven't rendered. Give it a bounded retry instead of giving up.
+    console.log("[LotPulse] no VIN found yet — watching for late-loading cards");
     watchSrpForLateCards();
   }
 
