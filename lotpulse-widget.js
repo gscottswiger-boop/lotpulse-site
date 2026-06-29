@@ -316,7 +316,7 @@
     +     '<span class="cbx" aria-hidden="true"></span>'
     +     '<label for="lp-consent" id="lp-consent-label"></label>'
     +   '</div>'
-    +   '<button class="btn" id="lp-confirm" disabled>'
+    +   '<button class="btn" id="lp-confirm">'
     +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
     +     'Start watching</button>'
     +   '<div class="fine" id="lp-fine"></div>'
@@ -335,30 +335,29 @@
     var consentLabel = root.getElementById("lp-consent-label");
     var watching = false;
 
-    // The core consent statement lives on the checkbox label — this is the
-    // thing the shopper actively checks, unchecked by default, separate from
-    // the submit button. Short mechanics (rates, STOP/HELP) stay as fine print.
+    // Watching this car and consenting to texts are two SEPARATE, genuinely
+    // optional choices — the button below is NEVER gated by this checkbox.
+    // (A2P/carrier review requires this: bundling "use the feature" with
+    // "agree to be texted" is forced consent, error 30923.) Unchecked by
+    // default either way, per the earlier 30925 requirement.
     consentLabel.textContent =
-      "I agree to receive automated marketing text messages about this vehicle "
-      + "from this dealer at the number above. Consent is not a condition of purchase.";
+      "Optional: also text me when the price drops. I agree to receive automated "
+      + "marketing text messages about this vehicle from this dealer at the number "
+      + "above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
     function openSheet() {
       sheet.classList.add("open"); scrim.classList.add("open");
-      // Reset consent state every time the sheet opens — never silently
-      // pre-checked, and the button starts disabled until actively checked.
+      // Reset every time the sheet opens — never silently pre-checked, and
+      // never left disabled from a previous in-flight submission.
       consent.checked = false;
-      confirm.disabled = true;
+      confirm.disabled = false;
       setTimeout(function () { phone.focus(); }, 280);
     }
     function closeSheet() { sheet.classList.remove("open"); scrim.classList.remove("open"); }
 
     btn.addEventListener("click", function () { if (!watching) openSheet(); });
     scrim.addEventListener("click", closeSheet);
-
-    consent.addEventListener("change", function () {
-      confirm.disabled = !consent.checked;
-    });
 
     phone.addEventListener("input", function (e) {
       var d = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -370,21 +369,15 @@
 
     confirm.addEventListener("click", function () {
       err.style.display = "none";
-      // Defensive check — the button is disabled until checked, but never
-      // trust client-side disabled state alone for a consent requirement.
-      if (!consent.checked) {
-        err.textContent = "Please check the box to confirm you'd like text alerts.";
-        err.style.display = "block";
-        return;
-      }
       var raw = phone.value.replace(/\D/g, "");
       if (raw.length !== 10) {
         err.textContent = "Enter a valid 10-digit mobile number.";
         err.style.display = "block";
         return;
       }
+      var smsConsent = consent.checked;
       confirm.disabled = true;
-      apiPost("/v1/watch", { vin: vin, phone: raw }).then(function (res) {
+      apiPost("/v1/watch", { vin: vin, phone: raw, smsConsent: smsConsent }).then(function (res) {
         confirm.disabled = false;
         if (!res.ok) {
           err.textContent = (res.json && res.json.error) || "Something went wrong. Try again.";
@@ -393,12 +386,18 @@
         }
         watching = true;
         closeSheet();
-        root.getElementById("lp-lbl").textContent = "Watching — we'll text you";
+        var smsEnabled = !!(res.json && res.json.smsEnabled);
+        root.getElementById("lp-lbl").textContent = smsEnabled ? "Watching — we'll text you" : "Watching this car";
         btn.classList.add("watching");
         var promiseEl = root.getElementById("lp-promise");
         if (promiseEl) promiseEl.style.display = "none";
         var subEl = root.getElementById("lp-sub");
-        if (subEl) { subEl.style.display = "block"; subEl.textContent = "You're all set. Reply STOP anytime."; }
+        if (subEl) {
+          subEl.style.display = "block";
+          subEl.textContent = smsEnabled
+            ? "You're all set. Reply STOP anytime."
+            : "You're all set — no texts will be sent.";
+        }
         var n = (res.json && res.json.watchers) != null ? res.json.watchers : (demand.watchers + 1);
         root.getElementById("lp-wn").textContent = n;
         root.getElementById("lp-wn2").textContent = n;
@@ -608,7 +607,7 @@
       +   '<div class="consent"><input type="checkbox" id="s-consent">'
       +     '<span class="cbx" aria-hidden="true"></span>'
       +     '<label for="s-consent" id="s-consent-label"></label></div>'
-      +   '<button class="btn" id="s-confirm" disabled>Start watching</button>'
+      +   '<button class="btn" id="s-confirm">Start watching</button>'
       +   '<div class="fine" id="s-fine"></div>'
       + '</div>';
   }
@@ -623,14 +622,19 @@
     var err = root.getElementById("s-err");
     var fine = root.getElementById("s-fine");
 
+    // Watching this car and consenting to texts are two SEPARATE, genuinely
+    // optional choices — confirm is NEVER gated by this checkbox (A2P error
+    // 30923, forced consent). Unchecked by default either way (30925).
     consentLabel.textContent =
-      "I agree to receive automated marketing text messages about this vehicle "
-      + "from this dealer at the number above. Consent is not a condition of purchase.";
+      "Optional: also text me when the price drops. I agree to receive automated "
+      + "marketing text messages about this vehicle from this dealer at the number "
+      + "above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
     function open() {
       sheet.classList.add("open"); scrim.classList.add("open");
-      consent.checked = false; confirm.disabled = true;
+      consent.checked = false;
+      confirm.disabled = false;
       err.style.display = "none"; phone.value = "";
       setTimeout(function () { phone.focus(); }, 280);
     }
@@ -638,7 +642,6 @@
     host._lpOpen = open; // exposed so per-card icon clicks can trigger this shared sheet
 
     scrim.addEventListener("click", close);
-    consent.addEventListener("change", function () { confirm.disabled = !consent.checked; });
     phone.addEventListener("input", function (e) {
       var d = e.target.value.replace(/\D/g, "").slice(0, 10);
       var out = d;
@@ -649,11 +652,6 @@
 
     confirm.addEventListener("click", function () {
       err.style.display = "none";
-      if (!consent.checked) {
-        err.textContent = "Please check the box to confirm you'd like text alerts.";
-        err.style.display = "block";
-        return;
-      }
       var raw = phone.value.replace(/\D/g, "");
       if (raw.length !== 10) {
         err.textContent = "Enter a valid 10-digit mobile number.";
@@ -661,14 +659,16 @@
         return;
       }
       if (!srpActiveVin) return;
+      var smsConsent = consent.checked;
       confirm.disabled = true;
-      apiPost("/v1/watch", { vin: srpActiveVin, phone: raw }).then(function () {
+      apiPost("/v1/watch", { vin: srpActiveVin, phone: raw, smsConsent: smsConsent }).then(function (res) {
         close();
+        var smsEnabled = !!(res && res.json && res.json.smsEnabled);
         var el = document.querySelector('[data-lp-srp="' + srpActiveVin + '"]');
         if (el) {
           el.style.background = "#1E8E5A";
           if (el.getAttribute("data-lp-mode") === "button") {
-            el.textContent = "\u2713 Watching \u2014 We'll text you";
+            el.textContent = smsEnabled ? "\u2713 Watching \u2014 We'll text you" : "\u2713 Watching this car";
           } else {
             el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" '
               + 'stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
