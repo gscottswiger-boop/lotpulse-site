@@ -156,8 +156,9 @@
   .mlink:hover{background:var(--action-deep)}
   .mclose-dark{background:var(--porcelain);color:var(--ink)}
   .soldlist{display:flex;flex-direction:column;gap:2px}
-  .soldrow{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+  .soldrow{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;transition:background .12s;border-radius:6px}
   .soldrow:last-child{border-bottom:0}
+  .soldrow:hover{background:var(--porcelain)}
   .soldinfo .vm{font-weight:600;font-size:14px;line-height:1.2}
   .soldinfo .vs{font-family:'IBM Plex Mono';font-size:10px;color:var(--slate);margin-top:3px;display:flex;align-items:center;gap:6px}
   .soldwatch{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
@@ -528,6 +529,53 @@
   document.getElementById("scrim").addEventListener("click", closeDetail);
   window.closeDetail = closeDetail;
 
+  // ── Sold vehicle detail (click-through from the sold list) ─────────────────
+  // Renders from the data already in hand (no extra vehicle fetch needed since
+  // /vehicle/:vin gates on is_active). Then hits /watchers for the who-was-watching list.
+  function openSoldDetail(v){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.classList.add("open"); scrim.classList.add("open");
+    var w=v.totalWatchers;
+    var dt=new Date(v.soldAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    modal.innerHTML=
+      '<div class="mphoto">'+photoTag(v.photoUrl,"")
+        +'<button class="mclose" onclick="closeDetail()" aria-label="Close">×</button></div>'
+      +'<div class="mbody">'
+        +'<div class="mtitle">'+vehLabel(v)+'</div>'
+        +'<div class="mmeta"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span>'
+          +(v.stockNumber?' &nbsp;#'+v.stockNumber+' · ':' ')+'VIN '+v.vin+'</div>'
+        +'<div class="mstats">'
+          +'<div class="mstat"><div class="n '+(w>=1?'hot':'')+'">' +w+'</div><div class="l">Peak<br>watchers</div></div>'
+          +'<div class="mstat"><div class="n">'+dt+'</div><div class="l">Sold</div></div>'
+          +(v.priceCents?'<div class="mstat"><div class="n">'+dollars(v.priceCents)+'</div><div class="l">Last price</div></div>':'')
+        +'</div>'
+        +'<div id="soldVehWatchers">'
+          +(w>0?'<div class="state" style="font-size:13px;padding:16px 0">Loading…</div>':'')
+        +'</div>'
+      +'</div>';
+    if(w>0){
+      fetch(API+"/dash/"+SLUG+"/vehicle/"+v.vin+"/watchers")
+        .then(function(r){return r.json();})
+        .then(function(wd){
+          var ws=(wd&&wd.watchers)||[];
+          var el=document.getElementById("soldVehWatchers");
+          if(!el||!ws.length){if(el)el.innerHTML="";return;}
+          var wrows="";
+          ws.forEach(function(wr){
+            var phoneDisp=wr.phone?wr.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+            var since=new Date(wr.watchingSince).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+            var stopped=wr.smsStatus==="stopped"?'<span class="stoppill">Opted out</span>':'';
+            wrows+='<div class="wrow">'
+              +'<div class="wrl"><a class="shopphone" href="tel:'+wr.phone+'">'+phoneDisp+'</a>'
+                +'<span class="wsince">watching since '+since+' '+stopped+'</span></div>'
+              +'</div>';
+          });
+          el.innerHTML='<div class="mph-title">Who was watching</div><div class="wlist">'+wrows+'</div>';
+        })
+        .catch(function(){var el=document.getElementById("soldVehWatchers");if(el)el.innerHTML="";});
+    }
+  }
+
   // ── Sold list ──
   function openSold(){
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
@@ -536,6 +584,8 @@
     fetch(API+"/dash/"+SLUG+"/sold?days=30").then(function(r){return r.json();}).then(function(d){
       if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
       var sold=d.sold||[];
+      // Sort by peak watcher count desc; sold date desc as tiebreaker
+      sold.sort(function(a,b){ return b.totalWatchers-a.totalWatchers || new Date(b.soldAt)-new Date(a.soldAt); });
       var rows="";
       if(!sold.length){
         rows='<div class="state">No vehicles sold in the last 30 days yet.</div>';
@@ -543,7 +593,7 @@
         sold.forEach(function(v){
           var dt=new Date(v.soldAt).toLocaleDateString("en-US",{month:"short",day:"numeric"});
           var w=v.totalWatchers;
-          rows+='<div class="soldrow">'
+          rows+='<div class="soldrow" data-soldvin="'+v.vin+'">'
             +'<div>'+photoTag(v.photoUrl,"thumb")+'</div>'
             +'<div class="soldinfo"><div class="vm">'+vehLabel(v)+'</div>'
               +'<div class="vs"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span> sold '+dt+'</div></div>'
@@ -559,6 +609,12 @@
           +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Each car\'s peak watcher count — demand that preceded the sale.</p>'
           +'<div class="soldlist">'+rows+'</div>'
         +'</div>';
+      // Wire up click-to-drill on each sold row
+      modal.querySelectorAll(".soldrow[data-soldvin]").forEach(function(row){
+        var vin=row.getAttribute("data-soldvin");
+        var veh=sold.find(function(x){return x.vin===vin;});
+        if(veh) row.addEventListener("click",function(){openSoldDetail(veh);});
+      });
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
   document.getElementById("soldCard").addEventListener("click", openSold);
