@@ -109,6 +109,8 @@
   }
 
   // ── Build the widget UI inside a shadow root ───────────────────────────────
+  var VDP_ROOT = null; // kept so a late-arriving demand fetch can update counts
+
   function mountWidget(vin, demand) {
     var host = document.createElement("div");
     host.id = "lotpulse-widget-host";
@@ -130,8 +132,31 @@
 
     var root = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
     root.innerHTML = widgetHtml(demand);
+    VDP_ROOT = root;
 
     wireWidget(root, vin, demand);
+  }
+
+  // Update the mounted widget's numbers when demand data arrives after mount.
+  // (The widget mounts immediately with zeros so a slow or cold API never
+  // leaves the page blank; this fills the real values in when they land.)
+  function hydrateDemand(demand) {
+    if (!VDP_ROOT) return;
+    var w = (demand && demand.watchers) || 0;
+    var wn = VDP_ROOT.getElementById("lp-wn");
+    var wn2 = VDP_ROOT.getElementById("lp-wn2");
+    if (wn) wn.textContent = w;
+    if (wn2) wn2.textContent = w;
+    var segs = VDP_ROOT.querySelectorAll(".seg");
+    for (var i = 0; i < segs.length; i++) {
+      segs[i].className = i < w ? (i >= 5 ? "seg on hi" : "seg on") : "seg";
+    }
+    if (demand && demand.daysOnLot != null) {
+      var cell = VDP_ROOT.getElementById("lp-days-cell");
+      var num = VDP_ROOT.getElementById("lp-days");
+      if (num) num.textContent = demand.daysOnLot;
+      if (cell) cell.style.display = "";
+    }
   }
 
   // Where to drop the widget: explicit selector override, else after the price,
@@ -181,9 +206,10 @@
       // stagger the fill animation per segment
       tach += '<i class="' + cls + '" style="--d:' + (i * 38) + 'ms"></i>';
     }
-    var intelDays = days != null
-      ? '<div class="cell"><div class="num">' + days + '</div><div class="lbl">Days listed</div></div>'
-      : "";
+    var intelDays =
+      '<div class="cell" id="lp-days-cell"' + (days == null ? ' style="display:none"' : '') + '>'
+      + '<div class="num" id="lp-days">' + (days != null ? days : "") + '</div>'
+      + '<div class="lbl">Days listed</div></div>';
 
     return ''
     + '<style>'
@@ -320,6 +346,11 @@
     +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
     +     'Start watching</button>'
     +   '<div class="fine" id="lp-fine"></div>'
+    +   '<div class="fine" style="margin-top:4px">'
+    +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
+    +     ' &nbsp;·&nbsp; '
+    +     '<a href="https://lotpulse.io/terms.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">SMS Terms</a>'
+    +   '</div>'
     + '</div>';
   }
 
@@ -609,6 +640,11 @@
       +     '<label for="s-consent" id="s-consent-label"></label></div>'
       +   '<button class="btn" id="s-confirm">Start watching</button>'
       +   '<div class="fine" id="s-fine"></div>'
+      +   '<div class="fine" style="margin-top:4px">'
+      +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
+      +     ' &nbsp;·&nbsp; '
+      +     '<a href="https://lotpulse.io/terms.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">SMS Terms</a>'
+      +   '</div>'
       + '</div>';
   }
 
@@ -833,10 +869,21 @@
     var vin = findVin();
     if (vin) {
       console.log("[LotPulse] VDP mode active, vin=" + vin);
-      apiGet("/v1/vehicle/" + vin + "/demand").then(function (demand) {
-        mountWhenAnchorReady(vin, demand || { watchers: 0 });
+      // Mount IMMEDIATELY with placeholder counts — never gate rendering on
+      // the API. A cold-starting or slow backend previously meant no widget
+      // at all (only a console.warn), which is invisible to a normal visitor
+      // and fatal to an A2P reviewer. Real numbers hydrate when the fetch
+      // resolves; wireWidget shares this same object so it sees them too.
+      var demand = { watchers: 0 };
+      mountWhenAnchorReady(vin, demand);
+      apiGet("/v1/vehicle/" + vin + "/demand").then(function (d) {
+        if (d && typeof d === "object" && !d.error) {
+          for (var k in d) demand[k] = d[k];
+          hydrateDemand(demand);
+          console.log("[LotPulse] demand hydrated: " + (demand.watchers || 0) + " watcher(s)");
+        }
       }).catch(function (e) {
-        console.warn("[LotPulse] demand fetch failed:", e);
+        console.warn("[LotPulse] demand fetch failed (widget still active):", e);
       });
       return;
     }
