@@ -181,6 +181,10 @@
   .shopcar{display:flex;align-items:center;gap:10px}
   .shopcar-link{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;border-radius:8px;padding:3px;margin:-3px;transition:background .12s}
   .shopcar-link:hover{background:var(--porcelain)}
+  .rmvbtn{margin-top:10px;background:none;border:none;padding:4px 0;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .rmvbtn:hover{color:var(--redline)}
+  .rmvbtn.arm{color:var(--redline)}
+  .rmvbtn:disabled{cursor:default;text-decoration:none}
   .scinfo{flex:1;min-width:0}
   .crmbtn{flex-shrink:0;border:1px solid var(--action);background:#fff;color:var(--action);
     font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;border-radius:8px;
@@ -652,13 +656,14 @@
           });
           var phoneDisp = s.phone ? s.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3") : "";
           var stopped = s.smsStatus==="stopped" ? '<span class="stoppill">Opted out</span>' : '';
-          list+='<div class="shopper">'
+          list+='<div class="shopper" data-shopper="'+s.watcherId+'">'
             +'<div class="shophead">'
               +'<div><a class="shopphone" href="tel:'+s.phone+'">'+phoneDisp+'</a> '+scoreBadge(s.score)+' '+stopped+'</div>'
               +'<div class="shopmeta">'+s.activeWatches+(s.activeWatches===1?' car':' cars')
                 +(s.alertClicks>0?' · '+s.alertClicks+' click'+(s.alertClicks===1?'':'s'):'')+'</div>'
             +'</div>'
             +'<div class="shopcars">'+cars+'</div>'
+            +'<button class="rmvbtn" data-rmv="'+s.watcherId+'">Remove this number</button>'
           +'</div>';
         });
       }
@@ -688,6 +693,33 @@
       // Wire vehicle photo+name links to open the vehicle detail.
       modal.querySelectorAll(".shopcar-link[data-vin]").forEach(function(el){
         el.addEventListener("click", function(){ openDetail(el.getAttribute("data-vin")); });
+      });
+      // Wire "Remove this number" — two-tap confirm, then soft-remove server-side.
+      modal.querySelectorAll(".rmvbtn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          if(!btn.classList.contains("arm")){
+            btn.classList.add("arm");
+            btn.textContent="Tap again to confirm — stops all texts to this number";
+            // Disarm if they don't confirm within a few seconds.
+            setTimeout(function(){
+              if(btn.classList.contains("arm")){ btn.classList.remove("arm"); btn.textContent="Remove this number"; }
+            }, 5000);
+            return;
+          }
+          btn.disabled=true; btn.textContent="Removing…";
+          fetch(API+"/dash/"+SLUG+"/watcher/"+btn.getAttribute("data-rmv")+"/remove",{method:"POST"})
+            .then(function(r){return r.json();})
+            .then(function(res){
+              if(res.removed){
+                var card=modal.querySelector('[data-shopper="'+btn.getAttribute("data-rmv")+'"]');
+                if(card){ card.style.opacity="0.35"; card.style.pointerEvents="none"; }
+                btn.textContent="Removed";
+              } else {
+                btn.textContent="Failed — tap to retry"; btn.disabled=false; btn.classList.remove("arm");
+              }
+            })
+            .catch(function(){ btn.textContent="Failed — tap to retry"; btn.disabled=false; btn.classList.remove("arm"); });
+        });
       });
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
