@@ -34,6 +34,9 @@
     cursor:pointer;text-align:right;max-width:280px}
   #dealerSwitch:focus{outline:none;border-color:var(--action)}
   #agencyTag{font-size:10.5px;color:var(--slate);letter-spacing:.04em;text-transform:uppercase;margin-top:3px;text-align:right}
+  #signOut{display:block;font-size:10.5px;color:var(--slate);letter-spacing:.04em;text-transform:uppercase;
+    margin-top:3px;text-align:right;text-decoration:underline;text-underline-offset:2px}
+  #signOut:hover{color:var(--redline)}
   .rooftop .r2{font-size:11px;color:var(--slate);display:flex;align-items:center;gap:5px;justify-content:flex-end}
   .live-dot{width:7px;height:7px;border-radius:50%;background:var(--win);animation:blink 2s ease-in-out infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
@@ -245,6 +248,7 @@
       <select id="dealerSwitch" style="display:none"></select>
       <div id="agencyTag" style="display:none"></div>
       <div class="r2"><span class="live-dot"></span><span id="updated">connecting</span></div>
+      <a href="#" id="signOut" style="display:none">Sign out</a>
     </div>
   </div>
 
@@ -308,6 +312,22 @@
   function unlockApp(){
     document.getElementById("gate").style.display="none";
     document.getElementById("app").style.display="block";
+    var so=document.getElementById("signOut");
+    so.style.display="block";
+    so.onclick=function(e){
+      e.preventDefault();
+      // Clear every LotPulse session flag (agency + any per-dealer unlocks),
+      // then reload — the gate reappears, URL and dealer selection intact.
+      try{
+        var kill=[];
+        for(var i=0;i<sessionStorage.length;i++){
+          var k=sessionStorage.key(i);
+          if(k==="lp_agency"||k.indexOf("lp_ok_")===0) kill.push(k);
+        }
+        kill.forEach(function(k){ sessionStorage.removeItem(k); });
+      }catch(err){}
+      location.reload();
+    };
     if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); }
   }
 
