@@ -144,25 +144,40 @@
 
     // If the chosen anchor lives inside a scroll-capped container, do NOT
     // mount inside it — the widget would be buried below the container's
-    // internal fold. Mount immediately AFTER the scroll container instead:
-    // same sidebar/rail (right width, right context), but outside the
-    // clipping region, always visible. We deliberately do not stretch the
-    // container itself: on sticky sidebars the height cap exists so the rail
-    // fits the viewport, and overriding it makes the dealer's own bottom
-    // CTAs unreachable while pinned. An explicit anchorSelector from config
-    // bypasses this escape — an explicit override is an intentional choice.
+    // internal fold. And do NOT mount as a sibling inside the sticky wrapper
+    // either: confirmed on Herndon's DI theme that the sticky engine actively
+    // sizes/positions the children it owns, and an uninvited sibling falls
+    // out of the rail's managed layout (rendered 1260px wide, colliding with
+    // page text). The only safe escape is PAST the whole sticky apparatus:
+    // climb from the scroll container to its enclosing <section> (vdp-hero on
+    // DI — gallery + rail together) and mount after that, in normal document
+    // flow, centered. Overlap-proof: normal flow pushes what follows down.
+    // An explicit anchorSelector from config bypasses this escape entirely.
     if (!anchor.explicit) {
       var trap = scrollTrapAncestor(anchor.el);
       if (trap && trap.parentNode) {
-        console.log("[LotPulse] anchor sits inside a scroll-capped container ("
-          + (trap.id || trap.className || trap.tagName)
-          + ") — mounting after it so the widget can't be buried below its internal fold");
-        trap.parentNode.insertBefore(host, trap.nextSibling);
-        var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
-        root0.innerHTML = widgetHtml(demand);
-        VDP_ROOT = root0;
-        wireWidget(root0, vin, demand);
-        return;
+        var flowTarget = trap;
+        var climb = trap.parentElement;
+        for (var ci = 0; ci < 6 && climb && climb !== document.body; ci++) {
+          flowTarget = climb;
+          if (climb.tagName === "SECTION") break;
+          climb = climb.parentElement;
+        }
+        if (flowTarget && flowTarget.parentNode) {
+          console.log("[LotPulse] anchor sits inside a scroll-capped container ("
+            + (trap.id || trap.className || trap.tagName)
+            + ") — escaping past the sticky apparatus, mounting after <"
+            + flowTarget.tagName.toLowerCase()
+            + (flowTarget.className ? " class=\"" + flowTarget.className + "\"" : "")
+            + "> in normal flow");
+          host.style.cssText = "display:flex;justify-content:center;margin:20px 12px;";
+          flowTarget.parentNode.insertBefore(host, flowTarget.nextSibling);
+          var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
+          root0.innerHTML = widgetHtml(demand);
+          VDP_ROOT = root0;
+          wireWidget(root0, vin, demand);
+          return;
+        }
       }
     }
 
