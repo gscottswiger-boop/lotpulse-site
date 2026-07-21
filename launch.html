@@ -212,10 +212,17 @@
     el.innerHTML = '<span class="dot"></span><span>' + label + '</span>';
   }
 
+  // Admin auth travels as a ?token= query parameter, NOT the x-admin-token
+  // header. The custom header forces a CORS preflight the API doesn't
+  // whitelist ("x-admin-token is not allowed by Access-Control-Allow-Headers"),
+  // so header-based calls die in the browser as "Failed to fetch" before
+  // ever reaching the server. The admin routes accept ?token= natively —
+  // same auth path the browser-triggered /admin/patch calls have always used.
   function apiCall(path, token, body){
-    return fetch(API + path, {
+    var sep = path.indexOf("?") === -1 ? "?" : "&";
+    return fetch(API + path + sep + "token=" + encodeURIComponent(token), {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {})
     }).then(function(r){ return r.json().then(function(json){ return { ok: r.ok, status: r.status, json: json }; }); });
   }
