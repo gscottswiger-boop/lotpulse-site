@@ -170,8 +170,22 @@
             + flowTarget.tagName.toLowerCase()
             + (flowTarget.className ? " class=\"" + flowTarget.className + "\"" : "")
             + "> in normal flow");
-          host.style.cssText = "display:flex;justify-content:center;margin:20px 12px;";
+          host.style.cssText = "display:flex;justify-content:center;margin:20px 12px;pointer-events:none;";
           flowTarget.parentNode.insertBefore(host, flowTarget.nextSibling);
+          // The sticky rail is absolutely positioned, so the hero section's
+          // height doesn't include it — on themes where the rail is TALLER
+          // than the gallery (Herndon), the rail overhangs the hero's bottom
+          // edge and our band slides up underneath it. Measure the actual
+          // rendered overlap and push the band below it. Themes with no
+          // overhang (Heyward) measure zero and stay put.
+          var trapRect = trap.getBoundingClientRect();
+          var hostRect = host.getBoundingClientRect();
+          if (trapRect.bottom > hostRect.top) {
+            var push = Math.round(trapRect.bottom - hostRect.top) + 24;
+            host.style.marginTop = push + "px";
+            console.log("[LotPulse] sticky rail overhangs the hero by ~"
+              + (push - 24) + "px — pushing the widget band below it");
+          }
           var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
           root0.innerHTML = widgetHtml(demand);
           VDP_ROOT = root0;
@@ -275,6 +289,7 @@
     + '<style>'
     + ':host,*{box-sizing:border-box}'
     + '.card{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;'
+    +   'pointer-events:auto;'
     +   'background:#fff;border:1px solid #E6E9EE;border-radius:18px;overflow:hidden;'
     +   'box-shadow:0 1px 2px rgba(20,24,29,.04),0 12px 32px rgba(31,79,224,.10);max-width:520px;'
     +   'animation:lpRise .5s cubic-bezier(.2,.7,.2,1) both}'
@@ -338,7 +353,7 @@
     + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
     +   'transition:opacity .22s;z-index:2147483646}'
     + '.scrim.open{opacity:1;pointer-events:auto}'
-    + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:520px;margin:0 auto;'
+    + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:520px;margin:0 auto;pointer-events:auto;'
     +   'background:#fff;border-radius:24px 24px 0 0;padding:10px 22px 26px;'
     +   'transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.2,1);'
     +   'box-shadow:0 -16px 56px rgba(13,18,28,.22);font-family:inherit}'
