@@ -170,7 +170,12 @@
             + flowTarget.tagName.toLowerCase()
             + (flowTarget.className ? " class=\"" + flowTarget.className + "\"" : "")
             + "> in normal flow");
-          host.style.cssText = "display:flex;justify-content:center;margin:20px 12px;pointer-events:none;";
+          // The rail column's left edge = the anchor's left edge (the anchor
+          // is a CTA slot inside the rail). Measure it BEFORE mounting, then
+          // size the band to fill the gallery column and stop short of the
+          // rail — a hard-coded width spills under the rail's overlay.
+          var anchorRect = anchor.el.getBoundingClientRect();
+          host.style.cssText = "display:flex;justify-content:flex-start;margin:20px 12px;pointer-events:none;";
           flowTarget.parentNode.insertBefore(host, flowTarget.nextSibling);
           // The sticky rail is absolutely positioned, so the hero section's
           // height doesn't include it — on themes where the rail is TALLER
@@ -188,14 +193,22 @@
           }
           var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
           root0.innerHTML = widgetHtml(demand);
-          // Wide enough to breathe? Reflow the card horizontally so it fills
-          // the band instead of sitting as a lonely vertical card in it.
-          if (host.clientWidth >= 760) {
-            var cardEl0 = root0.querySelector(".card");
-            if (cardEl0) {
-              cardEl0.classList.add("wide");
-              console.log("[LotPulse] wide band (" + host.clientWidth + "px) — using horizontal layout");
-            }
+          // Available width = from the band's left edge to the rail column's
+          // left edge, minus breathing room. Wide layout only if that leaves
+          // real room; otherwise keep the vertical card, left-aligned under
+          // the gallery. If the measurement is degenerate (hidden anchor),
+          // skip the constraint rather than trusting a bad number.
+          var hostRect0 = host.getBoundingClientRect();
+          var availW = Math.floor(anchorRect.left - hostRect0.left - 24);
+          var cardEl0 = root0.querySelector(".card");
+          if (cardEl0 && availW >= 760) {
+            cardEl0.classList.add("wide");
+            cardEl0.style.maxWidth = availW + "px";
+            console.log("[LotPulse] wide band — horizontal layout, "
+              + availW + "px wide (stops short of the rail column)");
+          } else if (cardEl0 && availW >= 320) {
+            console.log("[LotPulse] band width " + availW
+              + "px — keeping vertical card, left-aligned clear of the rail");
           }
           VDP_ROOT = root0;
           wireWidget(root0, vin, demand);
