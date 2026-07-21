@@ -188,6 +188,15 @@
           }
           var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
           root0.innerHTML = widgetHtml(demand);
+          // Wide enough to breathe? Reflow the card horizontally so it fills
+          // the band instead of sitting as a lonely vertical card in it.
+          if (host.clientWidth >= 760) {
+            var cardEl0 = root0.querySelector(".card");
+            if (cardEl0) {
+              cardEl0.classList.add("wide");
+              console.log("[LotPulse] wide band (" + host.clientWidth + "px) — using horizontal layout");
+            }
+          }
           VDP_ROOT = root0;
           wireWidget(root0, vin, demand);
           return;
@@ -349,6 +358,26 @@
     + '.sub{margin-top:9px;text-align:center;font-size:12px;color:#5C6670;display:none}'
     + '.brand{border-top:1px solid #EDF1F7;padding:9px 16px;text-align:center;'
     +   'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#AEB6BF;font-weight:600}'
+    // ── Wide mode ─────────────────────────────────────────────────────────────
+    // Applied when the widget lands in a full-width escaped band (scroll-trap
+    // themes) with room to breathe: the same elements reflow horizontally —
+    // header left, stats + tach middle, CTA right — so the band is filled
+    // instead of hosting a lonely vertical card. Activated at mount time when
+    // the host is >= 760px wide; narrower hosts keep the vertical card.
+    + '.card.wide{max-width:1100px;width:100%;display:flex;align-items:stretch}'
+    + '.wide .hd{flex:0 0 240px;border-bottom:0;border-right:1px solid #EDF1F7;'
+    +   'flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:18px;'
+    +   'background:linear-gradient(135deg,#F5F8FF,#fff)}'
+    + '.wide .mid{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0}'
+    + '.wide .intel{border-bottom:1px solid #EDF1F7}'
+    + '.wide .tachrow{padding:12px 16px 4px}'
+    + '.wide .note{padding:0 16px 12px}'
+    + '.wide .cta{flex:0 0 300px;display:flex;flex-direction:column;justify-content:center;'
+    +   'border-left:1px solid #EDF1F7;padding:16px}'
+    + '.wide .brand{display:none}'
+    + '.wide-only{display:none}'
+    + '.wide .wide-only{display:block;margin-top:10px;text-align:center;'
+    +   'font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#AEB6BF;font-weight:600}'
     // sheet
     + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
     +   'transition:opacity .22s;z-index:2147483646}'
@@ -378,6 +407,7 @@
     +   '<div class="hd"><div class="spark">'
     +     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg>'
     +   '</div><div><div class="hdt">Track this price</div><div class="hds">No haggling. No salesperson. Just a text.</div></div></div>'
+    +   '<div class="mid">'
     +   '<div class="intel">'
     +     '<div class="cell"><div class="num hot" id="lp-wn">' + watchers + '</div><div class="lbl">Watching now</div></div>'
     +     intelDays
@@ -385,6 +415,7 @@
     +   '<div class="tachrow"><div class="tach">' + tach + '</div>'
     +     '<div class="wc"><span class="n" id="lp-wn2">' + watchers + '</span><span class="t">watching</span></div></div>'
     +   '<div class="note">Get a text the moment the price drops.</div>'
+    +   '</div>'
     +   '<div class="cta">'
     +     '<button class="btn" id="lp-btn">'
     +       '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
@@ -396,6 +427,7 @@
     +       '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Cancel anytime</span>'
     +     '</div>'
     +     '<div class="sub" id="lp-sub"></div>'
+    +     '<div class="wide-only">Powered by LotPulse</div>'
     +   '</div>'
     +   '<div class="brand">Powered by LotPulse</div>'
     + '</div>'
