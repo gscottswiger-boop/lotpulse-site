@@ -29,6 +29,11 @@
   .wm-text em{font-style:normal;color:var(--redline)}
   .rooftop{text-align:right;margin-left:auto}
   .rooftop .r1{font-family:'Barlow Condensed';font-weight:600;font-size:16px;letter-spacing:.05em;text-transform:uppercase}
+  #dealerSwitch{font-family:'Barlow Condensed';font-weight:600;font-size:16px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:8px;padding:4px 8px;
+    cursor:pointer;text-align:right;max-width:280px}
+  #dealerSwitch:focus{outline:none;border-color:var(--action)}
+  #agencyTag{font-size:10.5px;color:var(--slate);letter-spacing:.04em;text-transform:uppercase;margin-top:3px;text-align:right}
   .rooftop .r2{font-size:11px;color:var(--slate);display:flex;align-items:center;gap:5px;justify-content:flex-end}
   .live-dot{width:7px;height:7px;border-radius:50%;background:var(--win);animation:blink 2s ease-in-out infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
@@ -237,6 +242,8 @@
     </div>
     <div class="rooftop">
       <div class="r1" id="dealerName">Loading…</div>
+      <select id="dealerSwitch" style="display:none"></select>
+      <div id="agencyTag" style="display:none"></div>
       <div class="r2"><span class="live-dot"></span><span id="updated">connecting</span></div>
     </div>
   </div>
@@ -303,28 +310,79 @@
     document.getElementById("app").style.display="block";
     if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); }
   }
+
+  // Agency scope: swap the static dealer name for a rooftop switcher.
+  function applyAgency(agency, dealers){
+    var sel=document.getElementById("dealerSwitch");
+    sel.innerHTML="";
+    dealers.forEach(function(d){
+      var o=document.createElement("option"); o.value=d.slug; o.textContent=d.name; sel.appendChild(o);
+    });
+    var slugs=dealers.map(function(d){return d.slug;});
+    // Keep the current ?dealer= if it belongs to this agency; else first rooftop.
+    if(slugs.indexOf(SLUG)===-1 && dealers.length){ SLUG=dealers[0].slug; }
+    sel.value=SLUG;
+    sel.style.display="block";
+    document.getElementById("dealerName").style.display="none";
+    var tag=document.getElementById("agencyTag");
+    tag.textContent=agency.name+" · "+dealers.length+" rooftop"+(dealers.length===1?"":"s");
+    tag.style.display="block";
+    sel.onchange=function(){
+      SLUG=sel.value;
+      try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
+      refresh();
+    };
+  }
+
   (function gate(){
-    var sessionKey = "lp_ok_" + SLUG;
-    try{ if(sessionStorage.getItem(sessionKey)==="1"){ window.__lpUnlock=true; } }catch(e){}
     var input=document.getElementById("gateInput"), btn=document.getElementById("gateBtn"), err=document.getElementById("gateErr");
-    function attempt(){
-      btn.disabled=true;
-      fetch(API+"/dash/"+SLUG+"/unlock",{
+
+    // One endpoint resolves whatever was typed: an agency code unlocks every
+    // rooftop (and the switcher); a dealer code unlocks just that store —
+    // identical to the original per-store behavior.
+    function resolveWith(code, silent){
+      return fetch(API+"/dash/resolve-code",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({code:input.value})
+        body:JSON.stringify({code:code, dealerSlug:SLUG})
       }).then(function(r){return r.json();}).then(function(res){
-        btn.disabled=false;
-        if(res.ok){
-          try{ sessionStorage.setItem(sessionKey,"1"); }catch(e){}
+        if(res.ok && res.scope==="agency"){
+          try{ sessionStorage.setItem("lp_agency", JSON.stringify({code:code})); }catch(e){}
+          applyAgency(res.agency, res.dealers||[]);
           unlockApp();
-        } else {
+          return true;
+        }
+        if(res.ok && res.scope==="dealer"){
+          try{ sessionStorage.setItem("lp_ok_"+SLUG,"1"); }catch(e){}
+          unlockApp();
+          return true;
+        }
+        if(!silent){
           err.textContent = res.error || "Incorrect code. Try again.";
           input.value=""; input.focus();
         }
+        return false;
       }).catch(function(){
-        btn.disabled=false;
-        err.textContent="Couldn't reach LotPulse. Check your connection.";
+        if(!silent) err.textContent="Couldn't reach LotPulse. Check your connection.";
+        return false;
       });
+    }
+
+    // Re-hydrate this browser session: agency first, then per-dealer flag.
+    var rehydrated=false;
+    try{
+      var agRaw=sessionStorage.getItem("lp_agency");
+      if(agRaw){
+        var agCode=(JSON.parse(agRaw)||{}).code;
+        if(agCode){ rehydrated=true; resolveWith(agCode,true); }
+      }
+    }catch(e){}
+    if(!rehydrated){
+      try{ if(sessionStorage.getItem("lp_ok_"+SLUG)==="1"){ window.__lpUnlock=true; } }catch(e){}
+    }
+
+    function attempt(){
+      btn.disabled=true;
+      resolveWith(input.value,false).then(function(){ btn.disabled=false; });
     }
     btn.addEventListener("click",attempt);
     input.addEventListener("keydown",function(e){ if(e.key==="Enter") attempt(); });
@@ -374,7 +432,7 @@
   }
 
   function loadBoard(){
-    return fetch(API+"/dash/"+SLUG+"/board?limit=300").then(function(r){return r.json();}).then(function(d){
+    return fetch(API+"/dash/"+SLUG+"/board?limit=1000").then(function(r){return r.json();}).then(function(d){
       if(d.error) throw new Error(d.error);
       state.board = d.board || [];
       updateCounts();
