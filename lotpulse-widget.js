@@ -111,6 +111,29 @@
   // ── Build the widget UI inside a shadow root ───────────────────────────────
   var VDP_ROOT = null; // kept so a late-arriving demand fetch can update counts
 
+  // Walk up from an element looking for a scroll-capped ancestor: a container
+  // with overflow-y auto/scroll AND a bounded height (a max-height cap, or
+  // content already taller than its box). Anything mounted inside one of
+  // these can sit below the container's INTERNAL fold — rendered perfectly,
+  // logged as mounted, and invisible unless the shopper scrolls the little
+  // box. Confirmed real on Herndon Chevrolet's Dealer Inspire theme, where
+  // #vdp-sidebar-wrapper caps the sticky right rail at
+  // max-height: calc(100vh - 454px) with internal scroll — a layout Big O's
+  // DI theme doesn't use, which is why this never surfaced there.
+  function scrollTrapAncestor(el) {
+    var node = el;
+    for (var i = 0; i < 12 && node && node !== document.body && node !== document.documentElement; i++) {
+      var cs = window.getComputedStyle(node);
+      var oy = cs.overflowY;
+      if (oy === "auto" || oy === "scroll") {
+        var capped = cs.maxHeight !== "none" || node.scrollHeight > node.clientHeight + 4;
+        if (capped) return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }
+
   function mountWidget(vin, demand) {
     var host = document.createElement("div");
     host.id = "lotpulse-widget-host";
@@ -118,6 +141,30 @@
 
     var anchor = pickAnchor();
     if (!anchor || !anchor.el || !anchor.el.parentNode) return;
+
+    // If the chosen anchor lives inside a scroll-capped container, do NOT
+    // mount inside it — the widget would be buried below the container's
+    // internal fold. Mount immediately AFTER the scroll container instead:
+    // same sidebar/rail (right width, right context), but outside the
+    // clipping region, always visible. We deliberately do not stretch the
+    // container itself: on sticky sidebars the height cap exists so the rail
+    // fits the viewport, and overriding it makes the dealer's own bottom
+    // CTAs unreachable while pinned. An explicit anchorSelector from config
+    // bypasses this escape — an explicit override is an intentional choice.
+    if (!anchor.explicit) {
+      var trap = scrollTrapAncestor(anchor.el);
+      if (trap && trap.parentNode) {
+        console.log("[LotPulse] anchor sits inside a scroll-capped container ("
+          + (trap.id || trap.className || trap.tagName)
+          + ") — mounting after it so the widget can't be buried below its internal fold");
+        trap.parentNode.insertBefore(host, trap.nextSibling);
+        var root0 = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
+        root0.innerHTML = widgetHtml(demand);
+        VDP_ROOT = root0;
+        wireWidget(root0, vin, demand);
+        return;
+      }
+    }
 
     if (anchor.position === "before") {
       anchor.el.parentNode.insertBefore(host, anchor.el);
@@ -159,8 +206,6 @@
     }
   }
 
-  // Where to drop the widget: explicit selector override, else after the price,
-  // else after the first H1 on the page.
   // Where to drop the widget. Priority order:
   //   1. Explicit anchorSelector from config (always wins if it matches)
   //   2. Dealer Inspire's purpose-built custom-HTML CTA slots (the right rail)
@@ -170,7 +215,7 @@
   function pickAnchor() {
     if (ANCHOR_SELECTOR) {
       var custom = document.querySelector(ANCHOR_SELECTOR);
-      if (custom) return { el: custom, position: CONFIG.anchorPosition || "after" };
+      if (custom) return { el: custom, position: CONFIG.anchorPosition || "after", explicit: true };
     }
     // Dealer Inspire: dedicated injection slots in the pricing CTA stack.
     var diSlots = [
@@ -580,8 +625,8 @@
   }
 
   function srpSheetHtml() {
-    // Same visual language and consent pattern as the VDP sheet — unchecked
-    // checkbox gating a disabled submit button (carrier requirement, 30925).
+    // Same visual language and consent pattern as the VDP sheet — optional,
+    // unchecked-by-default checkbox that never gates the submit button.
     return ''
       + '<style>'
       + ':host,*{box-sizing:border-box}'
