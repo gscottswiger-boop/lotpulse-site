@@ -45,13 +45,17 @@
         if (vin) return vin;
       } catch (e) { /* ignore malformed blocks */ }
     }
-    // 2. Data attributes commonly present on VDPs
-    var attrSel = "[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber']";
+    // 2. Data attributes commonly present on VDPs. Dealer.com exposes the VIN
+    // as a hidden <input name="vin" value="..."> rather than a data attribute,
+    // and its VDP URLs carry an item-id hash instead of the VIN — so without
+    // this the DDC path leans entirely on JSON-LD.
+    var attrSel = "[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber'],input[name='vin']";
     var el = document.querySelector(attrSel);
     if (el) {
       var v = el.getAttribute("data-vin") ||
               el.getAttribute("data-vehicle-vin") ||
               el.getAttribute("content") ||
+              el.getAttribute("value") ||
               el.textContent;
       v = cleanVin(v);
       if (v) return v;
@@ -320,6 +324,21 @@
     for (var i = 0; i < diSlots.length; i++) {
       var slot = document.querySelector(diSlots[i]);
       if (slot) return { el: slot, position: "after" };
+    }
+    // Dealer.com (DDC): the VDP right rail is assembled from data-name'd
+    // page sections. Confirmed identical on two live DDC rooftops (Mall of
+    // Georgia CDJR and Kia Mall of Georgia), so these are the platform's
+    // slots, not one store's theme. Preferred spot is directly under the
+    // CTA stack ("Get Today's Best Price" / "KBB Value Your Trade"), which
+    // is the same relative position the widget occupies on Dealer Inspire.
+    var ddcSlots = [
+      { sel: "[data-name='vdp-vehicle-ctas-container-1']", position: "after" },
+      { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "after" },
+      { sel: "[data-name='vdp-sidebar-container-1']", position: "append" }
+    ];
+    for (var d = 0; d < ddcSlots.length; d++) {
+      var ddcEl = document.querySelector(ddcSlots[d].sel);
+      if (ddcEl) return { el: ddcEl, position: ddcSlots[d].position };
     }
     // Generic fallbacks (other platforms / unknown layouts).
     var price = document.querySelector("[itemprop='price'],[data-price]");
@@ -674,18 +693,42 @@
   // confirmed against a real Big O search-results page — so prefer that.
   // Other platforms won't have it, so fall back to the generic "nearest
   // ancestor with a photo" heuristic, same proxy logic as before.
+  // How many DISTINCT vehicles does this subtree describe? Counting distinct
+  // VINs (not VIN-bearing elements) matters because one card often carries the
+  // same VIN twice — an attribute on a wrapper and the plain text inside.
+  function distinctVinCount(root) {
+    if (!root || !root.querySelectorAll) return 0;
+    var els = root.querySelectorAll(
+      "[data-vin],[data-vehicle-vin],[itemprop='vehicleIdentificationNumber'],[data-testid='vin-number']");
+    var seen = {}, n = 0;
+    for (var i = 0; i < els.length; i++) {
+      var raw = els[i].getAttribute("data-vin") || els[i].getAttribute("data-vehicle-vin")
+              || els[i].getAttribute("content") || els[i].textContent || "";
+      var m = String(raw).toUpperCase().match(/[A-HJ-NPR-Z0-9]{17}/);
+      if (m && !seen[m[0]]) { seen[m[0]] = true; n++; }
+    }
+    return n;
+  }
+
   function findCardContainer(el) {
     var node = el;
     for (var i = 0; i < 8 && node; i++) {
       if (node.classList && node.classList.contains("hit")) return node;
       node = node.parentElement;
     }
-    node = el;
-    for (var j = 0; j < 6 && node; j++) {
-      if (node.querySelector && node.querySelector("img")) return node;
-      node = node.parentElement;
+    // Platform-independent boundary: climb while the ancestor still describes
+    // exactly ONE vehicle, and stop the level before it starts swallowing
+    // sibling cards. This replaced a "nearest ancestor containing an <img>"
+    // heuristic that broke on Dealer.com, where promotional banners sit inside
+    // the card region — the walk latched onto the banner and parked the watch
+    // icon on ad creative instead of the vehicle.
+    var best = el, cur = el.parentElement;
+    for (var j = 0; j < 10 && cur && cur !== document.body; j++) {
+      if (distinctVinCount(cur) > 1) break;
+      best = cur;
+      cur = cur.parentElement;
     }
-    return el.parentElement || el;
+    return best;
   }
 
   // True if an element is genuinely rendered on screen right now — not just
@@ -1024,7 +1067,7 @@
     if (initial.length >= 2 || ldVins.length >= 2) {
       console.log("[LotPulse] SRP mode active"
         + (initial.length < 2
-          ? " (via JSON-LD multiplicity — no per-card VIN markup recognized on this platform yet, so no buttons will mount until we learn its card structure; VDP mode is deliberately suppressed)"
+          ? " (via JSON-LD multiplicity — cards not in the DOM yet; VDP mode suppressed so we can't mount a watch card for an arbitrary vehicle. Watching for cards to lazy-load.)"
           : ""));
       mountAllSrp(initial);
       watchSrpForLateCards();
