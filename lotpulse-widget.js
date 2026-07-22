@@ -334,6 +334,18 @@
     // whole calculator there, while Kia (calculator not expanded on load)
     // looked fine with the same anchor. Anchoring above the price breakdown
     // avoids depending on how much a given store's CTA block expands to.
+    // Slot directly into the DDC CTA button stack itself, between the 2nd
+    // button (KBB Value Your Trade) and 3rd (Estimate financing / Capital
+    // One) — confirmed via the .price-btn children of .vehicle-ctas
+    // (indexed cst-btn-0/1/2...) on a live DDC rooftop. :scope keeps this to
+    // DIRECT children only, so it can't grab a nested button by accident.
+    var ddcCtas = document.querySelector("[data-name='vdp-vehicle-ctas-container-1'] .vehicle-ctas");
+    if (ddcCtas) {
+      var priceBtns = ddcCtas.querySelectorAll(":scope > [class*='price-btn']");
+      if (priceBtns.length >= 2) {
+        return { el: priceBtns[1], position: "after" };
+      }
+    }
     var ddcSlots = [
       { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "before" },
       { sel: "[data-name='vdp-vehicle-ctas-container-1']", position: "before" },
