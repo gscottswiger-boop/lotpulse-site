@@ -95,6 +95,32 @@
     return v.length === 17 ? v : null;
   }
 
+  // Collect EVERY distinct VIN in the page's JSON-LD. A single Vehicle schema
+  // means a VDP; an ItemList with many vehicles means a LISTING page — even
+  // when the per-card markup doesn't match any pattern we know. This is the
+  // platform-independent tiebreaker: Dealer.com SRPs carry no per-card VIN
+  // attributes at all, so the card scan finds ~nothing, VDP mode kicked in,
+  // and the widget mounted for whatever vehicle happened to be FIRST in the
+  // JSON-LD — a watch card for a random car the shopper never opened.
+  function findAllJsonLdVins() {
+    var seen = {};
+    var out = [];
+    function walk(node) {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) { for (var i = 0; i < node.length; i++) walk(node[i]); return; }
+      if (node.vehicleIdentificationNumber) {
+        var v = cleanVin(node.vehicleIdentificationNumber);
+        if (v && !seen[v]) { seen[v] = true; out.push(v); }
+      }
+      for (var k in node) { if (typeof node[k] === "object") walk(node[k]); }
+    }
+    var scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    for (var s = 0; s < scripts.length; s++) {
+      try { walk(JSON.parse(scripts[s].textContent)); } catch (e) { /* ignore */ }
+    }
+    return out;
+  }
+
   // ── API calls ──────────────────────────────────────────────────────────────
   function apiGet(path) {
     return fetch(API + path, { headers: { "x-lotpulse-key": KEY } })
@@ -992,9 +1018,14 @@
     // search-results pages — because Dealer Inspire reuses the same
     // `vehicle-cta-N` naming on SRP cards that it uses on VDP price boxes.
     var initial = findAllVins();
-    console.log("[LotPulse] initial page scan: " + initial.length + " vehicle(s) detected");
-    if (initial.length >= 2) {
-      console.log("[LotPulse] SRP mode active");
+    var ldVins = findAllJsonLdVins();
+    console.log("[LotPulse] initial page scan: " + initial.length + " vehicle element(s), "
+      + ldVins.length + " distinct VIN(s) in JSON-LD");
+    if (initial.length >= 2 || ldVins.length >= 2) {
+      console.log("[LotPulse] SRP mode active"
+        + (initial.length < 2
+          ? " (via JSON-LD multiplicity — no per-card VIN markup recognized on this platform yet, so no buttons will mount until we learn its card structure; VDP mode is deliberately suppressed)"
+          : ""));
       mountAllSrp(initial);
       watchSrpForLateCards();
       return;
