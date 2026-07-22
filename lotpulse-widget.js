@@ -346,6 +346,16 @@
         return { el: priceBtns[1], position: "after" };
       }
     }
+    // Second DDC shape (confirmed on Kia Mall of Georgia): the KBB button
+    // isn't a .price-btn inside .vehicle-ctas at all — it's a standalone
+    // widget (data-web-api-id="kbb-leaddriver") sitting as its own stack
+    // item next to Capital One's. .closest(".mb-3") grabs its stack-level
+    // wrapper on either shape without assuming which one nests inside which.
+    var kbbWidget = document.querySelector("[data-web-api-id='kbb-leaddriver']");
+    if (kbbWidget) {
+      var kbbStackItem = kbbWidget.closest(".mb-3") || kbbWidget;
+      return { el: kbbStackItem, position: "after" };
+    }
     var ddcSlots = [
       { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "before" },
       { sel: "[data-name='vdp-vehicle-ctas-container-1']", position: "before" },
@@ -737,10 +747,20 @@
     // heuristic that broke on Dealer.com, where promotional banners sit inside
     // the card region — the walk latched onto the banner and parked the watch
     // icon on ad creative instead of the vehicle.
+    //
+    // Second-order fix: a promo tile carries ZERO vins, so it never trips the
+    // distinctVinCount>1 break — the climb happily grows past the true card
+    // boundary and merges in the neighboring ad tile, which is exactly what
+    // put the watch icon over promotional banner content on a live DDC SRP.
+    // Once a level already contains the card's own CTA stack (DDC's
+    // .vehicle-ctas, or DI's per-card markers), that level structurally IS
+    // the card — stop there regardless of what 0-VIN siblings sit beyond it.
     var best = el, cur = el.parentElement;
     for (var j = 0; j < 10 && cur && cur !== document.body; j++) {
       if (distinctVinCount(cur) > 1) break;
       best = cur;
+      if (cur.querySelector && cur.querySelector(
+        ".vehicle-ctas, [data-testid^='vehicle-cta-'], .hit-additional-ctas")) break;
       cur = cur.parentElement;
     }
     return best;
@@ -770,6 +790,13 @@
   // actually shown, which mounts cleanly with zero errors and is still
   // invisible. So this checks every match and returns the first VISIBLE one.
   function findCtaStack(cardEl) {
+    // Dealer.com: confirmed via live DOM inspection that SRP cards carry the
+    // same .vehicle-ctas button stack as the VDP (price-btn children). Join
+    // it the same way — a real full-width button matching the surrounding
+    // CTAs beats the floating icon overlay below, which exists for platforms
+    // with no recognizable native stack at all.
+    var ddcStack = cardEl.querySelector(".vehicle-ctas");
+    if (ddcStack && isVisible(ddcStack)) return ddcStack;
     var stacks = cardEl.querySelectorAll(".hit-additional-ctas");
     for (var i = 0; i < stacks.length; i++) {
       if (isVisible(stacks[i])) return stacks[i];
