@@ -355,7 +355,15 @@
     // widget (data-web-api-id="kbb-leaddriver") sitting as its own stack
     // item next to Capital One's. .closest(".mb-3") grabs its stack-level
     // wrapper on either shape without assuming which one nests inside which.
-    var kbbWidget = document.querySelector("[data-web-api-id='kbb-leaddriver']");
+    // div[...], not the bare attribute selector: DDC also tags the async
+    // LOADER <script src=".../kbb-leaddriver/v1/index.js"> with this same
+    // data-web-api-id, near the very end of <body>. The generic selector can
+    // match that script tag instead of the real widget container — which is
+    // exactly what put the host below the footer, right where that script
+    // sits. Restricting to div[] means: if the real container hasn't
+    // rendered yet, find nothing yet and let mountWhenAnchorReady's retry
+    // loop wait for it, rather than settling for the wrong element.
+    var kbbWidget = document.querySelector("div[data-web-api-id='kbb-leaddriver']");
     if (kbbWidget) {
       var kbbStackItem = kbbWidget.closest(".mb-3") || kbbWidget;
       // explicit: true — same reasoning: this is Kia's confirmed real anchor,
