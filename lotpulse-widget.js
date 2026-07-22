@@ -343,7 +343,11 @@
     if (ddcCtas) {
       var priceBtns = ddcCtas.querySelectorAll(":scope > [class*='price-btn']");
       if (priceBtns.length >= 2) {
-        return { el: priceBtns[1], position: "after" };
+        // explicit: true — hand-verified against real DOM (confirmed correct
+        // on MAGC), not a blind fallback guess. The scroll-trap escape below
+        // exists to protect generic fallback anchors; it has no business
+        // relocating a slot we've already confirmed is right.
+        return { el: priceBtns[1], position: "after", explicit: true };
       }
     }
     // Second DDC shape (confirmed on Kia Mall of Georgia): the KBB button
@@ -354,7 +358,10 @@
     var kbbWidget = document.querySelector("[data-web-api-id='kbb-leaddriver']");
     if (kbbWidget) {
       var kbbStackItem = kbbWidget.closest(".mb-3") || kbbWidget;
-      return { el: kbbStackItem, position: "after" };
+      // explicit: true — same reasoning: this is Kia's confirmed real anchor,
+      // not a guess. Without this, the scroll-trap escape silently relocated
+      // the widget far down the page because Kia's sidebar is scroll-capped.
+      return { el: kbbStackItem, position: "after", explicit: true };
     }
     var ddcSlots = [
       { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "before" },
