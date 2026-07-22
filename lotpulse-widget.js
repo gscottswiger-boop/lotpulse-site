@@ -342,35 +342,27 @@
     var ddcCtas = document.querySelector("[data-name='vdp-vehicle-ctas-container-1'] .vehicle-ctas");
     if (ddcCtas) {
       var priceBtns = ddcCtas.querySelectorAll(":scope > [class*='price-btn']");
-      if (priceBtns.length >= 2) {
-        // explicit: true — hand-verified against real DOM (confirmed correct
-        // on MAGC), not a blind fallback guess. The scroll-trap escape below
-        // exists to protect generic fallback anchors; it has no business
-        // relocating a slot we've already confirmed is right.
-        return { el: priceBtns[1], position: "after", explicit: true };
+      if (priceBtns.length >= 1) {
+        // Second button if there are 2+ (MAGC: lands between KBB and Capital
+        // One, confirmed correct there) — otherwise the only one there is
+        // (Kia: .vehicle-ctas holds just the eprice/"Request More Info"
+        // button; lands right after it, before the async trade-in/financing
+        // widgets). Anchoring inside .vehicle-ctas at all sidesteps a real
+        // race: KBB's widget is a separate, ASYNC-rendered div elsewhere on
+        // the page, so timing decided whether it existed yet when we looked
+        // — sometimes yes, sometimes no, which is exactly why placement kept
+        // flipping between rounds. .vehicle-ctas and its price-btn children
+        // are server-rendered and always present, so there's no race here.
+        var idx = Math.min(1, priceBtns.length - 1);
+        return { el: priceBtns[idx], position: "after", explicit: true };
       }
     }
-    // Second DDC shape (confirmed on Kia Mall of Georgia): the KBB button
-    // isn't a .price-btn inside .vehicle-ctas at all — it's a standalone
-    // widget (data-web-api-id="kbb-leaddriver") sitting as its own stack
-    // item next to Capital One's. .closest(".mb-3") grabs its stack-level
-    // wrapper on either shape without assuming which one nests inside which.
-    // div[...], not the bare attribute selector: DDC also tags the async
-    // LOADER <script src=".../kbb-leaddriver/v1/index.js"> with this same
-    // data-web-api-id, near the very end of <body>. The generic selector can
-    // match that script tag instead of the real widget container — which is
-    // exactly what put the host below the footer, right where that script
-    // sits. Restricting to div[] means: if the real container hasn't
-    // rendered yet, find nothing yet and let mountWhenAnchorReady's retry
-    // loop wait for it, rather than settling for the wrong element.
+    // Fallback for the (so far unseen) case where .vehicle-ctas exists but
+    // holds zero price-btn children — anchor to the KBB widget directly if
+    // it's already rendered. div[...] excludes the same-named loader script.
     var kbbWidget = document.querySelector("div[data-web-api-id='kbb-leaddriver']");
     if (kbbWidget) {
       var kbbStackItem = kbbWidget.closest(".mb-3") || kbbWidget;
-      // explicit: true — same reasoning: this is Kia's confirmed real anchor,
-      // not a guess. Without this, the scroll-trap escape silently relocated
-      // the widget far down the page because Kia's sidebar is scroll-capped.
-      // Position "before": sits below "Request More Info Now!" and above
-      // "Value Your Trade" (the kbb-leaddriver widget itself).
       return { el: kbbStackItem, position: "before", explicit: true };
     }
     var ddcSlots = [
