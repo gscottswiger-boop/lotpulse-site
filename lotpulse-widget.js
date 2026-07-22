@@ -361,7 +361,9 @@
       // explicit: true — same reasoning: this is Kia's confirmed real anchor,
       // not a guess. Without this, the scroll-trap escape silently relocated
       // the widget far down the page because Kia's sidebar is scroll-capped.
-      return { el: kbbStackItem, position: "after", explicit: true };
+      // Position "before": sits below "Request More Info Now!" and above
+      // "Value Your Trade" (the kbb-leaddriver widget itself).
+      return { el: kbbStackItem, position: "before", explicit: true };
     }
     var ddcSlots = [
       { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "before" },
