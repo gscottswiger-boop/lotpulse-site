@@ -325,16 +325,19 @@
       var slot = document.querySelector(diSlots[i]);
       if (slot) return { el: slot, position: "after" };
     }
-    // Dealer.com (DDC): the VDP right rail is assembled from data-name'd
-    // page sections. Confirmed identical on two live DDC rooftops (Mall of
-    // Georgia CDJR and Kia Mall of Georgia), so these are the platform's
-    // slots, not one store's theme. Preferred spot is directly under the
-    // CTA stack ("Get Today's Best Price" / "KBB Value Your Trade"), which
-    // is the same relative position the widget occupies on Dealer Inspire.
+    // Dealer.com (DDC): the VDP right rail is assembled from data-name'd page
+    // sections. Confirmed identical on two live DDC rooftops (Mall of Georgia
+    // CDJR and Kia Mall of Georgia). Mounting BEFORE the CTA stack rather than
+    // after it: "Estimate financing" expands an inline Capital One calculator
+    // (credit range, sliders, Check availability, disclosures) INSIDE that
+    // same container on MAGC — mounting after it buried the widget below the
+    // whole calculator there, while Kia (calculator not expanded on load)
+    // looked fine with the same anchor. Anchoring above the price breakdown
+    // avoids depending on how much a given store's CTA block expands to.
     var ddcSlots = [
-      { sel: "[data-name='vdp-vehicle-ctas-container-1']", position: "after" },
-      { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "after" },
-      { sel: "[data-name='vdp-sidebar-container-1']", position: "append" }
+      { sel: "[data-name='vdp-detailed-pricing-container-1']", position: "before" },
+      { sel: "[data-name='vdp-vehicle-ctas-container-1']", position: "before" },
+      { sel: "[data-name='vdp-sidebar-container-1']", position: "prepend" }
     ];
     for (var d = 0; d < ddcSlots.length; d++) {
       var ddcEl = document.querySelector(ddcSlots[d].sel);
