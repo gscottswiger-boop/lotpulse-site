@@ -161,6 +161,20 @@
   .phistory .pdate{color:var(--slate);font-size:12px}
   .phistory .pdrop{color:var(--win);font-weight:600;font-size:12px}
   .mlink{display:block;text-align:center;background:var(--action);color:#fff;text-decoration:none;font-weight:700;font-size:15px;border-radius:11px;padding:14px;transition:background .15s}
+  .setrow{margin-bottom:13px}
+  .setrow label{display:block;font-size:11.5px;font-weight:600;color:var(--slate);letter-spacing:.03em;text-transform:uppercase;margin-bottom:5px}
+  .setrow input,.setrow select{width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);background:var(--porcelain);
+    border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;outline:none}
+  .setrow input:focus,.setrow select:focus{border-color:var(--action)}
+  .setrow2{display:grid;grid-template-columns:70px 1fr;gap:12px}
+  .consent{display:flex;align-items:flex-start;gap:10px;cursor:pointer;position:relative}
+  .consent input[type=checkbox]{position:absolute;left:0;top:0;width:22px;height:22px;margin:0;opacity:0;cursor:pointer;z-index:2}
+  .consent .cbx{width:22px;height:22px;flex-shrink:0;border:2px solid #8A93A3;border-radius:6px;background:#fff;position:relative}
+  .consent input[type=checkbox]:checked + .cbx{background:var(--action);border-color:var(--action)}
+  .consent input[type=checkbox]:checked + .cbx::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .consent label{font-size:13.5px;color:var(--ink)}
+  .err{color:var(--redline);font-size:13px;font-weight:600;margin-bottom:12px;padding:9px 12px;background:var(--red-soft);border-radius:9px}
   .mlink:hover{background:var(--action-deep)}
   .mclose-dark{background:var(--porcelain);color:var(--ink)}
   .soldlist{display:flex;flex-direction:column;gap:2px}
@@ -248,7 +262,12 @@
       <select id="dealerSwitch" style="display:none"></select>
       <div id="agencyTag" style="display:none"></div>
       <div class="r2"><span class="live-dot"></span><span id="updated">connecting</span></div>
-      <a href="#" id="signOut" style="display:none">Sign out</a>
+      <div style="display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:3px">
+        <button id="settingsGear" title="Dealer settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <a href="#" id="signOut" style="display:none">Sign out</a>
+      </div>
     </div>
   </div>
 
@@ -347,6 +366,9 @@
     var tag=document.getElementById("agencyTag");
     tag.textContent=agency.name+" · "+dealers.length+" rooftop"+(dealers.length===1?"":"s");
     tag.style.display="block";
+    // The settings gear is agency-scope only — a per-dealer code never sees
+    // it, since one of the fields it edits is a live inventory feed token.
+    document.getElementById("settingsGear").style.display="inline-flex";
     sel.onchange=function(){
       SLUG=sel.value;
       try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
@@ -803,6 +825,87 @@
   }
   document.getElementById("shoppersCard").addEventListener("click", openShoppers);
   document.getElementById("shoppersCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openShoppers(); } });
+
+  // ── Dealer settings (agency-scope only) ─────────────────────────────────────
+  function agencyCode(){
+    try{
+      var raw=sessionStorage.getItem("lp_agency");
+      return raw ? (JSON.parse(raw)||{}).code : null;
+    }catch(e){ return null; }
+  }
+
+  function openSettings(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    var code=agencyCode();
+    fetch(API+"/dash/"+SLUG+"/settings",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({agencyCode:code})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(!d.ok){ modal.innerHTML='<div class="mbody"><div class="state">'+(d.error||"Could not load settings")+'</div></div>'; return; }
+      var s=d.settings;
+      modal.innerHTML=
+        '<div class="mbody">'
+          +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="mph-title" style="margin-top:0">Dealer settings — '+s.name+'</div>'
+          +'<div class="err" id="set-err" style="display:none"></div>'
+          +'<div class="setrow"><label>Dealer name</label><input id="set-name" value="'+(s.name||"")+'"></div>'
+          +'<div class="setrow"><label>Website host</label><input id="set-host" value="'+(s.websiteHost||"")+'" placeholder="www.dealer.com"></div>'
+          +'<div class="setrow2">'
+            +'<div class="setrow"><label>State</label><input id="set-state" maxlength="2" value="'+(s.state||"")+'"></div>'
+            +'<div class="setrow"><label>Timezone</label><select id="set-tz">'
+              +['America/New_York|Eastern','America/Chicago|Central','America/Denver|Mountain','America/Phoenix|Mountain (no DST)','America/Los_Angeles|Pacific']
+                .map(function(o){var p=o.split("|"); return '<option value="'+p[0]+'"'+(s.timezone===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join("")
+            +'</select></div>'
+          +'</div>'
+          +'<div class="setrow"><label>Inventory feed platform</label><select id="set-platform">'
+            +['hoot|Hoot','dealer_inspire|Dealer Inspire'].map(function(o){var p=o.split("|"); return '<option value="'+p[0]+'"'+(s.platform===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join("")
+          +'</select></div>'
+          +'<div class="setrow"><label>CRM lead email</label><input id="set-crm" type="email" value="'+(s.crmLeadEmail||"")+'" placeholder="leads@dealer.com"></div>'
+          +'<div class="consent" style="margin:2px 0 14px"><input type="checkbox" id="set-autosend"'+(s.crmAutosendHot?' checked':'')+'>'
+            +'<span class="cbx" aria-hidden="true"></span><label for="set-autosend" style="cursor:pointer">Auto-send hot leads to CRM</label></div>'
+          +'<div class="setrow"><label>Inventory feed URL <span style="font-weight:400;color:var(--slate)">(leave blank to keep current)</span></label>'
+            +'<input id="set-feed" placeholder="'+(s.feedUrlMasked||"not set")+'"></div>'
+          +'<div class="setrow"><label>Dashboard access code <span style="font-weight:400;color:var(--slate)">(leave blank to keep current)</span></label>'
+            +'<input id="set-code" placeholder="'+(s.accessCode||"")+'"></div>'
+          +'<button class="mlink" id="set-save" style="width:100%;border:0;cursor:pointer;margin-top:6px">Save changes</button>'
+        +'</div>';
+      document.getElementById("set-save").addEventListener("click", function(){
+        var btn=this; var err=document.getElementById("set-err");
+        err.style.display="none";
+        var body={
+          agencyCode: code,
+          name: document.getElementById("set-name").value.trim(),
+          websiteHost: document.getElementById("set-host").value.trim(),
+          state: document.getElementById("set-state").value.trim().toUpperCase(),
+          timezone: document.getElementById("set-tz").value,
+          platform: document.getElementById("set-platform").value,
+          crmLeadEmail: document.getElementById("set-crm").value.trim(),
+          crmAutosendHot: document.getElementById("set-autosend").checked,
+          feedUrl: document.getElementById("set-feed").value.trim(),
+          newAccessCode: document.getElementById("set-code").value.trim(),
+        };
+        btn.disabled=true; btn.textContent="Saving…";
+        fetch(API+"/dash/"+SLUG+"/settings/update",{
+          method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+        }).then(function(r){return r.json();}).then(function(res){
+          if(!res.ok){
+            err.textContent=res.error||"Save failed."; err.style.display="block";
+            btn.disabled=false; btn.textContent="Save changes";
+            return;
+          }
+          btn.textContent="✓ Saved"; btn.style.background="var(--win)";
+          loadSummary(); // pick up any renamed dealer / refreshed freshness state
+          setTimeout(closeDetail, 900);
+        }).catch(function(){
+          err.textContent="Network error. Try again."; err.style.display="block";
+          btn.disabled=false; btn.textContent="Save changes";
+        });
+      });
+    }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
+  }
+  document.getElementById("settingsGear").addEventListener("click", openSettings);
 
   document.getElementById("tabs").addEventListener("click", function(e){
     var b=e.target.closest(".tab"); if(!b) return;
