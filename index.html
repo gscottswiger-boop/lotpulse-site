@@ -167,6 +167,7 @@
     border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;outline:none}
   .setrow input:focus,.setrow select:focus{border-color:var(--action)}
   .setrow2{display:grid;grid-template-columns:70px 1fr;gap:12px}
+  .setrow2even{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .consent{display:flex;align-items:flex-start;gap:10px;cursor:pointer;position:relative}
   .consent input[type=checkbox]{position:absolute;left:0;top:0;width:22px;height:22px;margin:0;opacity:0;cursor:pointer;z-index:2}
   .consent .cbx{width:22px;height:22px;flex-shrink:0;border:2px solid #8A93A3;border-radius:6px;background:#fff;position:relative}
@@ -869,6 +870,12 @@
             +'<input id="set-feed" placeholder="'+(s.feedUrlMasked||"not set")+'"></div>'
           +'<div class="setrow"><label>Dashboard access code <span style="font-weight:400;color:var(--slate)">(leave blank to keep current)</span></label>'
             +'<input id="set-code" placeholder="'+(s.accessCode||"")+'"></div>'
+          +'<div class="setrow2even">'
+            +'<div class="setrow"><label>New-inventory SRP URL <span style="font-weight:400;color:var(--slate)">(sold-text link)</span></label>'
+              +'<input id="set-srp-new" value="'+(s.srpUrlNew||"")+'" placeholder="https://dealer.com/new-inventory/"></div>'
+            +'<div class="setrow"><label>Used-inventory SRP URL</label>'
+              +'<input id="set-srp-used" value="'+(s.srpUrlUsed||"")+'" placeholder="https://dealer.com/used-inventory/"></div>'
+          +'</div>'
           +'<button class="mlink" id="set-save" style="width:100%;border:0;cursor:pointer;margin-top:6px">Save changes</button>'
         +'</div>';
       document.getElementById("set-save").addEventListener("click", function(){
@@ -885,6 +892,8 @@
           crmAutosendHot: document.getElementById("set-autosend").checked,
           feedUrl: document.getElementById("set-feed").value.trim(),
           newAccessCode: document.getElementById("set-code").value.trim(),
+          srpUrlNew: document.getElementById("set-srp-new").value.trim(),
+          srpUrlUsed: document.getElementById("set-srp-used").value.trim(),
         };
         btn.disabled=true; btn.textContent="Saving…";
         fetch(API+"/dash/"+SLUG+"/settings/update",{
