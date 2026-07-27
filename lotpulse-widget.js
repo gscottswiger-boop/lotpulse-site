@@ -184,16 +184,58 @@
       anchor.el.appendChild(host);
       var rootG = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
       rootG.innerHTML = widgetHtml(demand);
-      // Card keeps its natural max-width (520px) and, with no auto margins in
-      // a block host, left-aligns to the column's content edge — i.e. flush
-      // under the left edge of the photos. (If we ever want it to span the
-      // full photo width or reflow horizontally, add the `.wide` class here;
-      // left as the vertical card for now, matching what shoppers already see
-      // on Big O.)
-      console.log("[LotPulse] mounted beneath the photo gallery (.vdp-gallery-wrap) "
-        + "in normal flow — left-aligned under the photos, no measurement");
       VDP_ROOT = rootG;
       wireWidget(rootG, vin, demand);
+
+      // Wide vs. vertical is decided by the LIVE rendered width of the host,
+      // re-evaluated continuously — never measured just once at mount. A
+      // single synchronous read right after append can catch the column
+      // mid-layout, before Dealer Inspire's two-column flex has settled it to
+      // its full ~770px; that's exactly why the first attempt stayed vertical
+      // even though the column ends up well over the 760px threshold. A
+      // ResizeObserver removes the timing bet entirely: it fires on the
+      // initial observe AND on every later reflow/resize, so the card flips to
+      // wide the moment the column reaches full width and flips back if the
+      // window is dragged below the breakpoint.
+      //
+      // The wide layout is a 3-column flex row (header | stats+tach | CTA)
+      // with ~540px of fixed side columns, so 760px is the floor where it
+      // fits without cramping. Below that (tablet/mobile) the vertical card
+      // stays, collapsing to full width on its own under 520px.
+      var applyWide = function () {
+        var card = rootG.querySelector(".card");
+        if (!card) return;
+        var w = host.getBoundingClientRect().width;
+        var wantWide = w >= 760;
+        var isWide = card.classList.contains("wide");
+        if (wantWide && !isWide) {
+          card.classList.add("wide");
+          card.style.width = "100%";
+          card.style.maxWidth = "none";
+          console.log("[LotPulse] gallery mount \u2192 WIDE layout, spanning the "
+            + "full photo column (" + Math.round(w) + "px)");
+        } else if (!wantWide && isWide) {
+          card.classList.remove("wide");
+          card.style.width = "";
+          card.style.maxWidth = "";
+          console.log("[LotPulse] gallery mount \u2192 vertical card ("
+            + Math.round(w) + "px, below the 760px wide threshold)");
+        }
+      };
+      applyWide();
+      if (typeof ResizeObserver !== "undefined") {
+        // Observing the host (whose width tracks the column) picks up the
+        // column settling to full width after our synchronous mount. Toggling
+        // the card class changes the host's HEIGHT, not its width, so this
+        // can't thrash between states — one extra benign fire, then it rests.
+        try { new ResizeObserver(applyWide).observe(host); } catch (e) { /* ignore */ }
+      } else {
+        // No ResizeObserver (very old browsers): fall back to window resize
+        // plus a couple of deferred re-checks to catch late layout settling.
+        window.addEventListener("resize", applyWide);
+        setTimeout(applyWide, 600);
+        setTimeout(applyWide, 1600);
+      }
       return;
     }
 
