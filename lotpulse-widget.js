@@ -172,6 +172,31 @@
     var anchor = pickAnchor();
     if (!anchor || !anchor.el || !anchor.el.parentNode) return;
 
+    // Preferred path: mount directly inside the photo column, in normal flow,
+    // beneath the gallery. Alignment and width come from the column itself —
+    // nothing is measured, so a still-loading hero image or a later reflow
+    // can't knock it out of place. This deliberately bypasses the scroll-trap
+    // escape logic below, which exists only for the case where the anchor is
+    // trapped inside the sticky price rail; the gallery column is neither
+    // sticky nor scroll-capped, so none of that applies.
+    if (anchor.underGallery) {
+      host.style.cssText = "display:block;width:100%;margin:16px 0 0;clear:both;";
+      anchor.el.appendChild(host);
+      var rootG = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
+      rootG.innerHTML = widgetHtml(demand);
+      // Card keeps its natural max-width (520px) and, with no auto margins in
+      // a block host, left-aligns to the column's content edge — i.e. flush
+      // under the left edge of the photos. (If we ever want it to span the
+      // full photo width or reflow horizontally, add the `.wide` class here;
+      // left as the vertical card for now, matching what shoppers already see
+      // on Big O.)
+      console.log("[LotPulse] mounted beneath the photo gallery (.vdp-gallery-wrap) "
+        + "in normal flow — left-aligned under the photos, no measurement");
+      VDP_ROOT = rootG;
+      wireWidget(rootG, vin, demand);
+      return;
+    }
+
     // If the chosen anchor lives inside a scroll-capped container, do NOT
     // mount inside it — the widget would be buried below the container's
     // internal fold. And do NOT mount as a sibling inside the sticky wrapper
@@ -311,6 +336,40 @@
     if (ANCHOR_SELECTOR) {
       var custom = document.querySelector(ANCHOR_SELECTOR);
       if (custom) return { el: custom, position: CONFIG.anchorPosition || "after", explicit: true };
+    }
+    // ── Preferred VDP placement: directly beneath the photo gallery ──────────
+    // Dealer Inspire renders the VDP as a two-column flex row (vdp-hero): the
+    // photo column is .vdp-gallery-wrap (confirmed display:block, ~2/3 width)
+    // and the pricing/CTA rail is the other column. Mounting the widget as the
+    // LAST CHILD of the gallery column puts it directly under the photos, at
+    // the column's exact left edge and full width, in NORMAL DOCUMENT FLOW —
+    // no pixel measurement, no margin-left shim, correct at every breakpoint.
+    //
+    // This is deliberately structural. The previous approach anchored to the
+    // sticky price rail, then escaped past the whole hero and MEASURED the
+    // gallery's rect at mount time to push a full-bleed band leftward into
+    // alignment. That measurement was read while the hero <img> was still
+    // lazy-loading (class="lazyload-loading"), so the gallery rect came back
+    // wrong and the band landed misaligned; it also drifted on any post-mount
+    // reflow. Flowing inside the column removes the measurement entirely.
+    //
+    // GUARD: only claim this anchor if the column won't CLIP a child that
+    // flows below the photo. A padded, display:block column with visible
+    // overflow (the confirmed DI case — it also holds the thumbnail strip and
+    // gallery modal as children, so it can't be clipping) grows to fit us; a
+    // clipped, fixed-height column would hide us, so we defer to the legacy
+    // placement below rather than mount somewhere invisible. Checked at
+    // runtime rather than assumed.
+    var galleryCol = document.querySelector(".vdp-gallery-wrap");
+    if (galleryCol) {
+      var gcs = window.getComputedStyle(galleryCol);
+      var galleryClips = (gcs.overflow === "hidden" || gcs.overflowY === "hidden");
+      if (!galleryClips) {
+        return { el: galleryCol, position: "append", underGallery: true };
+      }
+      console.log("[LotPulse] .vdp-gallery-wrap present but clips overflow ("
+        + gcs.overflow + "/" + gcs.overflowY + ") — not mounting inside it; "
+        + "falling through to legacy placement");
     }
     // Dealer Inspire: dedicated injection slots in the pricing CTA stack.
     var diSlots = [
