@@ -380,36 +380,44 @@
       if (custom) return { el: custom, position: CONFIG.anchorPosition || "after", explicit: true };
     }
     // ── Preferred VDP placement: directly beneath the photo gallery ──────────
-    // Dealer Inspire renders the VDP as a two-column flex row (vdp-hero): the
-    // photo column is .vdp-gallery-wrap (confirmed display:block, ~2/3 width)
-    // and the pricing/CTA rail is the other column. Mounting the widget as the
-    // LAST CHILD of the gallery column puts it directly under the photos, at
-    // the column's exact left edge and full width, in NORMAL DOCUMENT FLOW —
-    // no pixel measurement, no margin-left shim, correct at every breakpoint.
+    // Two confirmed platforms expose a photo COLUMN we can flow beneath:
+    //   Dealer Inspire: .vdp-gallery-wrap (flex item, flex-basis ~66.67%)
+    //   Dealer.com:     [data-name='vdp-vehicle-gallery-container-1']
+    //                   (Bootstrap col-md-8 → ~66.67%; confirmed identical on
+    //                    MAGC and KIMA. Its sibling sidebar rail is a col-md-4
+    //                    that is position:absolute on desktop, so the rail
+    //                    floats over the right third and never shares
+    //                    horizontal space with this column.)
+    // Both are ~2/3-width block columns. Mounting the widget as the column's
+    // LAST CHILD puts it directly under the photos, at the column's exact left
+    // edge and full width, in NORMAL DOCUMENT FLOW — no pixel measurement, no
+    // margin-left shim, correct at every breakpoint. The mount branch in
+    // mountWidget() is platform-agnostic, so both platforms feed the same code.
     //
-    // This is deliberately structural. The previous approach anchored to the
-    // sticky price rail, then escaped past the whole hero and MEASURED the
-    // gallery's rect at mount time to push a full-bleed band leftward into
-    // alignment. That measurement was read while the hero <img> was still
-    // lazy-loading (class="lazyload-loading"), so the gallery rect came back
-    // wrong and the band landed misaligned; it also drifted on any post-mount
-    // reflow. Flowing inside the column removes the measurement entirely.
+    // On DDC we deliberately target the STABLE page-section wrapper
+    // (data-name=...), NOT the inner React root (#vehicle-gallery1-app-root):
+    // React owns and re-reconciles the app-root's children and could wipe an
+    // injected node, whereas the page-section is static server-rendered HTML.
     //
-    // GUARD: only claim this anchor if the column won't CLIP a child that
-    // flows below the photo. A padded, display:block column with visible
-    // overflow (the confirmed DI case — it also holds the thumbnail strip and
-    // gallery modal as children, so it can't be clipping) grows to fit us; a
-    // clipped, fixed-height column would hide us, so we defer to the legacy
-    // placement below rather than mount somewhere invisible. Checked at
-    // runtime rather than assumed.
-    var galleryCol = document.querySelector(".vdp-gallery-wrap");
+    // This is deliberately structural. The prior DI approach anchored to the
+    // sticky price rail, escaped past the hero, and MEASURED the gallery rect
+    // at mount time to push a band into alignment — which read wrong while the
+    // hero <img> was still lazy-loading and drifted on reflow. Flowing inside
+    // the column removes the measurement entirely.
+    //
+    // GUARD: only claim this anchor if the column won't CLIP a child flowing
+    // below the photo. Both confirmed columns have visible overflow; a clipped,
+    // fixed-height column would hide us, so we defer to the legacy placement
+    // rather than mount somewhere invisible. Checked at runtime, not assumed.
+    var galleryCol = document.querySelector(
+      ".vdp-gallery-wrap, [data-name='vdp-vehicle-gallery-container-1']");
     if (galleryCol) {
       var gcs = window.getComputedStyle(galleryCol);
       var galleryClips = (gcs.overflow === "hidden" || gcs.overflowY === "hidden");
       if (!galleryClips) {
         return { el: galleryCol, position: "append", underGallery: true };
       }
-      console.log("[LotPulse] .vdp-gallery-wrap present but clips overflow ("
+      console.log("[LotPulse] gallery column present but clips overflow ("
         + gcs.overflow + "/" + gcs.overflowY + ") — not mounting inside it; "
         + "falling through to legacy placement");
     }
