@@ -267,6 +267,9 @@
         <button id="settingsGear" title="Dealer settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
+        <button id="accessLogBtn" title="Access log" aria-label="Access log" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
     </div>
@@ -370,6 +373,7 @@
     // The settings gear is agency-scope only — a per-dealer code never sees
     // it, since one of the fields it edits is a live inventory feed token.
     document.getElementById("settingsGear").style.display="inline-flex";
+    var _alb=document.getElementById("accessLogBtn"); if(_alb) _alb.style.display="inline-flex";
     sel.onchange=function(){
       SLUG=sel.value;
       try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
@@ -915,6 +919,89 @@
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
   document.getElementById("settingsGear").addEventListener("click", openSettings);
+
+  // ── Access log (agency-scope only) ──────────────────────────────────────────
+  // Answers "is this rooftop actually opening the dashboard, and from where?"
+  // Gated server-side on the agency code (same boundary as settings), so a
+  // per-dealer login can't reach it. Scoped to the currently-selected rooftop
+  // via SLUG — the dealer switcher drives which store's log you see. All values
+  // that originate from a request (IP, geo, org, user-agent) are HTML-escaped,
+  // since an unlock can carry a spoofed X-Forwarded-For or user-agent.
+  function escapeHtml(s){
+    return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function deviceHint(ua){
+    if(!ua) return "";
+    ua=String(ua);
+    if(/iPhone/i.test(ua)) return "iPhone";
+    if(/iPad/i.test(ua)) return "iPad";
+    if(/Android/i.test(ua)) return "Android";
+    if(/Macintosh|Mac OS X/i.test(ua)) return "Mac";
+    if(/Windows/i.test(ua)) return "Windows";
+    if(/Linux/i.test(ua)) return "Linux";
+    return "";
+  }
+  function currentDealerLabel(){
+    var sw=document.getElementById("dealerSwitch");
+    if(sw && sw.style.display!=="none" && sw.selectedIndex>=0) return sw.options[sw.selectedIndex].text;
+    return document.getElementById("dealerName").textContent || SLUG;
+  }
+  function openAccessLog(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/dash/"+SLUG+"/access-log",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({agencyCode:agencyCode(), limit:50})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(!d.ok){
+        modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="state">'+escapeHtml(d.error||"Could not load access log")+'</div></div>';
+        return;
+      }
+      var rows="";
+      (d.accesses||[]).forEach(function(a){
+        var when=new Date(a.at);
+        var abs=when.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "
+              +when.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+        var typePill = a.codeType==="dealer"
+          ? '<span class="scorepill" style="background:var(--new-soft);color:var(--new)">Dealer</span>'
+          : '<span class="scorepill cool">Agency</span>';
+        var loc = a.geo ? escapeHtml(a.geo) : "location unknown";
+        var dev = deviceHint(a.userAgent);
+        var meta = timeAgo(a.at)+" · "+abs+(dev?(" · "+dev):"");
+        var ipline = a.ip
+          ? '<span class="wsince" style="font-family:\'IBM Plex Mono\';font-size:10px">'+escapeHtml(a.ip)
+              +(a.org?(" · "+escapeHtml(a.org)):"")+'</span>'
+          : "";
+        rows+='<div class="wrow"><div class="wrl">'
+          +'<span style="font-size:13px;font-weight:600">'+typePill+' '+loc+'</span>'
+          +'<span class="wsince">'+escapeHtml(meta)+'</span>'
+          +ipline
+          +'</div></div>';
+      });
+      if(!rows) rows='<div class="state" style="padding:28px 0">No dashboard opens recorded yet for this rooftop.</div>';
+      modal.innerHTML=
+        '<div class="mbody">'
+          +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="mph-title" style="margin-top:0">Access log — '+escapeHtml(currentDealerLabel())+'</div>'
+          +'<div class="mstats" style="margin-bottom:14px">'
+            +'<div class="mstat"><div class="n" style="font-size:15px">'+timeAgo(d.lastDealerOpen)+'</div><div class="l">Dealer<br>last opened</div></div>'
+            +'<div class="mstat"><div class="n" style="font-size:15px">'+timeAgo(d.lastAgencyOpen)+'</div><div class="l">Agency<br>last opened</div></div>'
+            +'<div class="mstat"><div class="n">'+(d.totalShown||0)+'</div><div class="l">Recent<br>opens</div></div>'
+          +'</div>'
+          +'<p style="font-size:12.5px;color:var(--slate);margin:-2px 0 14px"><strong>Dealer</strong> = opened with this store\'s own code (the real usage signal). <strong>Agency</strong> = opened by you while viewing this rooftop. Location is approximate, from IP.</p>'
+          +'<div class="wlist">'+rows+'</div>'
+        +'</div>';
+    }).catch(function(e){
+      modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+        +'<div class="state">Could not load: '+escapeHtml(e.message)+'</div></div>';
+    });
+  }
+  var _accessLogBtn=document.getElementById("accessLogBtn");
+  if(_accessLogBtn) _accessLogBtn.addEventListener("click", openAccessLog);
 
   document.getElementById("tabs").addEventListener("click", function(e){
     var b=e.target.closest(".tab"); if(!b) return;
