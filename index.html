@@ -219,6 +219,7 @@
   .thumb-sm.ph{display:flex;align-items:center;justify-content:center;color:#B7BEB8}
   .scname{font-weight:600;font-size:13px;line-height:1.2}
   .scprice{font-family:'Barlow Condensed';font-weight:600;font-size:13px;color:var(--slate)}
+  .scwhen{font-family:'IBM Plex Mono';font-size:10px;color:#8A93A3;margin-top:2px;letter-spacing:.01em}
   .wlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
   .wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
   .wrow:last-child{border-bottom:0}
@@ -456,6 +457,23 @@
     if(s<3600) return Math.floor(s/60)+" min ago";
     if(s<86400){ var h=Math.floor(s/3600); return h+(h===1?" hour ago":" hours ago"); }
     var d=Math.floor(s/86400); return d+(d===1?" day ago":" days ago");
+  }
+  // Format a watch timestamp in the DEALER's local timezone (from
+  // dealer.timezone, an IANA string like "America/New_York"). Falls back to
+  // the viewer's browser zone if the dealer has no/invalid tz set, so a lead
+  // time never renders blank.
+  function fmtWatchedAt(iso, tz){
+    if(!iso) return "";
+    var d=new Date(iso);
+    if(isNaN(d.getTime())) return "";
+    var opts={month:"short",day:"numeric",hour:"numeric",minute:"2-digit"};
+    try{
+      if(tz) opts.timeZone=tz;
+      return d.toLocaleString("en-US",opts);
+    }catch(e){
+      try{ return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }
+      catch(e2){ return ""; }
+    }
   }
   function loadSummary(){
     return fetch(API+"/dash/"+SLUG+"/summary").then(function(r){return r.json();}).then(function(d){
@@ -743,6 +761,7 @@
     fetch(API+"/dash/"+SLUG+"/shoppers").then(function(r){return r.json();}).then(function(d){
       if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
       var shoppers=d.shoppers||[];
+      var tz=(d.dealer && d.dealer.timezone) || null; // render watch times in the dealer's local zone
       var list="";
       if(!shoppers.length){
         list='<div class="state">No shoppers watching yet.</div>';
@@ -754,7 +773,8 @@
               +'<div class="shopcar-link" data-vin="'+v.vin+'">'
                 +photoTag(v.photoUrl,"thumb-sm")
                 +'<div class="scinfo"><div class="scname">'+[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")+'</div>'
-                +'<div class="scprice">'+dollars(v.priceCents)+'</div></div>'
+                +'<div class="scprice">'+dollars(v.priceCents)+'</div>'
+                +(v.watchedAt?'<div class="scwhen">Since '+fmtWatchedAt(v.watchedAt,tz)+'</div>':'')+'</div>'
               +'</div>'
               +'<button class="crmbtn" data-w="'+s.watcherId+'" data-vin="'+v.vin+'" data-veh="'+(v.vehicleId||'')+'">Push to CRM</button>'
               +'</div>';
