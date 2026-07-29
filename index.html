@@ -220,6 +220,33 @@
   .scname{font-weight:600;font-size:13px;line-height:1.2}
   .scprice{font-family:'Barlow Condensed';font-weight:600;font-size:13px;color:var(--slate)}
   .scwhen{font-family:'IBM Plex Mono';font-size:10px;color:#8A93A3;margin-top:2px;letter-spacing:.01em}
+  /* Matchback: file inputs + report */
+  .setrow input[type=file]{width:100%;font-family:inherit;font-size:13px;color:var(--ink);background:var(--porcelain);border:1.5px dashed var(--line);border-radius:9px;padding:13px 12px;cursor:pointer}
+  .setrow input[type=file]:hover{border-color:var(--action)}
+  #mb-print-host{display:none}
+  .mb-report{max-width:760px;margin:0 auto;padding:24px;font-family:'Barlow',system-ui,sans-serif;color:var(--ink)}
+  .mb-head{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:16px}
+  .mb-brand{font-family:'Barlow Condensed';font-weight:700;font-size:22px;letter-spacing:.02em}
+  .mb-logo em{font-style:normal;color:var(--redline)}
+  .mb-sub{font-size:12px;color:var(--slate);margin-top:3px}
+  .mb-statrow{display:flex;gap:12px;margin-bottom:6px}
+  .mb-stat{flex:1;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
+  .mb-stat .n{font-family:'Barlow Condensed';font-weight:700;font-size:34px;line-height:1}
+  .mb-stat .l{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:5px}
+  .mb-stat .dsc{font-size:9.5px;color:var(--slate);margin-top:4px;line-height:1.3}
+  .mb-sec{font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--line);padding-bottom:5px;margin:18px 0 8px}
+  .mb-person{padding:8px 0;border-bottom:1px solid var(--line-soft);break-inside:avoid}
+  .mb-phead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .mb-name{font-weight:700;font-size:14px}
+  .mb-phone{font-family:'Barlow Condensed';font-weight:700;font-size:15px;color:var(--action);white-space:nowrap}
+  .mb-car{font-size:11.5px;color:#2A323A;margin-top:3px}
+  .mb-carmeta{color:var(--slate)}
+  .mb-none{font-size:12px;color:#A6AEA8;padding:4px 0}
+  .mb-foot{margin-top:20px;border-top:1px solid var(--line);padding-top:8px;font-size:10px;color:#A6AEA8;line-height:1.5}
+  @media print{
+    body.mb-printing > *{display:none!important}
+    body.mb-printing > #mb-print-host{display:block!important}
+  }
   .wlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
   .wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
   .wrow:last-child{border-bottom:0}
@@ -270,6 +297,9 @@
         </button>
         <button id="accessLogBtn" title="Access log" aria-label="Access log" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        </button>
+        <button id="matchbackBtn" title="Matchback report" aria-label="Matchback report" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
@@ -375,6 +405,7 @@
     // it, since one of the fields it edits is a live inventory feed token.
     document.getElementById("settingsGear").style.display="inline-flex";
     var _alb=document.getElementById("accessLogBtn"); if(_alb) _alb.style.display="inline-flex";
+    var _mbb=document.getElementById("matchbackBtn"); if(_mbb) _mbb.style.display="inline-flex";
     sel.onchange=function(){
       SLUG=sel.value;
       try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
@@ -762,6 +793,7 @@
       if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
       var shoppers=d.shoppers||[];
       var tz=(d.dealer && d.dealer.timezone) || null; // render watch times in the dealer's local zone
+      _mbTz=tz;
       var list="";
       if(!shoppers.length){
         list='<div class="state">No shoppers watching yet.</div>';
@@ -1022,6 +1054,141 @@
   }
   var _accessLogBtn=document.getElementById("accessLogBtn");
   if(_accessLogBtn) _accessLogBtn.addEventListener("click", openAccessLog);
+
+  // ── Matchback report (agency-scope only) ────────────────────────────────────
+  // Upload the dealer's SOLD customer CSV and/or PROSPECT CSV; the server
+  // phone-matches them against LotPulse watchers in memory (nothing stored)
+  // and returns Influenced Buyers (watched + bought) and Influenced Shoppers
+  // (watched + in CRM as prospect, not yet bought). The report renders into a
+  // dedicated print-only container — the browser's Print → Save as PDF is what
+  // produces the downloadable, branded PDF.
+  var _mbTz=null; // dealer timezone, captured from any prior shoppers load
+  function readFileText(input){
+    return new Promise(function(resolve){
+      var f=input.files && input.files[0];
+      if(!f){ resolve(""); return; }
+      var rd=new FileReader();
+      rd.onload=function(){ resolve(String(rd.result||"")); };
+      rd.onerror=function(){ resolve(""); };
+      rd.readAsText(f);
+    });
+  }
+  function openMatchback(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.classList.add("open"); scrim.classList.add("open");
+    modal.innerHTML=
+      '<div class="mbody">'
+        +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+        +'<div class="mph-title" style="margin-top:0">Matchback report — '+escapeHtml(currentDealerLabel())+'</div>'
+        +'<p style="font-size:13px;color:var(--slate);margin:-2px 0 16px">Upload the dealer\'s customer lists (CSV with a phone column). '
+          +'LotPulse matches watchers by phone number. Lists are matched in memory and <strong>never stored</strong>.</p>'
+        +'<div class="err" id="mb-err" style="display:none"></div>'
+        +'<div class="setrow"><label>Sold customers CSV <span style="font-weight:400;color:var(--slate)">(&rarr; Influenced Buyers)</span></label>'
+          +'<input type="file" id="mb-sold" accept=".csv,text/csv,text/plain"></div>'
+        +'<div class="setrow"><label>Prospect customers CSV <span style="font-weight:400;color:var(--slate)">(&rarr; Influenced Shoppers)</span></label>'
+          +'<input type="file" id="mb-prospect" accept=".csv,text/csv,text/plain"></div>'
+        +'<button class="mlink" id="mb-run" style="width:100%;border:0;cursor:pointer;margin-top:6px">Run matchback</button>'
+      +'</div>';
+    document.getElementById("mb-run").addEventListener("click", function(){
+      var btn=this, err=document.getElementById("mb-err");
+      err.style.display="none";
+      var soldIn=document.getElementById("mb-sold"), prosIn=document.getElementById("mb-prospect");
+      if(!(soldIn.files&&soldIn.files.length) && !(prosIn.files&&prosIn.files.length)){
+        err.textContent="Choose at least one CSV file."; err.style.display="block"; return;
+      }
+      btn.disabled=true; btn.textContent="Matching…";
+      Promise.all([readFileText(soldIn), readFileText(prosIn)]).then(function(txts){
+        return fetch(API+"/dash/"+SLUG+"/matchback",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({agencyCode:agencyCode(), soldCsv:txts[0], prospectCsv:txts[1]})
+        });
+      }).then(function(r){return r.json();}).then(function(d){
+        if(!d.ok){
+          err.textContent=d.error||"Matchback failed."; err.style.display="block";
+          btn.disabled=false; btn.textContent="Run matchback"; return;
+        }
+        renderMatchbackReport(d);
+      }).catch(function(e){
+        err.textContent="Network error: "+e.message; err.style.display="block";
+        btn.disabled=false; btn.textContent="Run matchback";
+      });
+    });
+  }
+  function mbPersonRows(list, tz){
+    var rows="";
+    list.forEach(function(p){
+      var phoneDisp=p.phone?p.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+      var cars="";
+      (p.watched||[]).forEach(function(v){
+        var label=[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
+        var soldNote = v.vehicleSoldAt ? (" · vehicle sold "+fmtWatchedAt(v.vehicleSoldAt,tz)) : "";
+        cars+='<div class="mb-car">'+escapeHtml(label)
+          +' <span class="mb-carmeta">'+dollars(v.priceCents)
+          +' · watched '+escapeHtml(fmtWatchedAt(v.watchedAt,tz))+escapeHtml(soldNote)+'</span></div>';
+      });
+      rows+='<div class="mb-person">'
+        +'<div class="mb-phead"><span class="mb-name">'+escapeHtml(p.name||"(no name on list)")+'</span>'
+        +'<span class="mb-phone">'+escapeHtml(phoneDisp)+'</span></div>'
+        +cars
+        +'</div>';
+    });
+    if(!rows) rows='<div class="mb-none">None found in this list.</div>';
+    return rows;
+  }
+  function renderMatchbackReport(d){
+    var tz=(d.dealer&&d.dealer.timezone)||_mbTz||null; // dealer-local when known; else browser zone
+    var when=new Date(d.generatedAt);
+    var dt=when.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+    var host=document.getElementById("mb-print-host");
+    if(!host){
+      host=document.createElement("div");
+      host.id="mb-print-host";
+      document.body.appendChild(host);
+    }
+    host.innerHTML=
+      '<div class="mb-report">'
+        +'<div class="mb-head">'
+          +'<div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em></span> Matchback Report</div>'
+          +'<div class="mb-sub">'+escapeHtml(currentDealerLabel())+' &middot; generated '+escapeHtml(dt)+'</div>'
+        +'</div>'
+        +'<div class="mb-statrow">'
+          +'<div class="mb-stat"><div class="n">'+d.totals.influencedBuyers+'</div><div class="l">Influenced Buyers</div><div class="dsc">Watched on LotPulse, then purchased</div></div>'
+          +'<div class="mb-stat"><div class="n">'+d.totals.influencedShoppers+'</div><div class="l">Influenced Shoppers</div><div class="dsc">Watching &amp; in CRM as a prospect</div></div>'
+          +'<div class="mb-stat"><div class="n">'+d.totals.lotpulseWatchers+'</div><div class="l">Total Watchers</div><div class="dsc">All LotPulse watchers, this rooftop</div></div>'
+        +'</div>'
+        +'<div class="mb-sec">Influenced Buyers &mdash; watched, then bought</div>'
+        +mbPersonRows(d.influencedBuyers, tz)
+        +'<div class="mb-sec">Influenced Shoppers &mdash; watching, still a prospect</div>'
+        +mbPersonRows(d.influencedShoppers, tz)
+        +'<div class="mb-foot">Matched by phone number against dealer-provided lists ('
+          +d.input.soldListSize+' sold, '+d.input.prospectListSize+' prospect records). '
+          +'A watcher on both lists is counted as a buyer. Customer lists are processed in memory and not retained by LotPulse.</div>'
+      +'</div>';
+    var modal=document.getElementById("modal");
+    modal.innerHTML=
+      '<div class="mbody">'
+        +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+        +'<div class="mph-title" style="margin-top:0">Matchback &mdash; '+escapeHtml(currentDealerLabel())+'</div>'
+        +'<div class="mstats" style="margin-bottom:14px">'
+          +'<div class="mstat"><div class="n hot">'+d.totals.influencedBuyers+'</div><div class="l">Influenced<br>Buyers</div></div>'
+          +'<div class="mstat"><div class="n">'+d.totals.influencedShoppers+'</div><div class="l">Influenced<br>Shoppers</div></div>'
+          +'<div class="mstat"><div class="n">'+d.totals.lotpulseWatchers+'</div><div class="l">Total<br>Watchers</div></div>'
+        +'</div>'
+        +'<p style="font-size:12.5px;color:var(--slate);margin:0 0 6px">Matched against '+d.input.soldListSize+' sold and '+d.input.prospectListSize+' prospect records. The full report is ready to download.</p>'
+        +'<button class="mlink" id="mb-print" style="width:100%;border:0;cursor:pointer;margin-top:8px">Download PDF (opens Print → Save as PDF)</button>'
+        +'<button class="mlink" id="mb-again" style="width:100%;border:0;cursor:pointer;margin-top:8px;background:var(--porcelain);color:var(--ink)">Run another</button>'
+      +'</div>';
+    document.getElementById("mb-print").addEventListener("click", function(){
+      document.body.classList.add("mb-printing");
+      var done=function(){ document.body.classList.remove("mb-printing"); window.removeEventListener("afterprint",done); };
+      window.addEventListener("afterprint",done);
+      setTimeout(done, 60000); // Safari/iOS afterprint can be flaky; hard reset
+      window.print();
+    });
+    document.getElementById("mb-again").addEventListener("click", openMatchback);
+  }
+  var _matchbackBtn=document.getElementById("matchbackBtn");
+  if(_matchbackBtn) _matchbackBtn.addEventListener("click", openMatchback);
 
   document.getElementById("tabs").addEventListener("click", function(e){
     var b=e.target.closest(".tab"); if(!b) return;
