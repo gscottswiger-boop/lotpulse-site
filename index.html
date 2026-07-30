@@ -220,6 +220,29 @@
   .scname{font-weight:600;font-size:13px;line-height:1.2}
   .scprice{font-family:'Barlow Condensed';font-weight:600;font-size:13px;color:var(--slate)}
   .scwhen{font-family:'IBM Plex Mono';font-size:10px;color:#8A93A3;margin-top:2px;letter-spacing:.01em}
+  /* Texts-sent (message log) drill-in */
+  .msglist{display:flex;flex-direction:column}
+  .msgrow{padding:12px 0;border-bottom:1px solid var(--line-soft)}
+  .msgrow:last-child{border-bottom:0}
+  .msgtop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .msgwho{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .msgphone{font-family:'Barlow Condensed';font-weight:700;font-size:15px;color:var(--action);text-decoration:none;white-space:nowrap}
+  .msgphone:hover{text-decoration:underline}
+  .msgname{font-size:12px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .msgtime{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--slate);white-space:nowrap}
+  .msgpills{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .kindpill{font-family:'Barlow Condensed';font-weight:700;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;border-radius:5px;padding:2px 8px}
+  .kindpill.price_drop{background:var(--red-soft);color:var(--redline)}
+  .kindpill.demand_nudge{background:var(--amber-soft);color:#9A6700}
+  .kindpill.sold{background:var(--cpo-soft);color:var(--cpo)}
+  .kindpill.welcome{background:var(--new-soft);color:var(--new)}
+  .statpill{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 7px}
+  .statpill.ok{background:var(--win-soft);color:var(--win)}
+  .statpill.pending{background:var(--used-soft);color:var(--slate)}
+  .statpill.bad{background:var(--red-soft);color:var(--redline)}
+  .msgclick{font-size:10.5px;font-weight:700;color:var(--win)}
+  .msgveh{font-size:11px;color:var(--slate);margin-top:6px;font-weight:600}
+  .msgbody{font-size:12.5px;color:#2A323A;background:var(--porcelain);border-radius:9px;padding:9px 11px;margin-top:7px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
   /* Matchback: file inputs + report */
   .setrow input[type=file]{width:100%;font-family:inherit;font-size:13px;color:var(--ink);background:var(--porcelain);border:1.5px dashed var(--line);border-radius:9px;padding:13px 12px;cursor:pointer}
   .setrow input[type=file]:hover{border-color:var(--action)}
@@ -309,7 +332,7 @@
   <div class="stats">
     <div class="stat"><div class="n" id="s-watchers">—</div><div class="l">Active<br>watchers</div></div>
     <div class="stat stat-clickable" id="shoppersCard" role="button" tabindex="0"><div class="n red" id="s-leads">—</div><div class="l">Unique<br>shoppers</div><div class="seehint">See who →</div></div>
-    <div class="stat"><div class="n" id="s-texts">—</div><div class="l">Texts sent<br>7 days</div></div>
+    <div class="stat stat-clickable" id="textsCard" role="button" tabindex="0"><div class="n" id="s-texts">—</div><div class="l">Texts sent<br>7 days</div><div class="seehint">See texts →</div></div>
     <div class="stat stat-clickable" id="soldCard" role="button" tabindex="0"><div class="n green" id="s-sold">—</div><div class="l">Sold<br>30 days</div><div class="seehint">See which →</div></div>
   </div>
 
@@ -779,6 +802,68 @@
   }
   document.getElementById("soldCard").addEventListener("click", openSold);
   document.getElementById("soldCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openSold(); } });
+
+  // ── Texts sent (message log drill-in) ───────────────────────────────────────
+  // Lists every text from the same 7-day window the card counts, so the list
+  // reconciles to the number. Each row shows recipient, kind, delivery status,
+  // vehicle, and the actual message body.
+  function msgKindLabel(k){
+    return k==="price_drop"?"Price drop":k==="demand_nudge"?"Demand":k==="sold"?"Sold":k==="welcome"?"Welcome":k;
+  }
+  function msgStatusClass(s){
+    return (s==="delivered"||s==="sent")?"ok":(s==="failed"||s==="undelivered")?"bad":"pending";
+  }
+  function openMessages(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/dash/"+SLUG+"/messages?days=7").then(function(r){return r.json();}).then(function(d){
+      if(d.error){ modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button><div class="state">'+escapeHtml(d.error)+'</div></div>'; return; }
+      var tz=(d.dealer&&d.dealer.timezone)||_mbTz||null;
+      var msgs=d.messages||[];
+      var counts={ok:0,pending:0,bad:0};
+      msgs.forEach(function(m){ counts[msgStatusClass(m.status)]++; });
+      var rows="";
+      if(!msgs.length){
+        rows='<div class="state">No texts sent in the last 7 days.</div>';
+      } else {
+        msgs.forEach(function(m){
+          var phoneDisp=m.phone?m.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+          var veh=m.vehicle?[m.vehicle.year,m.vehicle.make,m.vehicle.model,m.vehicle.trim].filter(Boolean).join(" "):"";
+          var sc=msgStatusClass(m.status);
+          var statusTxt=m.status+((m.errorCode&&sc==="bad")?(" · "+m.errorCode):"");
+          rows+='<div class="msgrow">'
+            +'<div class="msgtop">'
+              +'<div class="msgwho"><a class="msgphone" href="tel:'+escapeHtml(m.phone||"")+'">'+escapeHtml(phoneDisp)+'</a>'
+                +(m.firstName?'<span class="msgname">'+escapeHtml(m.firstName)+'</span>':'')+'</div>'
+              +'<span class="msgtime">'+escapeHtml(fmtWatchedAt(m.queuedAt,tz))+'</span>'
+            +'</div>'
+            +'<div class="msgpills"><span class="kindpill '+escapeHtml(m.kind||"")+'">'+escapeHtml(msgKindLabel(m.kind))+'</span>'
+              +'<span class="statpill '+sc+'">'+escapeHtml(statusTxt)+'</span>'
+              +(m.clickedAt?'<span class="msgclick">✓ Link clicked</span>':'')+'</div>'
+            +(veh?'<div class="msgveh">'+escapeHtml(veh)+'</div>':'')
+            +'<div class="msgbody">'+escapeHtml(m.body||"")+'</div>'
+          +'</div>';
+        });
+      }
+      var summary = msgs.length
+        ? ('<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 14px">'+msgs.length+' text'+(msgs.length===1?'':'s')
+            +' · '+counts.ok+' delivered/sent'
+            +(counts.pending?' · '+counts.pending+' pending':'')
+            +(counts.bad?' · <span style="color:var(--redline);font-weight:600">'+counts.bad+' failed</span>':'')
+            +'</p>')
+        : '';
+      modal.innerHTML=
+        '<div class="mbody">'
+          +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+          +'<div class="mph-title" style="margin-top:0">Texts sent · last 7 days</div>'
+          +summary
+          +'<div class="msglist">'+rows+'</div>'
+        +'</div>';
+    }).catch(function(e){ modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button><div class="state">Could not load: '+escapeHtml(e.message)+'</div></div>'; });
+  }
+  document.getElementById("textsCard").addEventListener("click", openMessages);
+  document.getElementById("textsCard").addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openMessages(); } });
 
   // ── Shoppers (lead list) ──
   function scoreBadge(s){
