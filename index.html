@@ -1007,6 +1007,10 @@
           +'<div class="setrow"><label>CRM lead email</label><input id="set-crm" type="email" value="'+(s.crmLeadEmail||"")+'" placeholder="leads@dealer.com"></div>'
           +'<div class="consent" style="margin:2px 0 14px"><input type="checkbox" id="set-autosend"'+(s.crmAutosendHot?' checked':'')+'>'
             +'<span class="cbx" aria-hidden="true"></span><label for="set-autosend" style="cursor:pointer">Auto-send hot leads to CRM</label></div>'
+          +'<div class="setrow"><label>This rooftop\'s digest recipient <span style="font-weight:400;color:var(--slate)">(weekly email · blank = use CRM lead email)</span></label>'
+            +'<input id="set-digest" type="email" value="'+(s.digestEmail||"")+'" placeholder="'+(s.crmLeadEmail||"gm@dealer.com")+'"></div>'
+          +'<div class="setrow"><label>Agency rollup recipient <span style="font-weight:400;color:var(--slate)">(all rooftops · applies agency-wide)</span></label>'
+            +'<input id="set-agency-digest" type="email" value="'+(s.agencyDigestEmail||"")+'" placeholder="you@agency.com"></div>'
           +'<div class="setrow"><label>Inventory feed URL <span style="font-weight:400;color:var(--slate)">(leave blank to keep current)</span></label>'
             +'<input id="set-feed" placeholder="'+(s.feedUrlMasked||"not set")+'"></div>'
           +'<div class="setrow"><label>Dashboard access code <span style="font-weight:400;color:var(--slate)">(leave blank to keep current)</span></label>'
@@ -1031,6 +1035,8 @@
           platform: document.getElementById("set-platform").value,
           crmLeadEmail: document.getElementById("set-crm").value.trim(),
           crmAutosendHot: document.getElementById("set-autosend").checked,
+          digestEmail: document.getElementById("set-digest").value.trim(),
+          agencyDigestEmail: document.getElementById("set-agency-digest").value.trim(),
           feedUrl: document.getElementById("set-feed").value.trim(),
           newAccessCode: document.getElementById("set-code").value.trim(),
           srpUrlNew: document.getElementById("set-srp-new").value.trim(),
