@@ -1096,9 +1096,13 @@
       // page instead of a foreign overlay. This is the slim, compelling
       // version: one clear line, no extra height.
       btn.setAttribute("data-lp-mode", "button");
-      btn.textContent = "\uD83D\uDC41 Watch \u2014 Get Price Alerts";
+      btn.innerHTML =
+        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" '
+        + 'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'
+        + '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
+        + '<span>Watch \u2014 Get Price Alerts</span>';
       btn.style.cssText =
-        "display:block;width:100%;flex-shrink:0;flex-basis:auto;box-sizing:border-box;border:0;cursor:pointer;"
+        "display:flex;align-items:center;justify-content:center;gap:8px;width:100%;flex-shrink:0;flex-basis:auto;box-sizing:border-box;border:0;cursor:pointer;"
         + "background:#1F4FE0;color:#fff;"
         + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
         + "font-size:14px;font-weight:600;padding:11px 14px;"
