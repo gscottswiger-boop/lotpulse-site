@@ -550,12 +550,15 @@
       document.getElementById("s-leads").textContent = d.stats.uniqueWatchers;
       document.getElementById("s-texts").textContent = d.stats.texts7d;
       document.getElementById("s-sold").textContent = d.stats.sold30d;
-      // Secondary highlights, mirroring the weekly digest. Zeros render muted.
+      // Secondary highlights, mirroring the weekly digest. Hidden entirely when
+      // zero (a quiet rooftop shouldn't show a row of 0s); reappears when a real
+      // number arrives on the next refresh.
       function setSub(id, val, suffix){
         var el=document.getElementById(id); if(!el) return;
         var v = (val==null?0:val);
+        if(!v){ el.textContent=""; el.style.display="none"; return; }
         el.textContent = v + " " + suffix;
-        el.classList.toggle("zero", !v);
+        el.style.display="";   // back to the stylesheet default (block)
       }
       setSub("ss-watchers", d.stats.newWatchers, "new this week");
       setSub("ss-shoppers", d.stats.hotShoppers, "hot");
