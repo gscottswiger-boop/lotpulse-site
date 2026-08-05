@@ -70,6 +70,26 @@
   .aov-s.blue{color:var(--action)} .aov-s.green{color:var(--win)} .aov-s.muted{color:var(--slate);font-weight:600}
   .aov-s small{font-family:'Barlow';font-weight:400;font-size:11px;color:var(--slate)}
   .aov-jump{color:#B7BEB8;font-size:18px;line-height:1;padding-top:2px;flex-shrink:0}
+  /* Pricing signals */
+  .sig-btn{display:none;align-items:center;gap:6px;border:1px solid var(--action);background:var(--card);color:var(--action);
+    font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:.03em;text-transform:uppercase;
+    border-radius:9px;padding:6px 12px;cursor:pointer;transition:all .14s}
+  .sig-btn:hover{background:var(--action);color:#fff}
+  .sig-btn .sc{font-family:'Barlow';font-size:11px;font-weight:700;background:var(--action);color:#fff;border-radius:20px;padding:1px 7px;min-width:18px;text-align:center}
+  .sig-btn:hover .sc{background:rgba(255,255,255,.25)}
+  .sig-sec-title{font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.04em;text-transform:uppercase;margin:16px 0 2px;display:flex;align-items:center;gap:8px}
+  .sig-sec-title.hold{color:var(--win)} .sig-sec-title.reprice{color:var(--redline)}
+  .sig-sec-sub{font-size:12px;color:var(--slate);margin-bottom:10px}
+  .sig-row{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;border-radius:8px;transition:background .12s}
+  .sig-row:last-child{border-bottom:0}
+  .sig-row:hover{background:var(--porcelain)}
+  .sig-info{flex:1;min-width:0}
+  .sig-name{font-weight:600;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sig-evidence{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--slate);margin-top:3px}
+  .sig-say{font-size:12px;margin-top:4px;line-height:1.35}
+  .sig-say.hold{color:#146c43} .sig-say.reprice{color:#9A3B36}
+  .sig-price{font-family:'Barlow Condensed';font-weight:700;font-size:16px;flex-shrink:0;text-align:right}
+  .sig-caveat{font-size:11.5px;color:var(--slate);line-height:1.5;margin-top:18px;padding:11px 13px;background:var(--porcelain);border-radius:9px}
 
   .controls{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
   .tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px}
@@ -381,7 +401,10 @@
 
   <div class="sec-head">
     <h2>Demand Board</h2>
-    <div class="meta" id="boardMeta">Loading…</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="sig-btn" id="signalsBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Signals <span class="sc" id="sig-count">0</span></button>
+      <div class="meta" id="boardMeta">Loading…</div>
+    </div>
   </div>
 
   <div id="boardWrap"><div class="board"><div class="state">Loading inventory…</div></div></div>
@@ -513,7 +536,7 @@
     setTimeout(function(){ input.focus(); },200);
   })();
 
-  var state = { board: [], cond: "all", sort: "watchers", view: "list" };
+  var state = { board: [], cond: "all", sort: "watchers", view: "list", signals: null };
 
   function dollars(c){ return c==null ? "—" : "$"+(c/100).toLocaleString("en-US",{maximumFractionDigits:0}); }
   function vehLabel(v){ return [v.year,v.make,v.model,v.trim].filter(Boolean).join(" "); }
@@ -591,6 +614,23 @@
       state.board = d.board || [];
       updateCounts();
       render();
+    });
+  }
+
+  // Pricing signals — fetched alongside the board, cached, and surfaced via the
+  // "Signals" button. The button (and its count) hides entirely when there are
+  // no signals, so a well-priced lot doesn't show an empty nag.
+  function loadSignals(){
+    return fetch(API+"/dash/"+SLUG+"/signals").then(function(r){return r.json();}).then(function(d){
+      if(d.error) throw new Error(d.error);
+      state.signals = d;
+      var total = (d.counts && (d.counts.hold + d.counts.reprice)) || 0;
+      var btn=document.getElementById("signalsBtn"), cnt=document.getElementById("sig-count");
+      if(cnt) cnt.textContent = total;
+      if(btn) btn.style.display = total > 0 ? "inline-flex" : "none";
+    }).catch(function(){
+      // Signals are a nice-to-have; never let a signals hiccup break the board.
+      var btn=document.getElementById("signalsBtn"); if(btn) btn.style.display="none";
     });
   }
 
@@ -1409,11 +1449,72 @@
     b.classList.add("active"); render();
   });
 
+  // ── Pricing signals modal (the merchandising co-pilot) ──────────────────────
+  // Two honestly-framed sections. HOLD = demand + steady price (hold firm).
+  // REPRICE = aged + no LotPulse watchers + steady price (worth a review). The
+  // recommendation wording never prescribes a dollar amount and never claims
+  // "no demand" — only "no demand LotPulse can see." The caveat at the bottom
+  // makes that limit explicit so a dealer never mistakes the signal for a verdict.
+  function sigRowHtml(v, kind){
+    var name=[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
+    var evidence, say;
+    if(kind==="hold"){
+      evidence = v.watchers+" watching · price unchanged "+v.daysSincePriceChange+"d · "+v.daysOnLot+"d on lot";
+      say = "Demand's there and you haven't discounted — room to hold firm.";
+    } else {
+      evidence = v.daysOnLot+"d on lot · 0 watchers · price unchanged "+v.daysSincePriceChange+"d";
+      say = "No demand signal here on LotPulse — worth a pricing review.";
+    }
+    return '<div class="sig-row" data-vin="'+escapeHtml(v.vin)+'">'
+      +'<div class="sig-info">'
+        +'<div class="sig-name">'+escapeHtml(name)+(v.stockNumber?' <span style="color:var(--slate);font-weight:400">#'+escapeHtml(v.stockNumber)+'</span>':'')+'</div>'
+        +'<div class="sig-evidence">'+escapeHtml(evidence)+'</div>'
+        +'<div class="sig-say '+kind+'">'+escapeHtml(say)+'</div>'
+      +'</div>'
+      +'<div class="sig-price">'+dollars(v.priceCents)+'</div>'
+    +'</div>';
+  }
+  function openSignals(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.classList.add("open"); scrim.classList.add("open");
+    var d=state.signals;
+    if(!d){ modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button><div class="state">No signals loaded yet.</div></div>'; return; }
+    var hold=d.hold||[], reprice=d.reprice||[];
+    var body='';
+    if(hold.length){
+      body+='<div class="sig-sec-title hold">Sitting on demand</div>'
+        +'<div class="sig-sec-sub">Real interest, price steady — you have room to hold firm.</div>'
+        +hold.map(function(v){return sigRowHtml(v,"hold");}).join("");
+    }
+    if(reprice.length){
+      body+='<div class="sig-sec-title reprice">Gone cold</div>'
+        +'<div class="sig-sec-sub">Aged with no watch activity on your site — worth a pricing look.</div>'
+        +reprice.map(function(v){return sigRowHtml(v,"reprice");}).join("");
+    }
+    if(!hold.length && !reprice.length){
+      body='<div class="state">No pricing signals right now — nothing aged-and-cold, nothing sitting on unmet demand.</div>';
+    }
+    modal.innerHTML=
+      '<div class="mbody">'
+        +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+        +'<div class="mph-title" style="margin-top:0">Pricing signals</div>'
+        +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 8px">Where your lot\'s demand and pricing disagree. Tap a vehicle to open it.</p>'
+        +body
+        +'<div class="sig-caveat"><strong>How to read these:</strong> signals reflect the demand LotPulse can see — shoppers who watched on your website. A car with no watchers may still have real interest from phone, walk-ins, or other sites. Treat these as prompts to look, not verdicts — you know your market.</div>'
+      +'</div>';
+    modal.querySelectorAll(".sig-row[data-vin]").forEach(function(row){
+      row.addEventListener("click", function(){ openDetail(row.getAttribute("data-vin")); });
+    });
+  }
+  var _signalsBtn=document.getElementById("signalsBtn");
+  if(_signalsBtn) _signalsBtn.addEventListener("click", openSignals);
+
   function refresh(){
     Promise.all([loadSummary(), loadBoard()]).catch(function(e){
       document.getElementById("boardWrap").innerHTML='<div class="board"><div class="state">Could not load data: '+e.message+'</div></div>';
       document.getElementById("updated").textContent="offline";
     });
+    loadSignals(); // independent — its own failure never blocks the board
   }
   // Start only after unlock. If this session already passed the gate, unlock now.
   if(window.__lpUnlock){ unlockApp(); }
