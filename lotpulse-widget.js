@@ -1098,11 +1098,11 @@
       btn.setAttribute("data-lp-mode", "button");
       btn.textContent = "\uD83D\uDC41 Watch \u2014 Get Price Alerts";
       btn.style.cssText =
-        "display:block;width:100%;flex-shrink:0;flex-basis:auto;border:0;cursor:pointer;"
+        "display:block;width:100%;flex-shrink:0;flex-basis:auto;box-sizing:border-box;border:0;cursor:pointer;"
         + "background:#1F4FE0;color:#fff;"
         + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
-        + "font-size:13px;font-weight:700;letter-spacing:.01em;padding:10px 12px;"
-        + "border-radius:2px;margin-top:1px;transition:background .15s;";
+        + "font-size:14px;font-weight:600;padding:11px 14px;"
+        + "border-radius:8px;margin-top:6px;transition:background .15s;";
       btn.addEventListener("mouseenter", function () { btn.style.background = "#1740B8"; });
       btn.addEventListener("mouseleave", function () { btn.style.background = "#1F4FE0"; });
       // This stack is sized by Dealer Inspire to fit exactly the 2 buttons
