@@ -1499,12 +1499,59 @@
         +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
         +'<div class="mph-title" style="margin-top:0">Pricing signals</div>'
         +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 8px">Where your lot\'s demand and pricing disagree. Tap a vehicle to open it.</p>'
+        +((hold.length||reprice.length)?'<button class="crmbtn" id="sig-print" style="margin:0 0 8px">Print / Save as PDF</button>':'')
         +body
         +'<div class="sig-caveat"><strong>How to read these:</strong> signals reflect the demand LotPulse can see — shoppers who watched on your website. A car with no watchers may still have real interest from phone, walk-ins, or other sites. Treat these as prompts to look, not verdicts — you know your market.</div>'
       +'</div>';
     modal.querySelectorAll(".sig-row[data-vin]").forEach(function(row){
       row.addEventListener("click", function(){ openDetail(row.getAttribute("data-vin")); });
     });
+    var _sp=document.getElementById("sig-print");
+    if(_sp) _sp.addEventListener("click", printSignals);
+  }
+  // Printable signals sheet. Reuses the matchback print host (#mb-print-host),
+  // the .mb-printing body class, the @media print rule, and the .mb-* report
+  // styles — so this adds no new print plumbing, just a signals-flavored report.
+  // The honesty caveat rides along on the print, same as on screen.
+  function printSignals(){
+    var d=state.signals; if(!d) return;
+    var hold=d.hold||[], reprice=d.reprice||[];
+    if(!hold.length && !reprice.length) return;
+    var dealerName=currentDealerLabel();
+    var when=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+    function section(title, list, kind){
+      if(!list.length) return "";
+      var rows=list.map(function(v){
+        var name=[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
+        var evidence = kind==="hold"
+          ? (v.watchers+" watching · price unchanged "+v.daysSincePriceChange+"d · "+v.daysOnLot+"d on lot")
+          : (v.daysOnLot+"d on lot · 0 watchers · price unchanged "+v.daysSincePriceChange+"d");
+        var say = kind==="hold"
+          ? "Demand's there and you haven't discounted — room to hold firm."
+          : "No demand signal here on LotPulse — worth a pricing review.";
+        return '<div class="mb-person"><div class="mb-phead">'
+          +'<span class="mb-name">'+escapeHtml(name)+(v.stockNumber?' <span class="mb-carmeta">#'+escapeHtml(v.stockNumber)+'</span>':'')+'</span>'
+          +'<span class="mb-phone">'+dollars(v.priceCents)+'</span></div>'
+          +'<div class="mb-car">'+escapeHtml(evidence)+' — <span class="mb-carmeta">'+escapeHtml(say)+'</span></div>'
+          +'</div>';
+      }).join("");
+      return '<div class="mb-sec">'+escapeHtml(title)+' ('+list.length+')</div>'+rows;
+    }
+    var host=document.getElementById("mb-print-host");
+    if(!host){ host=document.createElement("div"); host.id="mb-print-host"; document.body.appendChild(host); }
+    host.innerHTML='<div class="mb-report">'
+      +'<div class="mb-head"><div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em></span> Pricing Signals</div>'
+      +'<div class="mb-sub">'+escapeHtml(dealerName)+' &middot; generated '+escapeHtml(when)+'</div></div>'
+      +section("Sitting on demand — real interest, price steady", hold, "hold")
+      +section("Gone cold — aged with no watch activity on your site", reprice, "reprice")
+      +'<div class="mb-foot"><strong>How to read these:</strong> signals reflect the demand LotPulse can see — shoppers who watched on your website. '
+        +'A car with no watchers may still have real interest from phone, walk-ins, or other sites. Treat these as prompts to look, not verdicts.</div>'
+      +'</div>';
+    document.body.classList.add("mb-printing");
+    var done=function(){ document.body.classList.remove("mb-printing"); window.removeEventListener("afterprint",done); };
+    window.addEventListener("afterprint",done);
+    setTimeout(done,60000); // Safari/iOS afterprint can be flaky; hard reset
+    window.print();
   }
   var _signalsBtn=document.getElementById("signalsBtn");
   if(_signalsBtn) _signalsBtn.addEventListener("click", openSignals);
