@@ -6,6 +6,7 @@
 //   2. Calls the LotPulse API for that VIN's watcher count + deal intel
 //   3. Injects the "Watch this car" widget into the page
 //   4. Handles the phone capture + consent and posts the watch
+//   5. Emits ASC-compliant analytics events to the dealer's own GA4 (dataLayer)
 //
 // It is fully self-contained: all styles are scoped inside a shadow DOM so the
 // host dealer site's CSS can never collide with ours (and ours can't leak out).
@@ -29,6 +30,89 @@
   if (!API || !KEY) {
     console.warn("[LotPulse] missing apiBase or publicKey; widget not loaded");
     return;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ANALYTICS — ASC-compliant events pushed to the DEALER's own dataLayer
+  // ══════════════════════════════════════════════════════════════════════════
+  // Events follow the Automotive Standards Council (ASC) parameter spec, so a
+  // dealer or agency already consuming ASC events from other vendors (Dealer
+  // Inspire, Impel, CDK...) can read ours with no custom setup. Every event
+  // carries event_owner + product_name so LotPulse traffic is filterable in a
+  // property shared by a dozen vendors.
+  //
+  // WHY dataLayer AND NOT Measurement Protocol from here: MP requires an API
+  // secret, and anything in this file is public on a dealer's website. Pushing
+  // to the dealer's existing dataLayer needs no credential at all and lands in
+  // THEIR property — which is where an agency actually wants it. LotPulse's own
+  // copy of these events comes from the server side, not from here.
+  //
+  // NOTE ON event_owner: the ASC spec publishes a fixed vendor list and
+  // "lotpulse" is not on it yet. GA4 accepts the value fine; getting listed is
+  // an ASC membership step, not a code change.
+  //
+  // This funnel is the thing LotPulse has never been able to see: today the
+  // product only knows about people who COMPLETED a watch. widget_view and
+  // watch_abandoned are what distinguish "nobody sees the widget" from "lots of
+  // people see it and bail at the phone field" — two problems with completely
+  // different fixes.
+  function lpEvent(eventName, params) {
+    try {
+      window.dataLayer = window.dataLayer || [];
+      var payload = {
+        event: eventName,
+        event_owner: "lotpulse",     // ASC: company sending the events
+        product_name: "LotPulse",    // ASC: the widget/tool generating the event
+      };
+      for (var k in params) {
+        if (params.hasOwnProperty(k) && params[k] !== null && params[k] !== undefined && params[k] !== "") {
+          payload[k] = params[k];
+        }
+      }
+      window.dataLayer.push(payload);
+      console.log("[LotPulse] event: " + eventName, payload);
+    } catch (e) {
+      // Analytics must NEVER break the widget. Swallow and move on.
+      console.warn("[LotPulse] event push failed (widget unaffected):", e);
+    }
+  }
+
+  // ASC page_type — mapped list; "item" = a single item (VDP),
+  // "itemlist" = a listing/search-results page (SRP).
+  function ascPageType(mode) {
+    return mode === "srp" ? "itemlist" : "item";
+  }
+
+  // Pull the Google Click ID off the landing URL if present, else from the
+  // _gcl_aw cookie Google Ads sets. This is what a future offline-conversion
+  // upload would need to tie a watch back to the ad click that produced it.
+  // Captured now so the data starts accumulating; storage is a separate step.
+  function getGclid() {
+    try {
+      var m = window.location.search.match(/[?&]gclid=([^&#]+)/);
+      if (m) return decodeURIComponent(m[1]);
+      var c = document.cookie.match(/(?:^|;\s*)_gcl_aw=([^;]+)/);
+      if (c) {
+        // _gcl_aw looks like "GCL.1699999999.<gclid>"
+        var parts = decodeURIComponent(c[1]).split(".");
+        if (parts.length >= 3) return parts.slice(2).join(".");
+      }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  // GA4's client id, read from the _ga cookie ("GA1.1.<cid1>.<cid2>").
+  // Lets a LotPulse watch be stitched to the visitor's wider session on the
+  // dealer's site rather than floating as an orphan event.
+  function getClientId() {
+    try {
+      var c = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
+      if (c) {
+        var p = decodeURIComponent(c[1]).split(".");
+        if (p.length >= 4) return p[2] + "." + p[3];
+      }
+    } catch (e) { /* ignore */ }
+    return null;
   }
 
   // ── VIN detection ──────────────────────────────────────────────────────────
@@ -186,6 +270,7 @@
       rootG.innerHTML = widgetHtml(demand);
       VDP_ROOT = rootG;
       wireWidget(rootG, vin, demand);
+      emitWidgetView(vin, demand, "vdp");
 
       // Wide vs. vertical is decided by the LIVE rendered width of the host,
       // re-evaluated continuously — never measured just once at mount. A
@@ -323,6 +408,7 @@
           }
           VDP_ROOT = root0;
           wireWidget(root0, vin, demand);
+          emitWidgetView(vin, demand, "vdp");
           return;
         }
       }
@@ -344,6 +430,23 @@
     VDP_ROOT = root;
 
     wireWidget(root, vin, demand);
+    emitWidgetView(vin, demand, "vdp");
+  }
+
+  // Fired once per mounted widget — the impression LotPulse has never had.
+  // Without this there's no denominator: 8 watches could be a 4% conversion
+  // rate on 200 views or a 67% rate on 12. Those need opposite responses.
+  function emitWidgetView(vin, demand, mode) {
+    lpEvent("lp_widget_view", {
+      item_id: vin,
+      item_condition: (demand && demand.condition) || null,
+      page_type: ascPageType(mode),
+      element_type: "item_details",
+      element_subtype: "cta_button",
+      element_text: "Watch this car",
+      event_action: "view",
+      page_location: window.location.href,
+    });
   }
 
   // Update the mounted widget's numbers when demand data arrives after mount.
@@ -687,6 +790,12 @@
     var consent = root.getElementById("lp-consent");
     var consentLabel = root.getElementById("lp-consent-label");
     var watching = false;
+    // Tracks whether the CURRENT sheet session ended in a submit. Reset on
+    // every open; set true on a successful watch. Read by closeSheet() to
+    // decide whether the close is an ABANDON or just the sheet tidying itself
+    // away after success — without it, every successful watch would also fire
+    // an abandon event and the funnel numbers would be nonsense.
+    var submittedThisSession = false;
 
     // Watching this car and consenting to texts are two SEPARATE, genuinely
     // optional choices — the button below is NEVER gated by this checkbox.
@@ -705,9 +814,43 @@
       // never left disabled from a previous in-flight submission.
       consent.checked = false;
       confirm.disabled = false;
+      submittedThisSession = false;
+      lpEvent("lp_watch_intent", {
+        item_id: vin,
+        item_condition: (demand && demand.condition) || null,
+        page_type: ascPageType("vdp"),
+        element_type: "item_details",
+        element_subtype: "cta_button",
+        element_text: "Watch this car",
+        event_action: "click",
+        event_action_result: "popup",
+        flow_name: "alert",
+        flow_outcome: "start",
+        page_location: window.location.href,
+      });
       setTimeout(function () { phone.focus(); }, 280);
     }
-    function closeSheet() { sheet.classList.remove("open"); scrim.classList.remove("open"); }
+    function closeSheet() {
+      var wasOpen = sheet.classList.contains("open");
+      sheet.classList.remove("open"); scrim.classList.remove("open");
+      // The signal LotPulse has never had: someone wanted this car enough to
+      // open the form, then left without giving a number. VIN is included so
+      // a pattern on a specific vehicle is visible; nothing identifying is —
+      // this person deliberately did not give us their info.
+      if (wasOpen && !submittedThisSession) {
+        lpEvent("lp_watch_abandoned", {
+          item_id: vin,
+          item_condition: (demand && demand.condition) || null,
+          page_type: ascPageType("vdp"),
+          element_type: "form",
+          event_action: "click",
+          event_action_result: "close",
+          flow_name: "alert",
+          flow_outcome: "close",
+          page_location: window.location.href,
+        });
+      }
+    }
 
     btn.addEventListener("click", function () { if (!watching) openSheet(); });
     scrim.addEventListener("click", closeSheet);
@@ -730,7 +873,12 @@
       }
       var smsConsent = consent.checked;
       confirm.disabled = true;
-      apiPost("/v1/watch", { vin: vin, phone: raw, smsConsent: smsConsent }).then(function (res) {
+      // gclid/clientId ride along so a watch can later be tied to the ad click
+      // and the visitor's session. Harmless extra fields if the API ignores them.
+      apiPost("/v1/watch", {
+        vin: vin, phone: raw, smsConsent: smsConsent,
+        gclid: getGclid(), clientId: getClientId(),
+      }).then(function (res) {
         confirm.disabled = false;
         if (!res.ok) {
           err.textContent = (res.json && res.json.error) || "Something went wrong. Try again.";
@@ -738,6 +886,20 @@
           return;
         }
         watching = true;
+        submittedThisSession = true;
+        lpEvent("lp_watch_created", {
+          item_id: vin,
+          item_condition: (demand && demand.condition) || null,
+          page_type: ascPageType("vdp"),
+          element_type: "form",
+          form_type: "alert",
+          event_action: "click",
+          event_action_result: "complete",
+          flow_name: "alert",
+          flow_outcome: "submit",
+          sms_consent: !!(res.json && res.json.smsEnabled),
+          page_location: window.location.href,
+        });
         closeSheet();
         var smsEnabled = !!(res.json && res.json.smsEnabled);
         root.getElementById("lp-lbl").textContent = smsEnabled ? "Watching — we'll text you" : "Watching this car";
@@ -929,6 +1091,9 @@
 
   var srpSheetHost = null;
   var srpActiveVin = null;
+  // Mirrors the VDP flag: set on a successful SRP watch so the shared sheet's
+  // close() can tell "closed after success" from a genuine abandon.
+  var srpSubmittedThisSession = false;
 
   function ensureSrpSheet() {
     if (srpSheetHost) return srpSheetHost;
@@ -1034,10 +1199,38 @@
       sheet.classList.add("open"); scrim.classList.add("open");
       consent.checked = false;
       confirm.disabled = false;
+      srpSubmittedThisSession = false;
       err.style.display = "none"; phone.value = "";
+      lpEvent("lp_watch_intent", {
+        item_id: srpActiveVin,
+        page_type: ascPageType("srp"),
+        element_type: "item_details",
+        element_subtype: "cta_button",
+        element_text: "Watch — Get Price Alerts",
+        event_action: "click",
+        event_action_result: "popup",
+        flow_name: "alert",
+        flow_outcome: "start",
+        page_location: window.location.href,
+      });
       setTimeout(function () { phone.focus(); }, 280);
     }
-    function close() { sheet.classList.remove("open"); scrim.classList.remove("open"); }
+    function close() {
+      var wasOpen = sheet.classList.contains("open");
+      sheet.classList.remove("open"); scrim.classList.remove("open");
+      if (wasOpen && !srpSubmittedThisSession) {
+        lpEvent("lp_watch_abandoned", {
+          item_id: srpActiveVin,
+          page_type: ascPageType("srp"),
+          element_type: "form",
+          event_action: "click",
+          event_action_result: "close",
+          flow_name: "alert",
+          flow_outcome: "close",
+          page_location: window.location.href,
+        });
+      }
+    }
     host._lpOpen = open; // exposed so per-card icon clicks can trigger this shared sheet
 
     scrim.addEventListener("click", close);
@@ -1060,9 +1253,25 @@
       if (!srpActiveVin) return;
       var smsConsent = consent.checked;
       confirm.disabled = true;
-      apiPost("/v1/watch", { vin: srpActiveVin, phone: raw, smsConsent: smsConsent }).then(function (res) {
-        close();
+      apiPost("/v1/watch", {
+        vin: srpActiveVin, phone: raw, smsConsent: smsConsent,
+        gclid: getGclid(), clientId: getClientId(),
+      }).then(function (res) {
+        srpSubmittedThisSession = true;
         var smsEnabled = !!(res && res.json && res.json.smsEnabled);
+        lpEvent("lp_watch_created", {
+          item_id: srpActiveVin,
+          page_type: ascPageType("srp"),
+          element_type: "form",
+          form_type: "alert",
+          event_action: "click",
+          event_action_result: "complete",
+          flow_name: "alert",
+          flow_outcome: "submit",
+          sms_consent: smsEnabled,
+          page_location: window.location.href,
+        });
+        close();
         var el = document.querySelector('[data-lp-srp="' + srpActiveVin + '"]');
         if (el) {
           el.style.background = "#1E8E5A";
@@ -1185,6 +1394,7 @@
           + " (card boundary: " + (hadHit ? ".hit" : "generic-fallback") + ")");
         var mountedBtn = card.querySelector('[data-lp-srp="' + entry.vin + '"]');
         if (mountedBtn) reportGeometry(entry.vin, mountedBtn);
+        emitWidgetView(entry.vin, null, "srp");
       }
     });
   }
