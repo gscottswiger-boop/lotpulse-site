@@ -758,6 +758,7 @@
     +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>Price drops — you hear first, before the listing updates</li>'
     +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>Demand alerts — know when others start watching</li>'
     +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Sold notice — never chase a car that\'s already gone</li>'
+    +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>New arrivals — when another one like it lands on the lot</li>'
     +   '</ul>'
     +   '<div class="err" id="lp-err"></div>'
     +   '<div class="field"><span class="cc">+1</span>'
@@ -802,10 +803,22 @@
     // (A2P/carrier review requires this: bundling "use the feature" with
     // "agree to be texted" is forced consent, error 30923.) Unchecked by
     // default either way, per the earlier 30925 requirement.
+    //
+    // SCOPE NOTE — read before editing: this text defines the OUTER LIMIT of
+    // what may ever be sent to this watcher. "Similar vehicles" is deliberately
+    // pinned to SAME MAKE AND MODEL, because vague wording ("similar inventory")
+    // would let a Wrangler watcher be texted about a Gladiator and reasonably
+    // feel misled. If the arrival-matching logic is ever widened, this sentence
+    // must be widened FIRST — never the other way around.
+    //
+    // Watchers who opted in under EARLIER, narrower wording are not covered by
+    // this text; arrival alerts may only go to watchers who consented after
+    // this copy shipped.
     consentLabel.textContent =
-      "Optional: also text me when the price drops. I agree to receive automated "
-      + "marketing text messages about this vehicle from this dealer at the number "
-      + "above. Consent is not a condition of purchase.";
+      "Optional: also text me when the price drops on this vehicle, and when "
+      + "similar vehicles (same make and model) arrive. I agree to receive automated "
+      + "marketing text messages about this vehicle and similar inventory from this "
+      + "dealer at the number above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
     function openSheet() {
@@ -1159,6 +1172,7 @@
       +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>Price drops — you hear first, before the listing updates</li>'
       +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>Demand alerts — know when others start watching</li>'
       +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Sold notice — never chase a car that\'s already gone</li>'
+      +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>New arrivals — when another one like it lands on the lot</li>'
       +   '</ul>'
       +   '<div class="err" id="s-err"></div>'
       +   '<div class="field"><span class="cc">+1</span>'
@@ -1189,10 +1203,15 @@
     // Watching this car and consenting to texts are two SEPARATE, genuinely
     // optional choices — confirm is NEVER gated by this checkbox (A2P error
     // 30923, forced consent). Unchecked by default either way (30925).
+    //
+    // MUST STAY IDENTICAL to the VDP sheet's consent text — a shopper who opts
+    // in from a listing page and one who opts in from a vehicle page are
+    // agreeing to exactly the same thing. See the scope note on the VDP copy.
     consentLabel.textContent =
-      "Optional: also text me when the price drops. I agree to receive automated "
-      + "marketing text messages about this vehicle from this dealer at the number "
-      + "above. Consent is not a condition of purchase.";
+      "Optional: also text me when the price drops on this vehicle, and when "
+      + "similar vehicles (same make and model) arrive. I agree to receive automated "
+      + "marketing text messages about this vehicle and similar inventory from this "
+      + "dealer at the number above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
     function open() {
