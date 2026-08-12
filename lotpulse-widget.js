@@ -658,7 +658,7 @@
     // draws the visible box — appearance:none on a native checkbox isn't
     // reliably honored in every browser (privacy-hardened engines especially),
     // so this avoids depending on that entirely.
-    + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer;position:relative}'
+    + '.consent{display:flex;align-items:flex-start;gap:10px;margin:2px 0 12px;cursor:pointer;position:relative}'
     + '.consent input[type=checkbox]{position:absolute;left:0;top:0;width:23px;height:23px;'
     +   'margin:0;opacity:0;cursor:pointer;z-index:2}'
     + '.consent .cbx{width:23px;height:23px;flex-shrink:0;border:2.5px solid #8A93A3;border-radius:6px;'
@@ -667,7 +667,7 @@
     + '.consent input[type=checkbox]:checked + .cbx{background:#1F4FE0;border-color:#1F4FE0}'
     + '.consent input[type=checkbox]:checked + .cbx::after{content:"";position:absolute;left:6px;top:2px;'
     +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
-    + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
+    + '.consent label{font-size:12.5px;line-height:1.4;color:#3A434D;cursor:pointer}'
     + '.btn.watching{background:#1E8E5A;box-shadow:0 4px 14px rgba(30,142,90,.3)}'
     // reassurance row under button — the no-pressure promise, made loud
     + '.promise{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:11px;flex-wrap:wrap}'
@@ -700,16 +700,25 @@
     + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
     +   'transition:opacity .22s;z-index:2147483646}'
     + '.scrim.open{opacity:1;pointer-events:auto}'
+    // Cap the sheet at the viewport and let it scroll internally. Adding the
+    // fourth perk and the longer (legally load-bearing) consent text pushed the
+    // sheet taller than a phone screen, which buried "Start watching" below the
+    // fold — a shopper had to scroll inside the sheet to find the submit. The
+    // content can't shrink, so the container has to behave: dvh tracks mobile
+    // browser chrome correctly (vh does not), and the safe-area inset keeps the
+    // button clear of the iOS home indicator.
     + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:520px;margin:0 auto;pointer-events:auto;'
     +   'background:#fff;border-radius:24px 24px 0 0;padding:10px 22px 26px;'
+    +   'max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;'
+    +   'padding-bottom:calc(26px + env(safe-area-inset-bottom,0px));'
     +   'transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.2,1);'
     +   'box-shadow:0 -16px 56px rgba(13,18,28,.22);font-family:inherit}'
     + '.sheet.open{transform:translateY(0)}'
     + '.grab{width:40px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 18px}'
-    + '.sheet h3{font-size:23px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.02em;line-height:1.15}'
-    + '.sheet .psub{font-size:14px;color:#5C6670;margin:0 0 16px}'
-    + '.perks{list-style:none;margin:0 0 18px;padding:0}'
-    + '.perks li{display:flex;gap:11px;align-items:center;font-size:14px;color:#2A323A;padding:6px 0}'
+    + '.sheet h3{font-size:21px;font-weight:800;color:#14181D;margin:0 0 5px;letter-spacing:-.02em;line-height:1.15}'
+    + '.sheet .psub{font-size:13.5px;color:#5C6670;margin:0 0 12px;line-height:1.4}'
+    + '.perks{list-style:none;margin:0 0 12px;padding:0}'
+    + '.perks li{display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.35;color:#2A323A;padding:4px 0}'
     + '.perks .pk{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;'
     +   'justify-content:center;background:#EAF1FF;color:#1F4FE0}'
     + '.field{display:flex;align-items:center;gap:10px;border:1.5px solid #E4E7E4;border-radius:13px;'
@@ -1129,17 +1138,20 @@
       + '.scrim{position:fixed;inset:0;background:rgba(13,18,28,.5);opacity:0;pointer-events:none;'
       +   'transition:opacity .22s;z-index:2147483646}'
       + '.scrim.open{opacity:1;pointer-events:auto}'
+      // Same viewport cap + internal scroll as the VDP sheet — see the note there.
       + '.sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:480px;margin:0 auto;'
       +   'background:#fff;border-radius:24px 24px 0 0;padding:10px 22px 26px;'
+      +   'max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;'
+      +   'padding-bottom:calc(26px + env(safe-area-inset-bottom,0px));'
       +   'transform:translateY(105%);transition:transform .3s cubic-bezier(.32,.72,.2,1);'
       +   'box-shadow:0 -16px 56px rgba(13,18,28,.22);'
       +   'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}'
       + '.sheet.open{transform:translateY(0)}'
-      + '.grab{width:40px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 18px}'
-      + 'h3{font-size:21px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.02em}'
-      + '.psub{font-size:14px;color:#5C6670;margin:0 0 16px}'
-      + '.perks{list-style:none;margin:0 0 18px;padding:0}'
-      + '.perks li{display:flex;gap:11px;align-items:center;font-size:14px;color:#2A323A;padding:6px 0}'
+      + '.grab{width:40px;height:4px;border-radius:2px;background:#E4E7E4;margin:0 auto 12px}'
+      + 'h3{font-size:20px;font-weight:800;color:#14181D;margin:0 0 5px;letter-spacing:-.02em}'
+      + '.psub{font-size:13.5px;color:#5C6670;margin:0 0 12px;line-height:1.4}'
+      + '.perks{list-style:none;margin:0 0 12px;padding:0}'
+      + '.perks li{display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.35;color:#2A323A;padding:4px 0}'
       + '.perks .pk{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;'
       +   'justify-content:center;background:#EAF1FF;color:#1F4FE0}'
       + '.field{display:flex;align-items:center;gap:10px;border:1.5px solid #E4E7E4;border-radius:13px;'
@@ -1148,7 +1160,7 @@
       + '.cc{font-weight:700;color:#5C6670;font-size:15px}'
       + 'input{border:0;outline:0;flex:1;font-family:inherit;font-size:17px;font-weight:600;'
       +   'color:#14181D;background:transparent;min-width:0}'
-      + '.consent{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;cursor:pointer;position:relative}'
+      + '.consent{display:flex;align-items:flex-start;gap:10px;margin:2px 0 12px;cursor:pointer;position:relative}'
       + '.consent input[type=checkbox]{position:absolute;left:0;top:0;width:23px;height:23px;'
       +   'margin:0;opacity:0;cursor:pointer;z-index:2}'
       + '.consent .cbx{width:23px;height:23px;flex-shrink:0;border:2.5px solid #8A93A3;border-radius:6px;'
@@ -1156,7 +1168,7 @@
       + '.consent input[type=checkbox]:checked + .cbx{background:#1F4FE0;border-color:#1F4FE0}'
       + '.consent input[type=checkbox]:checked + .cbx::after{content:"";position:absolute;left:6px;top:2px;'
       +   'width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}'
-      + '.consent label{font-size:13px;line-height:1.45;color:#3A434D;cursor:pointer}'
+      + '.consent label{font-size:12.5px;line-height:1.4;color:#3A434D;cursor:pointer}'
       + '.btn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:13px;'
       +   'padding:16px;font-size:16px;font-weight:700;font-family:inherit}'
       + '.btn:disabled{background:#C7D3EE;cursor:not-allowed}'
