@@ -762,7 +762,7 @@
     + '<div class="sheet" id="lp-sheet" role="dialog" aria-modal="true">'
     +   '<div class="grab"></div>'
     +   '<h3>Get a text when this price drops</h3>'
-    +   '<p class="psub">No forms to fill out. Just your number and we\'ll text you when the price drops.</p>'
+    +   '<p class="psub">No forms to fill out. Just your number \u2014 and check the box below if you want the text alerts when the price drops.</p>'
     +   '<ul class="perks">'
     +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>Price drops — you hear first, before the listing updates</li>'
     +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>Demand alerts — know when others start watching</li>'
@@ -779,7 +779,7 @@
     +   '</div>'
     +   '<button class="btn" id="lp-confirm">'
     +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
-    +     'Start watching</button>'
+    +     '<span id="lp-confirm-lbl">Watch without texts</span></button>'
     +   '<div class="fine" id="lp-fine"></div>'
     +   '<div class="fine" style="margin-top:4px">'
     +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
@@ -830,6 +830,24 @@
       + "dealer at the number above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
+    // The submit button states the OUTCOME of the checkbox as it stands right
+    // now. This exists because the checkbox sits between the phone field and a
+    // big blue button and was losing to momentum: shoppers entered a number,
+    // tapped submit, and ended up with a watch and NO alerts — while the sheet
+    // headline had just promised "get a text when this price drops." They
+    // weren't declining, they were skimming.
+    //
+    // Naming the outcome on the button converts a missed checkbox into an
+    // informed choice at the exact moment of decision. Critically this does NOT
+    // gate anything — the button stays fully enabled either way, which is the
+    // A2P forced-consent requirement (error 30923). It only tells the truth
+    // about what is about to happen.
+    function syncConfirmLabel() {
+      var lbl = root.getElementById("lp-confirm-lbl");
+      if (lbl) lbl.textContent = consent.checked ? "Start watching" : "Watch without texts";
+    }
+    consent.addEventListener("change", syncConfirmLabel);
+
     function openSheet() {
       sheet.classList.add("open"); scrim.classList.add("open");
       // Reset every time the sheet opens — never silently pre-checked, and
@@ -837,6 +855,7 @@
       consent.checked = false;
       confirm.disabled = false;
       submittedThisSession = false;
+      syncConfirmLabel();
       lpEvent("lp_watch_intent", {
         item_id: vin,
         item_condition: (demand && demand.condition) || null,
@@ -1179,7 +1198,7 @@
       + '<div class="sheet" id="s-sheet" role="dialog" aria-modal="true">'
       +   '<div class="grab"></div>'
       +   '<h3>Get a text when this price drops</h3>'
-      +   '<p class="psub">No forms to fill out. Just your number and we\'ll text you when the price drops.</p>'
+      +   '<p class="psub">No forms to fill out. Just your number \u2014 and check the box below if you want the text alerts when the price drops.</p>'
       +   '<ul class="perks">'
       +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>Price drops — you hear first, before the listing updates</li>'
       +     '<li><span class="pk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>Demand alerts — know when others start watching</li>'
@@ -1192,7 +1211,7 @@
       +   '<div class="consent"><input type="checkbox" id="s-consent">'
       +     '<span class="cbx" aria-hidden="true"></span>'
       +     '<label for="s-consent" id="s-consent-label"></label></div>'
-      +   '<button class="btn" id="s-confirm">Start watching</button>'
+      +   '<button class="btn" id="s-confirm"><span id="s-confirm-lbl">Watch without texts</span></button>'
       +   '<div class="fine" id="s-fine"></div>'
       +   '<div class="fine" style="margin-top:4px">'
       +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
@@ -1226,12 +1245,21 @@
       + "dealer at the number above. Consent is not a condition of purchase.";
     fine.textContent = "Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.";
 
+    // Mirrors the VDP sheet: the button names the outcome of the checkbox as it
+    // currently stands, without ever gating submission. See the note there.
+    function syncConfirmLabel() {
+      var lbl = root.getElementById("s-confirm-lbl");
+      if (lbl) lbl.textContent = consent.checked ? "Start watching" : "Watch without texts";
+    }
+    consent.addEventListener("change", syncConfirmLabel);
+
     function open() {
       sheet.classList.add("open"); scrim.classList.add("open");
       consent.checked = false;
       confirm.disabled = false;
       srpSubmittedThisSession = false;
       err.style.display = "none"; phone.value = "";
+      syncConfirmLabel();
       lpEvent("lp_watch_intent", {
         item_id: srpActiveVin,
         page_type: ascPageType("srp"),
