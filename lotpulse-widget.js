@@ -729,6 +729,28 @@
     +   'color:#14181D;background:transparent;min-width:0}'
     + '.fine{font-size:10.5px;line-height:1.5;color:#9AA29C;margin-top:12px}'
     + '.err{color:#DE3730;font-size:13px;font-weight:600;margin-bottom:10px;display:none}'
+    // Post-submit confirmation panel. Replaces the form once a watch is saved.
+    // Its real job is for shoppers who DECLINED texts: without this they hand
+    // over a phone number and get nothing back at all. The link is the one
+    // channel that needs no consent.
+    + '.done{display:none;text-align:center;padding:6px 0 2px}'
+    + '.done .tick{width:52px;height:52px;border-radius:50%;background:#EAF6EF;color:#1E8E5A;'
+    +   'display:flex;align-items:center;justify-content:center;margin:0 auto 14px}'
+    + '.done h4{font-size:19px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.01em}'
+    + '.done p{font-size:13.5px;color:#5C6670;margin:0 0 16px;line-height:1.45}'
+    + '.mdbox{background:#F5F8FF;border:1px solid #D6E2FF;border-radius:13px;padding:14px;text-align:left}'
+    + '.mdbox .lbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;'
+    +   'color:#1F4FE0;margin-bottom:7px}'
+    + '.mdbox .url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;'
+    +   'color:#3A434D;word-break:break-all;line-height:1.45;margin-bottom:11px}'
+    + '.mdbtns{display:flex;gap:8px}'
+    + '.mdbtns a,.mdbtns button{flex:1;border:0;cursor:pointer;font-family:inherit;font-size:13.5px;'
+    +   'font-weight:700;padding:11px;border-radius:10px;text-align:center;text-decoration:none;'
+    +   'transition:background .14s}'
+    + '.mdbtns a{background:#1F4FE0;color:#fff}'
+    + '.mdbtns a:hover{background:#1740B8}'
+    + '.mdbtns button{background:#fff;color:#1F4FE0;border:1px solid #C7D4F8}'
+    + '.mdbtns button:hover{background:#EAF1FF}'
     + '</style>'
     + '<div class="card">'
     +   '<div class="hd"><div class="spark">'
@@ -785,6 +807,19 @@
     +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
     +     ' &nbsp;·&nbsp; '
     +     '<a href="https://lotpulse.io/terms.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">SMS Terms</a>'
+    +   '</div>'
+    +   '<div class="done" id="lp-done">'
+    +     '<div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+    +     '<h4 id="lp-done-h">You\'re watching this car</h4>'
+    +     '<p id="lp-done-p"></p>'
+    +     '<div class="mdbox">'
+    +       '<div class="lbl">Your car list</div>'
+    +       '<div class="url" id="lp-md-url"></div>'
+    +       '<div class="mdbtns">'
+    +         '<a id="lp-md-open" href="#" target="_blank" rel="noopener">Open my list</a>'
+    +         '<button type="button" id="lp-md-copy">Copy link</button>'
+    +       '</div>'
+    +     '</div>'
     +   '</div>'
     + '</div>';
   }
@@ -878,7 +913,12 @@
       // open the form, then left without giving a number. VIN is included so
       // a pattern on a specific vehicle is visible; nothing identifying is —
       // this person deliberately did not give us their info.
-      if (wasOpen && !submittedThisSession) {
+      //
+      // `watching` is checked as well as submittedThisSession: the success
+      // panel now stays open inside the sheet, so dismissing the sheet AFTER a
+      // successful watch would otherwise be miscounted as an abandon and would
+      // corrupt the funnel this event exists to measure.
+      if (wasOpen && !submittedThisSession && !watching) {
         lpEvent("lp_watch_abandoned", {
           item_id: vin,
           item_condition: (demand && demand.condition) || null,
@@ -891,6 +931,54 @@
           page_location: window.location.href,
         });
       }
+    }
+
+    // Swap the sheet's form for the success panel. Everything above the panel is
+    // hidden rather than removed, so nothing has to be re-rendered if the
+    // shopper reopens the sheet later.
+    function showDone(smsEnabled, mydriveUrl) {
+      var sel = ["h3", ".psub", ".perks", ".field", ".consent", "#lp-confirm", "#lp-fine"];
+      sel.forEach(function (q) {
+        var el = sheet.querySelector(q);
+        if (el) el.style.display = "none";
+      });
+      var doneEl = root.getElementById("lp-done");
+      var h = root.getElementById("lp-done-h");
+      var pEl = root.getElementById("lp-done-p");
+      if (h) h.textContent = smsEnabled ? "You're all set" : "You're watching this car";
+      if (pEl) {
+        pEl.textContent = smsEnabled
+          ? "We'll text you the moment this price drops. Reply STOP anytime."
+          : "No texts will be sent. Bookmark your list below to check back on this car.";
+      }
+      var box = sheet.querySelector(".mdbox");
+      if (mydriveUrl) {
+        var urlEl = root.getElementById("lp-md-url");
+        var openEl = root.getElementById("lp-md-open");
+        if (urlEl) urlEl.textContent = mydriveUrl.replace(/^https?:\/\//, "");
+        if (openEl) openEl.setAttribute("href", mydriveUrl);
+        var copyBtn = root.getElementById("lp-md-copy");
+        if (copyBtn) {
+          copyBtn.addEventListener("click", function () {
+            var done = function () { copyBtn.textContent = "Copied"; };
+            try {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(mydriveUrl).then(done, function () {});
+              } else {
+                // Older mobile browsers: select the text so a long-press copy works.
+                var r = document.createRange();
+                r.selectNodeContents(root.getElementById("lp-md-url"));
+                var selc = window.getSelection(); selc.removeAllRanges(); selc.addRange(r);
+                done();
+              }
+            } catch (e) { /* leave the label alone if copy isn't available */ }
+          });
+        }
+      } else if (box) {
+        // No token (patch not run) — hide the box rather than show an empty one.
+        box.style.display = "none";
+      }
+      if (doneEl) doneEl.style.display = "block";
     }
 
     btn.addEventListener("click", function () { if (!watching) openSheet(); });
@@ -941,8 +1029,14 @@
           sms_consent: !!(res.json && res.json.smsEnabled),
           page_location: window.location.href,
         });
-        closeSheet();
+        // Show the confirmation panel IN the sheet rather than closing it. The
+        // sheet used to just vanish, which for a no-consent shopper meant they
+        // handed over a phone number and saw nothing at all. Now everyone gets
+        // their private list link; for the no-texts case it is the only thing
+        // they get, and it is the whole reason MyDrive exists.
         var smsEnabled = !!(res.json && res.json.smsEnabled);
+        var mdUrl = (res.json && res.json.mydriveUrl) || null;
+        showDone(smsEnabled, mdUrl);
         root.getElementById("lp-lbl").textContent = smsEnabled ? "Watching — we'll text you" : "Watching this car";
         btn.classList.add("watching");
         var promiseEl = root.getElementById("lp-promise");
