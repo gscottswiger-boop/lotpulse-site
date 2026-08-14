@@ -955,8 +955,15 @@
       if (mydriveUrl) {
         var urlEl = root.getElementById("lp-md-url");
         var openEl = root.getElementById("lp-md-open");
+        // Displayed and COPIED URL stays clean — the shopper is going to
+        // bookmark this, and campaign params on a personal link are noise.
+        // Only the tap-through is tagged, so MyDrive's own analytics can tell
+        // how many people actually open their list from this panel.
         if (urlEl) urlEl.textContent = mydriveUrl.replace(/^https?:\/\//, "");
-        if (openEl) openEl.setAttribute("href", mydriveUrl);
+        var taggedUrl = mydriveUrl
+          + (mydriveUrl.indexOf("?") === -1 ? "?" : "&")
+          + "utm_source=lotpulse&utm_medium=widget&utm_campaign=watch_confirm";
+        if (openEl) openEl.setAttribute("href", taggedUrl);
         var copyBtn = root.getElementById("lp-md-copy");
         if (copyBtn) {
           copyBtn.addEventListener("click", function () {
