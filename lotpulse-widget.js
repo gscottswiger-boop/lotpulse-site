@@ -1487,7 +1487,20 @@
       stack.style.height = "auto";
       stack.style.maxHeight = "none";
       stack.style.overflow = "visible";
-      stack.appendChild(btn);
+      // DDC SRP cards order their CTAs as .price-btn.cst-btn-0 (the ePrice /
+      // "Request More Info" image button), then cst-btn-1 (window sticker),
+      // then async financing blocks (Capital One, Chase). Appending to the end
+      // buries the watch button under the financing stack — and that block
+      // renders late, so the button's position would also visibly jump.
+      // Insert immediately AFTER cst-btn-0 instead: stable, server-rendered,
+      // and directly beneath the primary CTA. Other platforms have no
+      // cst-btn-0, so they append exactly as before.
+      var eprice = stack.querySelector(":scope > .cst-btn-0, :scope > [class*='cst-btn-0']");
+      if (eprice && eprice.parentNode === stack) {
+        stack.insertBefore(btn, eprice.nextSibling);
+      } else {
+        stack.appendChild(btn);
+      }
     } else {
       // No native CTA stack on this template — fall back to a small
       // floating icon over the photo rather than guessing at button styling.
@@ -1566,23 +1579,63 @@
   function watchSrpForLateCards() {
     if (srpWatchStarted) return;
     srpWatchStarted = true;
-    var tries = 0;
+
+    // ── Why an OBSERVER and not a bounded poll ───────────────────────────────
+    // The old version polled every 500ms and gave up after ~12s. That failed
+    // badly on Dealer.com: a live KIMA SRP logged "0 vehicle element(s), 29
+    // distinct VIN(s) in JSON-LD" at boot, yet querying [data-vin] after
+    // scrolling returned 78 elements across 29 cards. DDC renders each card's
+    // VIN-bearing block (the Capital One financing widget) only as the card
+    // scrolls into view, so almost every card materialised long after the poll
+    // window had closed — exactly one or two cards ever got a button.
+    //
+    // On an infinite-scroll listing there is no moment when "all cards" exist,
+    // so any fixed deadline is wrong by construction. The observer stays alive
+    // for the life of the page and picks up cards whenever they arrive.
+    //
+    // Cost control, since this runs on a 196-vehicle page:
+    //   • Debounced — a burst of DOM mutations triggers ONE scan, not fifty.
+    //   • mountSrpButton() returns immediately if the card already has a
+    //     button, so re-scanning is cheap and idempotent.
+    //   • The observer only watches childList/subtree, not attributes, so
+    //     routine style and class churn doesn't wake it.
     var everFound = false;
-    var iv = setInterval(function () {
-      tries++;
+    var pending = null;
+
+    function scan() {
+      pending = null;
       var found = findAllVins();
       if (found.length) { everFound = true; mountAllSrp(found); }
-      // ~12s window — longer than the VDP anchor-wait, since listing grids
-      // are more likely to lazy-load and mobile may render a beat slower.
-      if (tries > 24) {
-        clearInterval(iv);
-        if (!everFound) {
-          console.warn("[LotPulse] gave up after 12s — found 0 vehicles on this page. "
-            + "Either this isn't an inventory page, or the VIN markup here doesn't "
-            + "match any known pattern yet.");
-        }
+    }
+    function scheduleScan() {
+      if (pending) return;
+      pending = setTimeout(scan, 250);
+    }
+
+    scan(); // immediate first pass
+
+    if (typeof MutationObserver !== "undefined") {
+      try {
+        new MutationObserver(scheduleScan).observe(document.body, {
+          childList: true, subtree: true,
+        });
+      } catch (e) {
+        console.warn("[LotPulse] MutationObserver failed, falling back to polling:", e);
       }
-    }, 500);
+    }
+
+    // Belt-and-braces for anything the observer misses (some frameworks swap
+    // whole subtrees in ways that can race a debounce). A handful of spaced
+    // re-scans, then stop — the observer is the real mechanism.
+    [1000, 2500, 5000, 10000].forEach(function (ms) { setTimeout(scan, ms); });
+
+    setTimeout(function () {
+      if (!everFound) {
+        console.warn("[LotPulse] no vehicles found on this page after 10s. "
+          + "Either this isn't an inventory page, or the VIN markup here doesn't "
+          + "match any known pattern yet.");
+      }
+    }, 10500);
   }
 
   // ── Boot ────────────────────────────────────────────────────────────────────
