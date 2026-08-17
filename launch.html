@@ -78,10 +78,40 @@
 
   .warn{background:var(--amber-soft);border:1px solid #F3D9A6;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#7A5300;margin-bottom:16px;line-height:1.5}
   .err{background:var(--red-soft);color:#9A2E29;border-radius:10px;padding:11px 13px;font-size:13px;margin-top:10px;display:none}
+
+  /* Agency-code gate. Validated SERVER-side via /dash/resolve-code — the same
+     endpoint and brute-force limiter that guard the dashboard. This page is the
+     more sensitive of the two admin surfaces: it onboards rooftops and displays
+     feed URLs containing live tokens. */
+  #gate{position:fixed;inset:0;z-index:200;background:#14181D;display:flex;
+    align-items:center;justify-content:center;padding:24px}
+  #gate .box{width:100%;max-width:360px;text-align:center}
+  #gate .mkw{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;
+    border-radius:13px;background:#fff;margin-bottom:18px}
+  #gate h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:#fff;letter-spacing:.02em}
+  #gate .gsub{color:#8A929B;font-size:14px;margin:6px 0 22px}
+  #gate input{width:100%;font-family:inherit;font-size:17px;text-align:center;letter-spacing:.1em;
+    color:#14181D;background:#fff;border:0;border-radius:11px;padding:15px;margin-bottom:10px}
+  #gate .gerr{color:#FF8A84;font-size:13px;min-height:18px;margin-bottom:8px}
+  #gate button{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:11px;
+    padding:15px;font-family:inherit;font-weight:700;font-size:16px}
+  #gate button:disabled{background:#3A4560;cursor:default}
 </style>
 </head>
 <body>
-<div class="shell">
+<div id="gate">
+  <div class="box">
+    <div class="mkw"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg></div>
+    <h1>Dealer Launch</h1>
+    <div class="gsub">Enter your agency access code</div>
+    <input id="gateCode" type="password" inputmode="text" autocapitalize="none" autocorrect="off"
+           placeholder="Agency code" autocomplete="off" spellcheck="false">
+    <div class="gerr" id="gateErr"></div>
+    <button id="gateBtn">Unlock</button>
+  </div>
+</div>
+
+<div class="shell" id="app" style="display:none">
   <div class="top">
     <div class="wm-pulse"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg></div>
     <div class="wm-text">Lot<em>Pulse</em></div>
@@ -189,6 +219,59 @@
 <script>
   var API = "https://lotpulse-q249.onrender.com";
 
+  // ── Agency-code gate ─────────────────────────────────────────────────────
+  // Server-validated via /dash/resolve-code, which carries the same brute-force
+  // limiter as the dashboard. Requires scope === "agency": a per-DEALER code
+  // also resolves successfully against that endpoint, and must never reach
+  // dealer-onboarding tooling that displays live feed tokens.
+  //
+  // This is defence in depth, not the security boundary — ADMIN_TOKEN is still
+  // verified server-side on every call below. It stops casual discovery and
+  // means an attacker needs the agency code AND the token.
+  (function(){
+    var gate = document.getElementById("gate");
+    var app = document.getElementById("app");
+    var gCode = document.getElementById("gateCode");
+    var gBtn = document.getElementById("gateBtn");
+    var gErr = document.getElementById("gateErr");
+
+    function tryUnlock(){
+      var code = gCode.value.trim();
+      if (!code) { gErr.textContent = "Enter your agency code."; return; }
+      gBtn.disabled = true; gBtn.textContent = "Checking\u2026"; gErr.textContent = "";
+      fetch(API + "/dash/resolve-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code })
+      }).then(function(r){
+        return r.json().then(function(j){ return { status: r.status, body: j }; });
+      }).then(function(res){
+        if (res.body && res.body.ok && res.body.scope === "agency") {
+          gate.style.display = "none";
+          app.style.display = "block";
+          setTimeout(function(){ var t = document.getElementById("token"); if (t) t.focus(); }, 120);
+          return;
+        }
+        if (res.status === 429) {
+          gErr.textContent = (res.body && res.body.error) || "Too many attempts. Try again shortly.";
+        } else if (res.body && res.body.ok) {
+          gErr.textContent = "That's a dealer code. Launch needs the agency code.";
+        } else {
+          gErr.textContent = "Incorrect code.";
+        }
+        gCode.value = ""; gCode.focus();
+      }).catch(function(){
+        gErr.textContent = "Couldn't reach LotPulse. Check your connection.";
+      }).finally(function(){
+        gBtn.disabled = false; gBtn.textContent = "Unlock";
+      });
+    }
+
+    gBtn.addEventListener("click", tryUnlock);
+    gCode.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
+    setTimeout(function(){ gCode.focus(); }, 200);
+  })();
+
   // Auto-slugify the name into the slug field, but stop once the user edits
   // slug directly so we never clobber a manual choice.
   var slugTouched = false;
@@ -212,17 +295,22 @@
     el.innerHTML = '<span class="dot"></span><span>' + label + '</span>';
   }
 
-  // Admin auth travels as a ?token= query parameter, NOT the x-admin-token
-  // header. The custom header forces a CORS preflight the API doesn't
-  // whitelist ("x-admin-token is not allowed by Access-Control-Allow-Headers"),
-  // so header-based calls die in the browser as "Failed to fetch" before
-  // ever reaching the server. The admin routes accept ?token= natively —
-  // same auth path the browser-triggered /admin/patch calls have always used.
+  // Admin auth now travels in the x-admin-token HEADER, not a ?token= query
+  // parameter. This previously could NOT work: the custom header forces a CORS
+  // preflight, and the API's Access-Control-Allow-Headers didn't whitelist it,
+  // so every call died in the browser as "Failed to fetch". server.js now
+  // whitelists x-admin-token, which is what makes this possible.
+  //
+  // Worth the change because a URL is not a secret: query parameters land in
+  // browser history and autocomplete, may be captured by proxies and CDN logs,
+  // and appear in every screenshot. A header does none of that.
+  //
+  // REQUIRES the updated server.js to be deployed. If calls fail with "Failed
+  // to fetch", that deploy hasn't landed yet.
   function apiCall(path, token, body){
-    var sep = path.indexOf("?") === -1 ? "?" : "&";
-    return fetch(API + path + sep + "token=" + encodeURIComponent(token), {
+    return fetch(API + path, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
       body: JSON.stringify(body || {})
     }).then(function(r){ return r.json().then(function(json){ return { ok: r.ok, status: r.status, json: json }; }); });
   }
