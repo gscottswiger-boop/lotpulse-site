@@ -763,7 +763,9 @@
     +   '</div>'
     +   '<div class="tachrow"><div class="tach">' + tach + '</div>'
     +     '<div class="wc"><span class="n" id="lp-wn2">' + watchers + '</span><span class="t">watching</span></div></div>'
-    +   '<div class="note">Get a text the moment the price drops.</div>'
+    // "the moment" implied real-time; alerts actually follow the dealer's
+    // inventory-feed sync cadence. The shorter line is the accurate one.
+    +   '<div class="note">Get a text when the price drops.</div>'
     +   '</div>'
     +   '<div class="cta">'
     +     '<button class="btn" id="lp-btn">'
