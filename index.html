@@ -255,7 +255,10 @@
     font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;border-radius:8px;
     padding:7px 11px;cursor:pointer;transition:all .14s;white-space:nowrap}
   .crmbtn:hover{background:var(--action);color:#fff}
-  .crmbtn:disabled{cursor:default}
+  /* A sent lead must read as a STATE, not a button that failed to respond —
+     no hover lift, no pointer, clearly settled. */
+  .crmbtn:disabled{cursor:default;opacity:.9}
+  .crmbtn:disabled:hover{background:var(--win-soft);color:var(--win)}
   .crmbtn.done{border-color:var(--win);color:var(--win);background:var(--win-soft)}
   .thumb-sm{width:42px;height:32px;border-radius:6px;object-fit:cover;background:#E9ECE9;display:block;flex-shrink:0}
   .thumb-sm.ph{display:flex;align-items:center;justify-content:center;color:#B7BEB8}
@@ -761,7 +764,7 @@
             rows+='<div class="wrow">'
               +'<div class="wrl"><a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
                 +'<span class="wsince">since '+since+' '+stopped+'</span></div>'
-              +'<button class="crmbtn" data-w="'+w.watcherId+'" data-veh="'+(w.vehicleId||'')+'">Push to CRM</button>'
+              +crmButton(w.watcherId, w.vehicleId, w.crmSent)
               +'</div>';
           });
           var el=document.getElementById("vehWatchers");
@@ -957,6 +960,18 @@
   //              call. Without this pill they look identical to a consenting
   //              watcher and a dealer would wrongly assume alerts are running.
   //   active  -> no pill; texting is working normally.
+  // Renders the CRM button in its correct state. A lead already delivered shows
+  // as a disabled "Sent to CRM" rather than an active button — otherwise the
+  // dealer re-pushes, the server-side dedupe silently skips it, and nothing
+  // appears to happen. This matters more now that the backstop sweep pushes
+  // aging leads automatically: without this the dealer can't tell what it sent.
+  function crmButton(watcherId, vehicleId, alreadySent, extraAttrs){
+    if (alreadySent) {
+      return '<button class="crmbtn done" disabled>\u2713 Sent to CRM</button>';
+    }
+    return '<button class="crmbtn" data-w="'+watcherId+'" data-veh="'+(vehicleId||'')
+      + '"'+(extraAttrs||'')+'>Push to CRM</button>';
+  }
   function smsPill(status){
     if(status==="stopped") return '<span class="stoppill">Opted out</span>';
     if(status==="no_sms")  return '<span class="notextpill">No texts</span>';
@@ -985,7 +1000,7 @@
                 +'<div class="scprice">'+dollars(v.priceCents)+'</div>'
                 +(v.watchedAt?'<div class="scwhen">Since '+fmtWatchedAt(v.watchedAt,tz)+'</div>':'')+'</div>'
               +'</div>'
-              +'<button class="crmbtn" data-w="'+s.watcherId+'" data-vin="'+v.vin+'" data-veh="'+(v.vehicleId||'')+'">Push to CRM</button>'
+              +crmButton(s.watcherId, v.vehicleId, v.crmSent, ' data-vin="'+v.vin+'"')
               +'</div>';
           });
           var phoneDisp = s.phone ? s.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3") : "";
