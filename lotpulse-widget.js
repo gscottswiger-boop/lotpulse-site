@@ -861,7 +861,7 @@
     // this text; arrival alerts may only go to watchers who consented after
     // this copy shipped.
     consentLabel.textContent =
-      "Optional: also text me when the price drops on this vehicle, and when "
+      "Optional: text me when the price drops on this vehicle, and when "
       + "similar vehicles (same make and model) arrive. I agree to receive automated "
       + "marketing text messages about this vehicle and similar inventory from this "
       + "dealer at the number above. Consent is not a condition of purchase.";
@@ -1342,7 +1342,7 @@
     // in from a listing page and one who opts in from a vehicle page are
     // agreeing to exactly the same thing. See the scope note on the VDP copy.
     consentLabel.textContent =
-      "Optional: also text me when the price drops on this vehicle, and when "
+      "Optional: text me when the price drops on this vehicle, and when "
       + "similar vehicles (same make and model) arrive. I agree to receive automated "
       + "marketing text messages about this vehicle and similar inventory from this "
       + "dealer at the number above. Consent is not a condition of purchase.";
