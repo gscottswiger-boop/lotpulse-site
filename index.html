@@ -242,6 +242,31 @@
      calmer than "Opted out" — this isn't someone rejecting the dealer, it's a
      live lead who simply has to be reached by phone instead of by text. */
   .notextpill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--used-soft);color:var(--slate);border-radius:5px;padding:2px 7px;vertical-align:2px}
+  /* Stop-messaging tool. Lives in the Shoppers modal because the person
+     reading a "thanks, I bought it" reply is the store, and a buyer whose
+     watched car sold no longer appears in the list below. */
+  .stopbox{border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:16px;background:var(--porcelain)}
+  .stopbox .sbt{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);margin-bottom:3px}
+  .stopbox .sbs{font-size:12.5px;color:var(--slate);line-height:1.45;margin-bottom:10px}
+  .stopbox .sbrow{display:flex;gap:8px}
+  .stopbox input{flex:1;min-width:0;font-family:inherit;font-size:15px;color:var(--ink);
+    background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;outline:none}
+  .stopbox input:focus{border-color:var(--action)}
+  .stopbox button{flex-shrink:0;border:1px solid var(--action);background:#fff;color:var(--action);
+    font-family:inherit;font-weight:700;font-size:13.5px;border-radius:9px;padding:9px 14px;cursor:pointer}
+  .stopbox button:hover{background:var(--action);color:#fff}
+  .stopbox button:disabled{opacity:.5;cursor:default}
+  .sbfound{margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .sbname{font-weight:600;font-size:14.5px}
+  .sbcars{font-size:12.5px;color:var(--slate);margin-top:4px;line-height:1.5}
+  .sbwhy{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .sbwhy button{flex:1;min-width:150px}
+  .sbwhy button.buy{border-color:var(--win);color:var(--win)}
+  .sbwhy button.buy:hover{background:var(--win);color:#fff}
+  .sbwhy button.req{border-color:var(--redline);color:var(--redline)}
+  .sbwhy button.req:hover{background:var(--redline);color:#fff}
+  .sbmsg{font-size:13px;font-weight:600;margin-top:10px}
+  .sbmsg.ok{color:var(--win)} .sbmsg.bad{color:var(--redline)}
   .shopcars{display:flex;flex-direction:column;gap:7px}
   .shopcar{display:flex;align-items:center;gap:10px}
   .shopcar-link{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;border-radius:8px;padding:3px;margin:-3px;transition:background .12s}
@@ -1021,8 +1046,108 @@
           +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
           +'<div class="mph-title" style="margin-top:0">Shoppers watching your lot</div>'
           +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Tap a number to call. Hot = watching multiple cars or clicking alerts.</p>'
+          +'<div class="stopbox">'
+            +'<div class="sbt">Stop messaging a number</div>'
+            +'<div class="sbs">Someone reply that they bought a car? Look them up and we\'ll stop all texts. Works even if the vehicle they were watching has already sold.</div>'
+            +'<div class="sbrow">'
+              +'<input id="sb-phone" type="tel" inputmode="tel" placeholder="(555) 555-0134" autocomplete="off">'
+              +'<button id="sb-find">Look up</button>'
+            +'</div>'
+            +'<div id="sb-result"></div>'
+          +'</div>'
           +'<div class="shoplist">'+list+'</div>'
         +'</div>';
+      // ── Stop-messaging tool ────────────────────────────────────────────
+      // Two steps on purpose: look up, SEE who it is, then choose a reason.
+      // Acting straight off a pasted number risks silently killing a
+      // stranger's alerts on a mistyped digit.
+      var sbPhone = document.getElementById("sb-phone");
+      var sbFind = document.getElementById("sb-find");
+      var sbResult = document.getElementById("sb-result");
+      if (sbPhone) {
+        sbPhone.addEventListener("input", function(e){
+          var d = e.target.value.replace(/\D/g,"").slice(0,10), out = d;
+          if (d.length > 6) out = "("+d.slice(0,3)+") "+d.slice(3,6)+"-"+d.slice(6);
+          else if (d.length > 3) out = "("+d.slice(0,3)+") "+d.slice(3);
+          e.target.value = out;
+        });
+        sbPhone.addEventListener("keydown", function(e){ if(e.key==="Enter") sbFind.click(); });
+
+        sbFind.addEventListener("click", function(){
+          var phone = sbPhone.value.replace(/\D/g,"");
+          if (phone.length !== 10) {
+            sbResult.innerHTML = '<div class="sbmsg bad">Enter a 10-digit number.</div>';
+            return;
+          }
+          sbFind.disabled = true; sbFind.textContent = "Looking\u2026";
+          sbResult.innerHTML = "";
+          fetch(API+"/dash/"+SLUG+"/lookup-phone",{
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ phone: phone })
+          }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+            .then(function(res){
+              if (!res.ok || !res.j.ok) {
+                sbResult.innerHTML = '<div class="sbmsg bad">'+esc(res.j.error||"Not found")+'</div>';
+                return;
+              }
+              var w = res.j;
+              if (w.smsStatus === "stopped") {
+                sbResult.innerHTML = '<div class="sbfound"><div class="sbname">'
+                  + esc(w.firstName || "This shopper") + '</div>'
+                  + '<div class="sbmsg ok">Already stopped \u2014 no texts are being sent.</div></div>';
+                return;
+              }
+              // Show every vehicle, sold included — the sold one is usually
+              // why the dealer is looking this person up.
+              var cars = (w.watched||[]).map(function(v){
+                var name = [v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
+                return esc(name) + (v.status === "vehicle_sold" ? " <em>(sold)</em>" : "");
+              }).join("<br>") || "No vehicles on record";
+              sbResult.innerHTML = '<div class="sbfound">'
+                + '<div class="sbname">'+esc(w.firstName || "Shopper")+' \u00b7 '
+                  + esc((w.phone||"").replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"))+'</div>'
+                + '<div class="sbcars">'+cars+'</div>'
+                + '<div class="sbwhy">'
+                  + '<button class="buy" data-reason="purchased">They bought a vehicle</button>'
+                  + '<button class="req" data-reason="requested">They asked to stop</button>'
+                + '</div>'
+                + '<div id="sb-msg"></div></div>';
+
+              sbResult.querySelectorAll(".sbwhy button").forEach(function(b){
+                b.addEventListener("click", function(){
+                  var reason = b.getAttribute("data-reason");
+                  sbResult.querySelectorAll(".sbwhy button").forEach(function(x){ x.disabled = true; });
+                  b.textContent = "Stopping\u2026";
+                  fetch(API+"/dash/"+SLUG+"/stop-phone",{
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({ phone: phone, reason: reason })
+                  }).then(function(r){ return r.json(); }).then(function(j){
+                    var el = document.getElementById("sb-msg");
+                    if (j.ok) {
+                      sbResult.querySelector(".sbwhy").style.display = "none";
+                      el.innerHTML = '<div class="sbmsg ok">\u2713 All texts stopped'
+                        + (j.watchesEnded ? ' \u00b7 '+j.watchesEnded+' watch(es) ended' : '')+'</div>';
+                      sbPhone.value = "";
+                      // Refresh so the list reflects the change.
+                      setTimeout(openShoppers, 1200);
+                    } else {
+                      el.innerHTML = '<div class="sbmsg bad">'+esc(j.error||"Failed")+'</div>';
+                      sbResult.querySelectorAll(".sbwhy button").forEach(function(x){ x.disabled=false; });
+                      b.textContent = reason==="purchased" ? "They bought a vehicle" : "They asked to stop";
+                    }
+                  }).catch(function(){
+                    document.getElementById("sb-msg").innerHTML =
+                      '<div class="sbmsg bad">Network error. Try again.</div>';
+                    sbResult.querySelectorAll(".sbwhy button").forEach(function(x){ x.disabled=false; });
+                  });
+                });
+              });
+            })
+            .catch(function(){ sbResult.innerHTML = '<div class="sbmsg bad">Network error.</div>'; })
+            .finally(function(){ sbFind.disabled = false; sbFind.textContent = "Look up"; });
+        });
+      }
+
       // Wire the "Push to CRM" buttons.
       modal.querySelectorAll(".crmbtn").forEach(function(btn){
         btn.addEventListener("click", function(){
