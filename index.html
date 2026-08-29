@@ -1087,13 +1087,13 @@
           }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
             .then(function(res){
               if (!res.ok || !res.j.ok) {
-                sbResult.innerHTML = '<div class="sbmsg bad">'+esc(res.j.error||"Not found")+'</div>';
+                sbResult.innerHTML = '<div class="sbmsg bad">'+escapeHtml(res.j.error||"Not found")+'</div>';
                 return;
               }
               var w = res.j;
               if (w.smsStatus === "stopped") {
                 sbResult.innerHTML = '<div class="sbfound"><div class="sbname">'
-                  + esc(w.firstName || "This shopper") + '</div>'
+                  + escapeHtml(w.firstName || "This shopper") + '</div>'
                   + '<div class="sbmsg ok">Already stopped \u2014 no texts are being sent.</div></div>';
                 return;
               }
@@ -1101,11 +1101,11 @@
               // why the dealer is looking this person up.
               var cars = (w.watched||[]).map(function(v){
                 var name = [v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
-                return esc(name) + (v.status === "vehicle_sold" ? " <em>(sold)</em>" : "");
+                return escapeHtml(name) + (v.status === "vehicle_sold" ? " <em>(sold)</em>" : "");
               }).join("<br>") || "No vehicles on record";
               sbResult.innerHTML = '<div class="sbfound">'
-                + '<div class="sbname">'+esc(w.firstName || "Shopper")+' \u00b7 '
-                  + esc((w.phone||"").replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"))+'</div>'
+                + '<div class="sbname">'+escapeHtml(w.firstName || "Shopper")+' \u00b7 '
+                  + escapeHtml((w.phone||"").replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"))+'</div>'
                 + '<div class="sbcars">'+cars+'</div>'
                 + '<div class="sbwhy">'
                   + '<button class="buy" data-reason="purchased">They bought a vehicle</button>'
@@ -1131,7 +1131,7 @@
                       // Refresh so the list reflects the change.
                       setTimeout(openShoppers, 1200);
                     } else {
-                      el.innerHTML = '<div class="sbmsg bad">'+esc(j.error||"Failed")+'</div>';
+                      el.innerHTML = '<div class="sbmsg bad">'+escapeHtml(j.error||"Failed")+'</div>';
                       sbResult.querySelectorAll(".sbwhy button").forEach(function(x){ x.disabled=false; });
                       b.textContent = reason==="purchased" ? "They bought a vehicle" : "They asked to stop";
                     }
@@ -1143,7 +1143,15 @@
                 });
               });
             })
-            .catch(function(){ sbResult.innerHTML = '<div class="sbmsg bad">Network error.</div>'; })
+            .catch(function(err){
+              // Distinguish a genuine network failure from a bug in the code
+              // above. Reporting every exception as "Network error." sent us
+              // hunting a deploy problem when the request had returned 200.
+              console.error("[LotPulse] lookup failed:", err);
+              sbResult.innerHTML = '<div class="sbmsg bad">'
+                + escapeHtml(err && err.message ? err.message : "Something went wrong")
+                + '</div>';
+            })
             .finally(function(){ sbFind.disabled = false; sbFind.textContent = "Look up"; });
         });
       }
