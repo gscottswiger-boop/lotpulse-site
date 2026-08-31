@@ -1449,6 +1449,12 @@
     var rows="";
     list.forEach(function(p){
       var phoneDisp=p.phone?p.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+      // What the dealer's own CRM says this person was interested in or bought,
+      // printed directly above what LotPulse observed them watching. The
+      // side-by-side is the argument: "watched this, then bought that."
+      var crmLine = p.crmVehicle
+        ? '<div class="mb-car"><strong>From your list:</strong> '+escapeHtml(p.crmVehicle)+'</div>'
+        : "";
       var cars="";
       (p.watched||[]).forEach(function(v){
         var label=[v.year,v.make,v.model,v.trim].filter(Boolean).join(" ");
@@ -1460,7 +1466,8 @@
       rows+='<div class="mb-person">'
         +'<div class="mb-phead"><span class="mb-name">'+escapeHtml(p.name||"(no name on list)")+'</span>'
         +'<span class="mb-phone">'+escapeHtml(phoneDisp)+'</span></div>'
-        +cars
+        +crmLine
+        +(cars ? '<div class="mb-car" style="margin-top:5px"><strong>Watched on LotPulse:</strong></div>'+cars : cars)
         +'</div>';
     });
     if(!rows) rows='<div class="mb-none">None found in this list.</div>';
@@ -1492,7 +1499,9 @@
         +'<div class="mb-sec">Influenced Shoppers &mdash; watching, still a prospect</div>'
         +mbPersonRows(d.influencedShoppers, tz)
         +'<div class="mb-foot">Matched by phone number against dealer-provided lists ('
-          +d.input.soldListSize+' sold, '+d.input.prospectListSize+' prospect records). '
+          +d.input.soldListSize+' sold, '+d.input.prospectListSize+' prospect phone numbers '
+          +'\u2014 every phone column in the upload is matched, so one customer with '
+          +'both a cell and a home number counts twice here). '
           +'A watcher on both lists is counted as a buyer. Customer lists are processed in memory and not retained by LotPulse.</div>'
       +'</div>';
     var modal=document.getElementById("modal");
