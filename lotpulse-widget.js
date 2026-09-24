@@ -222,6 +222,20 @@
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, json: j }; }); });
   }
 
+  // ── Coordination with the promo popup (promo-popup.js, separate GTM tag) ──
+  // The promo popup must never stack on top of this widget. Two signals, both
+  // write-only from here and wrapped so they can never break the widget:
+  //   • sessionStorage "lp_watched_<VIN>" — set after a SUCCESSFUL watch, so
+  //     the promo won't fire on a car this shopper already watched.
+  //   • window.__lotpulseSheetOpen — true while a watch sheet is open, so the
+  //     promo waits instead of covering a form the shopper is filling in.
+  function markWatched(vin) {
+    try { if (vin) window.sessionStorage.setItem("lp_watched_" + vin, "1"); } catch (e) { /* ignore */ }
+  }
+  function markSheetOpen(isOpen) {
+    try { window.__lotpulseSheetOpen = !!isOpen; } catch (e) { /* ignore */ }
+  }
+
   // ── Build the widget UI inside a shadow root ───────────────────────────────
   var VDP_ROOT = null; // kept so a late-arriving demand fetch can update counts
 
@@ -887,6 +901,7 @@
 
     function openSheet() {
       sheet.classList.add("open"); scrim.classList.add("open");
+      markSheetOpen(true);
       // Reset every time the sheet opens — never silently pre-checked, and
       // never left disabled from a previous in-flight submission.
       consent.checked = false;
@@ -911,6 +926,7 @@
     function closeSheet() {
       var wasOpen = sheet.classList.contains("open");
       sheet.classList.remove("open"); scrim.classList.remove("open");
+      markSheetOpen(false);
       // The signal LotPulse has never had: someone wanted this car enough to
       // open the form, then left without giving a number. VIN is included so
       // a pattern on a specific vehicle is visible; nothing identifying is —
@@ -1025,6 +1041,7 @@
         }
         watching = true;
         submittedThisSession = true;
+        markWatched(vin);
         lpEvent("lp_watch_created", {
           item_id: vin,
           item_condition: (demand && demand.condition) || null,
@@ -1358,6 +1375,7 @@
 
     function open() {
       sheet.classList.add("open"); scrim.classList.add("open");
+      markSheetOpen(true);
       consent.checked = false;
       confirm.disabled = false;
       srpSubmittedThisSession = false;
@@ -1380,6 +1398,7 @@
     function close() {
       var wasOpen = sheet.classList.contains("open");
       sheet.classList.remove("open"); scrim.classList.remove("open");
+      markSheetOpen(false);
       if (wasOpen && !srpSubmittedThisSession) {
         lpEvent("lp_watch_abandoned", {
           item_id: srpActiveVin,
@@ -1420,6 +1439,7 @@
         gclid: getGclid(), clientId: getClientId(),
       }).then(function (res) {
         srpSubmittedThisSession = true;
+        if (res && res.ok) markWatched(srpActiveVin);
         var smsEnabled = !!(res && res.json && res.json.smsEnabled);
         lpEvent("lp_watch_created", {
           item_id: srpActiveVin,
