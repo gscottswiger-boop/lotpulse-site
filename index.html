@@ -354,6 +354,73 @@
     .thumb{width:48px;height:38px}
     .tach i{max-width:7px;height:14px}
   }
+  /* ── Promo popup (agency settings + dealer lead list) ── */
+  .sig-btn.promo{border-color:var(--win);color:var(--win)}
+  .sig-btn.promo:hover{background:var(--win);color:#fff}
+  .sig-btn.promo .sc{background:var(--win)}
+  .sig-btn.promo:hover .sc{background:rgba(255,255,255,.25)}
+  .pstat{font-family:'Barlow Condensed';font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:3px 10px}
+  .pstat.live{background:var(--win-soft);color:var(--win)}
+  .pstat.off,.pstat.ended{background:var(--used-soft);color:var(--slate)}
+  .pstat.paused{background:var(--red-soft);color:var(--redline)}
+  .pstat.scheduled{background:var(--amber-soft);color:#9A6700}
+  .pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;flex-wrap:wrap}
+  .killbtn{border:1.5px solid var(--redline);background:#fff;color:var(--redline);font-family:'Barlow';font-weight:700;font-size:13.5px;border-radius:9px;padding:8px 14px;cursor:pointer}
+  .killbtn:hover{background:var(--redline);color:#fff}
+  .killbtn.resume{border-color:var(--win);color:var(--win)}
+  .killbtn.resume:hover{background:var(--win);color:#fff}
+  .killbtn:disabled{opacity:.6;cursor:default}
+  .pwarn{font-size:12.5px;font-weight:600;color:#9A6700;background:var(--amber-soft);border-radius:9px;padding:9px 12px;margin:0 0 14px}
+  .pnote{font-size:12px;color:var(--slate);margin:-6px 0 13px;line-height:1.45}
+  .psec{font-family:'Barlow Condensed';font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:20px 0 10px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .pv{border-radius:12px;overflow:hidden;margin:0 0 16px;box-shadow:0 1px 2px rgba(20,24,29,.08),0 6px 18px rgba(20,24,29,.08)}
+  .pv-band{background:#1F2A44;color:#fff;padding:16px 18px 15px}
+  .pv-dealer{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
+  .pv-amt{display:flex;align-items:baseline;gap:7px;font-weight:800;line-height:.95}
+  .pv-amt .n{font-size:46px;letter-spacing:-.02em}.pv-amt .off{font-size:23px}
+  .pv-sub{font-size:14.5px;font-weight:600;margin-top:7px;opacity:.95}
+  .pv-img{display:block;width:100%;height:auto;max-height:240px;object-fit:contain;background:#1F2A44}
+  .pv-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:7px 12px}
+  .setrow textarea{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--porcelain);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;outline:none;resize:vertical;min-height:62px}
+  .setrow textarea:focus{border-color:var(--action)}
+  .mkchips{display:flex;flex-wrap:wrap;gap:6px}
+  .setrow label.mkchip{display:inline-flex;text-transform:none;letter-spacing:0;margin:0;color:var(--ink);font-size:13px}
+  .setrow label.mkchip.on{color:var(--action)}
+  .mkchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;user-select:none}
+  .mkchip input{width:15px;height:15px;margin:0;accent-color:var(--action)}
+  .mkchip.on{border-color:var(--action);background:var(--new-soft);color:var(--action)}
+  .mkchip .ct{font-size:11px;color:var(--slate);font-weight:500}
+  .imgrow{display:flex;gap:10px;align-items:center;margin-top:8px}
+  .imgrow img{width:92px;height:48px;object-fit:cover;border-radius:6px;background:var(--porcelain)}
+  .linkbtn{background:none;border:0;color:var(--redline);font-weight:600;font-size:13px;cursor:pointer;padding:4px;text-decoration:underline}
+  .kindpill.promo{background:var(--win-soft);color:var(--win)}
+  .pstat.idle{background:var(--amber-soft);color:#9A6700}
+  .pok{font-size:12.5px;font-weight:600;color:var(--win);background:var(--win-soft);border-radius:9px;padding:9px 12px;margin:0 0 14px}
+  .ocard{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fff}
+  .ohead{display:flex;align-items:flex-start;gap:10px}
+  .opri{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-family:'Barlow Condensed';font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .oname{flex:1;min-width:0}
+  .on1{font-weight:700;font-size:15px;line-height:1.25}
+  .osub{font-size:12.5px;color:var(--slate);margin-top:2px}
+  .ometa{font-size:12px;color:var(--ink);margin:8px 0 0 34px;line-height:1.45}
+  .owarn{font-size:12px;font-weight:600;color:#9A6700;background:var(--amber-soft);border-radius:7px;padding:6px 9px;margin:8px 0 0 34px}
+  .oact{display:flex;gap:6px;align-items:center;margin:10px 0 0 34px}
+  .obtn{border:1.5px solid var(--line);background:#fff;color:var(--ink);font-family:'Barlow';font-weight:600;font-size:12.5px;border-radius:8px;padding:5px 11px;cursor:pointer}
+  .obtn:hover:not(:disabled){border-color:var(--action);color:var(--action)}
+  .obtn:disabled{opacity:.35;cursor:default}
+  .obtn.primary{background:var(--action);border-color:var(--action);color:#fff}
+  .obtn.primary:hover{background:var(--action-deep);color:#fff}
+  .pmatch{font-size:13px;color:var(--ink);background:var(--new-soft);border-radius:9px;padding:10px 12px;margin:2px 0 6px;line-height:1.45}
+  .pmatch.bad{background:var(--amber-soft);color:#7A5200}
+  .pmx{font-size:12px;color:var(--slate);margin-top:3px}
+  .kindpill.trig{background:var(--used-soft);color:var(--slate)}
+  .plcontact{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:12.5px}
+  .plcontact a{color:var(--action);text-decoration:none;font-weight:600}
+  .plcontact a:hover{text-decoration:underline}
+  .plresend{border:1px solid var(--action);background:#fff;color:var(--action);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 8px;cursor:pointer}
+  .plresend:hover{background:var(--action);color:#fff}
+  .plresend:disabled{opacity:.6;cursor:default}
+
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -397,6 +464,9 @@
         <button id="agencyOverviewBtn" title="All rooftops" aria-label="All rooftops" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
+        <button id="promoBtn" title="Promo popup" aria-label="Promo popup settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
     </div>
@@ -434,6 +504,7 @@
   <div class="sec-head">
     <h2>Demand Board</h2>
     <div style="display:flex;align-items:center;gap:12px">
+      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from the promo offer popup"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Promo leads <span class="sc" id="promo-count">0</span></button>
       <button class="sig-btn" id="signalsBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Signals <span class="sc" id="sig-count">0</span></button>
       <div class="meta" id="boardMeta">Loading…</div>
     </div>
@@ -506,6 +577,7 @@
     var _alb=document.getElementById("accessLogBtn"); if(_alb) _alb.style.display="inline-flex";
     var _mbb=document.getElementById("matchbackBtn"); if(_mbb) _mbb.style.display="inline-flex";
     var _aob=document.getElementById("agencyOverviewBtn"); if(_aob) _aob.style.display="inline-flex";
+    var _prb=document.getElementById("promoBtn"); if(_prb) _prb.style.display="inline-flex";
     sel.onchange=function(){
       SLUG=sel.value;
       try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
@@ -1730,12 +1802,524 @@
   var _signalsBtn=document.getElementById("signalsBtn");
   if(_signalsBtn) _signalsBtn.addEventListener("click", openSignals);
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // PROMO POPUP — agency settings (5th icon) + dealer "Promo leads" list
+  // ══════════════════════════════════════════════════════════════════════════
+  // A separate lead-gen product: a dealer-branded "$X off" popup on the VDP.
+  // Settings are AGENCY-ONLY (server re-checks the agency code on every call,
+  // same boundary as the gear). The lead list is dealer-scoped, like Shoppers,
+  // and its button stays hidden until the popup has EVER been on for this
+  // rooftop. None of this touches the stat cards, scoring or the board.
+
+  var PROMO_STATUS_LABEL={live:"Live",off:"Off",paused:"Paused",scheduled:"Scheduled",ended:"Ended",idle:"No offer running"};
+  var _promoCache=null;
+
+  function promoDollars(c){ return "$"+Math.round((c||0)/100).toLocaleString("en-US"); }
+  function promoTrigLabel(t){ return t==="exit_intent"?"Exit intent":"Timed"; }
+
+  // ── Dealer view: Promo leads button + list ──────────────────────────────────
+  function loadPromoLeads(){
+    var btn=document.getElementById("promoLeadsBtn"), cnt=document.getElementById("promo-count");
+    var forSlug=SLUG;
+    return fetch(API+"/dash/"+SLUG+"/promo-leads").then(function(r){return r.json();}).then(function(d){
+      if(forSlug!==SLUG) return;             // rooftop switched mid-flight
+      _promoCache=d;
+      if(!d || !d.visible){ if(btn) btn.style.display="none"; return; }
+      if(cnt) cnt.textContent=d.leadsThisWeek||0;
+      if(btn){ btn.style.display="inline-flex"; btn.title=(d.leadsThisWeek||0)+" promo lead(s) this week"; }
+    }).catch(function(){ if(btn) btn.style.display="none"; });
+  }
+
+  function promoLeadRow(l, tz){
+    var v=l.vehicle;
+    var veh = v ? [v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")
+                  +(v.stockNumber?" · #"+v.stockNumber:"")+(v.stillOnLot===false?" · no longer on lot":"")
+                : "VIN "+l.vin+" · no longer in inventory";
+    var phoneDisp=l.phone?l.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
+    var crm = l.crm==="sent" ? '<span class="statpill ok">Sent to CRM</span>'
+      : '<span class="statpill '+(l.crm==="failed"?'bad':'pending')+'" title="'+escapeHtml(l.crmError||"")+'">'
+          +(l.crm==="failed"?"CRM failed":"CRM pending")+'</span>'
+        +' <button class="plresend" data-plid="'+escapeHtml(String(l.id))+'">Resend</button>';
+    return '<div class="msgrow">'
+      +'<div class="msgtop"><div class="msgwho"><span class="msgphone" style="color:var(--ink)">'+escapeHtml(l.name)+'</span></div>'
+        +'<span class="msgtime">'+escapeHtml(fmtWatchedAt(l.createdAt,tz))+'</span></div>'
+      +'<div class="msgpills"><span class="kindpill promo">'+escapeHtml(promoDollars(l.offerCents))+(l.offerName?' · '+escapeHtml(l.offerName):' offer')+'</span>'
+        +'<span class="kindpill trig">'+promoTrigLabel(l.trigger)+'</span>'+crm+'</div>'
+      +'<div class="msgveh">'+escapeHtml(veh)+'</div>'
+      +'<div class="plcontact">'
+        +(l.phone?'<a href="tel:'+escapeHtml(l.phone)+'">'+escapeHtml(phoneDisp)+'</a>':'')
+        +(l.email?'<a href="mailto:'+escapeHtml(l.email)+'">'+escapeHtml(l.email)+'</a>':'')
+      +'</div>'
+    +'</div>';
+  }
+
+  function openPromoLeads(){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    var closeBtn='<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>';
+    fetch(API+"/dash/"+SLUG+"/promo-leads").then(function(r){return r.json();}).then(function(d){
+      if(d.error||!d.visible){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">'+escapeHtml(d.error||"The promo popup isn't set up for this rooftop.")+'</div></div>'; return; }
+      var tz=(d.dealer&&d.dealer.timezone)||null, leads=d.leads||[];
+      var sent=leads.filter(function(l){return l.crm==="sent";}).length;
+      var notSent=leads.length-sent;
+      var byTrig={timed:0,exit_intent:0}; leads.forEach(function(l){ byTrig[l.trigger]=(byTrig[l.trigger]||0)+1; });
+      var rows = leads.length ? leads.map(function(l){ return promoLeadRow(l,tz); }).join("")
+        : '<div class="state" style="padding:28px 0">No promo leads yet.</div>';
+      modal.innerHTML='<div class="mbody">'+closeBtn
+        +'<div class="mph-title" style="margin-top:0">Promo leads · last '+(d.windowDays||90)+' days</div>'
+        +'<div class="mstats">'
+          +'<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">This<br>week</div></div>'
+          +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
+          +'<div class="mstat"><div class="n">'+(byTrig.exit_intent||0)+'</div><div class="l">Exit<br>intent</div></div>'
+        +'</div>'
+        +'<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 12px">Shoppers who claimed the website offer. '
+          +'These are separate from watchers and aren\'t scored. '+leads.length+' total · '+sent+' sent to CRM'
+          +(notSent?' · <span style="color:var(--redline);font-weight:600">'+notSent+' not yet delivered</span>':'')+'</p>'
+        +'<div class="msglist">'+rows+'</div>'
+      +'</div>';
+      modal.querySelectorAll(".plresend").forEach(function(b){
+        b.addEventListener("click", function(){
+          b.disabled=true; b.textContent="Sending…";
+          fetch(API+"/dash/"+SLUG+"/promo-leads/"+b.getAttribute("data-plid")+"/resend",{
+            method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"
+          }).then(function(r){return r.json();}).then(function(res){
+            if(res.sent||res.skipped==="already_sent"){
+              var pill=b.previousElementSibling; if(pill){ pill.className="statpill ok"; pill.textContent="Sent to CRM"; }
+              b.remove();
+            } else {
+              b.disabled=false;
+              b.textContent = res.skipped==="no_destination" ? "No CRM email set" : "Retry";
+              b.title=res.error||res.skipped||"Send failed";
+            }
+          }).catch(function(){ b.disabled=false; b.textContent="Retry"; });
+        });
+      });
+    }).catch(function(e){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">Could not load: '+escapeHtml(e.message)+'</div></div>'; });
+  }
+  var _promoLeadsBtn=document.getElementById("promoLeadsBtn");
+  if(_promoLeadsBtn) _promoLeadsBtn.addEventListener("click", openPromoLeads);
+
+  // ── Agency view: promo settings (rooftop controls + offer list + editor) ────
+  // One modal, two views: the offer LIST (rooftop switch, pause-all, stats,
+  // offers in priority order) and the offer EDITOR. Everything is re-fetched
+  // after each save so "wins N cars" always reflects the server's own matching.
+  var _pr=null;   // { d: last /promo-settings payload, code }
+
+  function promoPost(path, body){
+    body=body||{}; body.agencyCode=_pr?_pr.code:agencyCode();
+    return fetch(API+"/dash/"+SLUG+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+      .then(function(r){ return r.json().then(function(j){ j._status=r.status; return j; }); });
+  }
+  function prModal(){ return document.getElementById("modal"); }
+  function prClose(){ return '<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'; }
+  function prFail(msg){ prModal().innerHTML='<div class="mbody">'+prClose()+'<div class="state">'+escapeHtml(msg)+'</div></div>'; }
+  function prPct(r){ return r==null?"—":(r*100).toFixed(1)+"%"; }
+
+  // ISO timestamp -> "YYYY-MM-DD" in the DEALER's timezone, for <input type=date>.
+  // The server interprets date-only values in that same timezone (start of day
+  // for start, end of day for end), so a round trip never shifts a day.
+  function promoDateVal(iso, tz){
+    if(!iso) return "";
+    try{ return new Date(iso).toLocaleDateString("en-CA",{timeZone:tz||undefined}); }catch(e){ return String(iso).slice(0,10); }
+  }
+
+  // Offer graphic: shrink to <=1200px wide in the browser before upload so a
+  // 6 MB phone photo or print-res JPG becomes a ~150 KB web image. A JPG that is
+  // already web-sized is sent untouched, so a designer's file isn't recompressed.
+  function prepPromoImage(file){
+    return new Promise(function(resolve,reject){
+      if(!/^image\/(jpeg|png|webp)$/.test(file.type)) return reject(new Error("Use a JPG, PNG or WebP image."));
+      if(file.size>25*1024*1024) return reject(new Error("That file is over 25 MB."));
+      var url=URL.createObjectURL(file), img=new Image();
+      img.onload=function(){
+        var w=img.naturalWidth, h=img.naturalHeight;
+        function done(dataUrl, ow, oh){ URL.revokeObjectURL(url); resolve({dataUrl:dataUrl,width:ow,height:oh}); }
+        if(file.type==="image/jpeg" && w<=1200 && file.size<=600*1024){
+          var fr=new FileReader(); fr.onload=function(){ done(fr.result,w,h); }; fr.onerror=function(){ reject(new Error("Could not read the file.")); };
+          fr.readAsDataURL(file); return;
+        }
+        var scale=Math.min(1,1200/w), cw=Math.round(w*scale), ch=Math.round(h*scale);
+        var c=document.createElement("canvas"); c.width=cw; c.height=ch;
+        var ctx=c.getContext("2d");
+        var out=file.type==="image/png" ? "image/png" : "image/jpeg";   // WebP -> JPEG
+        if(out==="image/jpeg"){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,cw,ch); }
+        ctx.drawImage(img,0,0,cw,ch);
+        var data=c.toDataURL(out,0.86);
+        // A large photographic PNG can still be heavy; fall back to JPEG.
+        if(out==="image/png" && data.length>1.9*1024*1024){
+          ctx.fillStyle="#fff"; ctx.fillRect(0,0,cw,ch); ctx.drawImage(img,0,0,cw,ch);
+          data=c.toDataURL("image/jpeg",0.86);
+        }
+        done(data,cw,ch);
+      };
+      img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error("That file couldn't be read as an image.")); };
+      img.src=url;
+    });
+  }
+
+  function openPromoSettings(){
+    var modal=prModal(), scrim=document.getElementById("scrim");
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    _pr={code:agencyCode(), d:null};
+    prReload(function(){ prRenderList(); });
+  }
+  function prReload(then){
+    promoPost("/promo-settings",{}).then(function(d){
+      if(!d.ok) return prFail(d.error||"Could not load promo settings");
+      _pr.d=d; then();
+    }).catch(function(e){ prFail("Could not load: "+e.message); });
+  }
+  function prStatusPill(status, id){
+    return '<span class="pstat '+escapeHtml(status)+'"'+(id?' id="'+id+'"':'')+'>'+(PROMO_STATUS_LABEL[status]||status)+'</span>';
+  }
+
+  // ── List view ──
+  function prRenderList(flash){
+    var d=_pr.d, s=d.settings, l7=(d.stats||{}).last7||{}, l30=(d.stats||{}).last30||{};
+    var paused=!!s.killSwitch, offers=d.offers||[];
+    var cards=offers.map(function(o,idx){
+      var st=o.stats||{}, o7=st.last7||{};
+      var warn="";
+      if(o.status==="live" && !paused && s.enabled){
+        if(o.matchesOnLot===0) warn='<div class="owarn">No cars on the lot match this offer right now.</div>';
+        else if(o.winsOnLot===0) warn='<div class="owarn">Every car it matches is taken by an offer above it. Move it up or narrow the one above.</div>';
+      }
+      var cov = o.status==="live"
+        ? 'Showing on <strong>'+o.winsOnLot+'</strong> car'+(o.winsOnLot===1?'':'s')+(o.matchesOnLot>o.winsOnLot?' <span style="color:var(--slate)">('+(o.matchesOnLot-o.winsOnLot)+' more go to offers above)</span>':'')
+        : 'Matches '+o.matchesOnLot+' car'+(o.matchesOnLot===1?'':'s')+' on the lot';
+      return '<div class="ocard" data-oid="'+escapeHtml(o.id)+'">'
+        +'<div class="ohead"><span class="opri">'+(idx+1)+'</span>'
+          +'<div class="oname"><div class="on1">'+escapeHtml(o.name)+'</div>'
+            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+escapeHtml(o.targets)+(o.image?' · graphic':'')+'</div></div>'
+          +prStatusPill(o.status)+'</div>'
+        +'<div class="ometa">'+cov+' · 7 days: '+(o7.impressions||0)+' views, '+(o7.submits||0)+' leads, '+prPct(o7.conversionRate)+'</div>'
+        +warn
+        +'<div class="oact">'
+          +'<button class="obtn" data-act="up" '+(idx===0?'disabled':'')+' aria-label="Move up">↑</button>'
+          +'<button class="obtn" data-act="down" '+(idx===offers.length-1?'disabled':'')+' aria-label="Move down">↓</button>'
+          +'<span style="flex:1"></span>'
+          +'<button class="obtn" data-act="dup">Duplicate</button>'
+          +'<button class="obtn primary" data-act="edit">Edit</button>'
+        +'</div></div>';
+    }).join("");
+    if(!offers.length) cards='<div class="state" style="padding:24px 0">No offers yet. Add one to start showing the popup.</div>';
+
+    prModal().innerHTML='<div class="mbody">'+prClose()
+      +'<div class="mph-title" style="margin-top:0">Promo popup — '+escapeHtml(currentDealerLabel())+'</div>'
+      +'<div class="pbar">'+prStatusPill(d.status,"pr-status")
+        +'<button class="killbtn'+(paused?' resume':'')+'" id="pr-kill">'+(paused?'Resume all offers':'Pause all offers')+'</button></div>'
+      +(flash?'<div class="pok">'+escapeHtml(flash)+'</div>':'')
+      +(d.crmDestination?'':'<div class="pwarn">No CRM lead email is set for this rooftop, so promo leads won\'t reach the dealer\'s CRM. Set one in Dealer settings (gear icon).</div>')
+      +(d.status==="idle"?'<div class="pwarn">The popup is on, but no offer is running right now, so shoppers won\'t see anything.</div>':'')
+      +'<div class="mstats">'
+        +'<div class="mstat"><div class="n">'+(l7.impressions||0)+'</div><div class="l">Views<br>7 days</div></div>'
+        +'<div class="mstat"><div class="n">'+(l7.submits||0)+'</div><div class="l">Leads<br>7 days</div></div>'
+        +'<div class="mstat"><div class="n">'+prPct(l7.conversionRate)+'</div><div class="l">Conversion<br>7 days</div></div>'
+      +'</div>'
+      +'<p class="pnote" style="margin-top:-8px">All offers, 30 days: '+(l30.impressions||0)+' views · '+(l30.submits||0)+' leads · '+prPct(l30.conversionRate)+' conversion</p>'
+      +'<div class="err" id="pr-err" style="display:none"></div>'
+
+      +'<div class="psec">Offers</div>'
+      +'<p class="pnote" style="margin-top:-4px">If a car matches more than one offer, the one <strong>highest on this list</strong> wins. Use the arrows to reorder.'
+        +(d.inventoryCount?' '+d.uncoveredOnLot+' of '+d.inventoryCount+' cars on the lot have no offer right now.':'')+'</p>'
+      +'<div id="pr-offers">'+cards+'</div>'
+      +'<button class="mlink" id="pr-add" style="width:100%;border:0;cursor:pointer;margin-top:4px;background:#fff;color:var(--action);border:1.5px solid var(--action)">+ Add offer</button>'
+
+      +'<div class="psec">Rooftop settings</div>'
+      +'<div class="consent" style="margin:0 0 14px"><input type="checkbox" id="pr-enabled"'+(s.enabled?' checked':'')+'>'
+        +'<span class="cbx" aria-hidden="true"></span><label for="pr-enabled" style="cursor:pointer;font-weight:600">Popup on for this rooftop</label></div>'
+      +'<div class="setrow2even">'
+        +'<div class="setrow"><label>Delay (seconds)</label><input id="pr-delay" type="number" min="5" max="600" step="1" value="'+(s.delaySeconds||"")+'" placeholder="'+d.defaults.delaySeconds+' (default)"></div>'
+        +'<div class="setrow"><label>Don\'t show again for (days)</label><input id="pr-suppress" type="number" min="1" max="365" step="1" value="'+(s.suppressDays||"")+'" placeholder="'+d.defaults.suppressDays+' (default)"></div>'
+      +'</div>'
+      +'<p class="pnote">After a shopper sees the popup on a car, it won\'t show on that car again for this long. After they submit any offer, no popup shows on any car for this long, since the dealer is already following up.</p>'
+      +'<button class="mlink" id="pr-save-roof" style="width:100%;border:0;cursor:pointer">Save rooftop settings</button>'
+    +'</div>';
+
+    var err=document.getElementById("pr-err");
+    function showErr(m){ err.textContent=m; err.style.display="block"; err.scrollIntoView({block:"nearest"}); }
+
+    document.getElementById("pr-kill").addEventListener("click", function(){
+      var b=this, pausing=!paused; b.disabled=true;
+      promoPost("/promo-settings/update",{killSwitch:pausing}).then(function(res){
+        if(!res.ok){ b.disabled=false; return showErr(res.error||"Could not change pause state."); }
+        prReload(function(){ prRenderList(pausing?"All offers paused. Shoppers won't see the popup until you resume.":"Offers resumed."); });
+      }).catch(function(){ b.disabled=false; showErr("Network error. Try again."); });
+    });
+    document.getElementById("pr-save-roof").addEventListener("click", function(){
+      var b=this; b.disabled=true; b.textContent="Saving…";
+      function num(id){ var v=document.getElementById(id).value.trim(); return v===""?"":Number(v); }
+      promoPost("/promo-settings/update",{
+        enabled:document.getElementById("pr-enabled").checked,
+        delaySeconds:num("pr-delay"), suppressDays:num("pr-suppress"),
+      }).then(function(res){
+        if(!res.ok){ b.disabled=false; b.textContent="Save rooftop settings"; return showErr(res.error||"Save failed."); }
+        loadPromoLeads();   // first-ever enable reveals the dealer's Promo leads button
+        prReload(function(){ prRenderList("Rooftop settings saved."); });
+      }).catch(function(){ b.disabled=false; b.textContent="Save rooftop settings"; showErr("Network error. Try again."); });
+    });
+    document.getElementById("pr-add").addEventListener("click", function(){ prRenderEditor(null); });
+
+    prModal().querySelectorAll(".ocard").forEach(function(card){
+      var id=card.getAttribute("data-oid");
+      card.querySelectorAll(".obtn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var act=btn.getAttribute("data-act");
+          if(act==="edit"){ prRenderEditor(offers.filter(function(o){return o.id===id;})[0]); return; }
+          if(act==="dup"){
+            btn.disabled=true;
+            promoPost("/promo-offers/"+id+"/duplicate",{}).then(function(res){
+              if(!res.ok){ btn.disabled=false; return showErr(res.error||"Could not duplicate."); }
+              prReload(function(){ prRenderList("Copy added at the bottom, switched off. Edit it, then turn it on."); });
+            });
+            return;
+          }
+          // up / down: swap and send the full order
+          var order=offers.map(function(o){return o.id;}), i=order.indexOf(id), j=act==="up"?i-1:i+1;
+          if(j<0||j>=order.length) return;
+          order[i]=order[j]; order[j]=id;
+          prModal().querySelectorAll(".obtn").forEach(function(x){ x.disabled=true; });
+          promoPost("/promo-offers/reorder",{order:order}).then(function(res){
+            if(!res.ok) return showErr(res.error||"Could not reorder.");
+            prReload(function(){ prRenderList(); });
+          });
+        });
+      });
+    });
+  }
+
+  // ── Editor view ──
+  function prRenderEditor(o){
+    var d=_pr.d, tz=d.dealer.timezone, isNew=!o;
+    o=o||{ name:"", enabled:true, offerCents:d.defaults.offerCents, headline:"", disclaimer:"",
+           startAt:null, endAt:null, vehicleFilter:null, image:null };
+    var f=o.vehicleFilter||{}, image=o.image;
+    var chosenMakes=(f.make||[]).map(function(m){return m.toLowerCase();});
+    var chosenModels=(f.model||[]).map(function(m){return m.toLowerCase();});
+
+    // Makes on the lot, plus anything already in the saved filter (so a make
+    // that sold out doesn't silently drop out of the filter).
+    var makes=(d.inventoryMakes||[]).slice();
+    (f.make||[]).forEach(function(m){ if(!makes.some(function(x){return x.make.toLowerCase()===m.toLowerCase();})) makes.push({make:m,n:0}); });
+    var models=(d.inventoryModels||[]).slice();
+    (f.model||[]).forEach(function(m){ if(!models.some(function(x){return x.model.toLowerCase()===m.toLowerCase();})) models.push({make:"",model:m,n:0}); });
+
+    var makeChips=makes.map(function(m){
+      var on=chosenMakes.indexOf(m.make.toLowerCase())!==-1;
+      return '<label class="mkchip'+(on?' on':'')+'"><input type="checkbox" value="'+escapeHtml(m.make)+'"'+(on?' checked':'')+'>'
+        +escapeHtml(m.make)+' <span class="ct">'+m.n+'</span></label>';
+    }).join("") || '<span style="font-size:12.5px;color:var(--slate)">No inventory synced yet.</span>';
+
+    prModal().innerHTML='<div class="mbody">'+prClose()
+      +'<button class="linkbtn" id="pr-back" style="color:var(--action);padding:0;margin:0 0 8px;text-decoration:none">← All offers</button>'
+      +'<div class="mph-title" style="margin-top:0">'+(isNew?'New offer':'Edit offer')+' — '+escapeHtml(currentDealerLabel())+'</div>'
+      +'<div class="err" id="pr-err" style="display:none"></div>'
+      +'<div class="setrow"><label>Offer name <span style="font-weight:400;color:var(--slate)">(for you and the dealer · shoppers never see it)</span></label>'
+        +'<input id="pr-name" maxlength="60" value="'+escapeHtml(o.name)+'" placeholder="e.g. Tacoma Month"></div>'
+      +'<div class="consent" style="margin:0 0 14px"><input type="checkbox" id="pr-on"'+(o.enabled?' checked':'')+'>'
+        +'<span class="cbx" aria-hidden="true"></span><label for="pr-on" style="cursor:pointer;font-weight:600">Offer on</label></div>'
+
+      +'<div class="psec" style="border-top:0;padding-top:0;margin-top:6px">Preview</div>'
+      +'<div class="pv" id="pr-preview"></div>'
+
+      +'<div class="psec">Offer</div>'
+      +'<div class="setrow"><label>Offer amount ($)</label><input id="pr-offer" type="number" min="1" step="1" inputmode="numeric" value="'+Math.round((o.offerCents||0)/100)+'"></div>'
+      +'<div class="setrow"><label>Line under the offer amount <span style="font-weight:400;color:var(--slate)">(optional)</span></label>'
+        +'<input id="pr-headline" maxlength="120" value="'+escapeHtml(o.headline||"")+'" placeholder="this 2024 Toyota Tacoma  (automatic: names the vehicle)"></div>'
+      +'<div class="setrow"><label>Offer graphic <span style="font-weight:400;color:var(--slate)">(optional · replaces the colored header · about 1200×600 works best)</span></label>'
+        +(isNew?'<div class="pnote" style="margin:0">Save the offer first, then add a graphic.</div>'
+               :'<input type="file" id="pr-image" accept="image/jpeg,image/png,image/webp"><div class="imgrow" id="pr-imgrow"></div>')
+      +'</div>'
+      +'<p class="pnote">If you use a graphic, make sure it shows the same amount as <strong>Offer amount</strong> above. The CRM lead records that number, not whatever the picture says.</p>'
+      +'<div class="setrow"><label>Fine print <span style="font-weight:400;color:var(--slate)">(optional · get the dealer\'s approved wording)</span></label>'
+        +'<textarea id="pr-disclaimer" maxlength="400" placeholder="Offer applies to this vehicle only. Cannot be combined with some offers. See dealer for details.">'+escapeHtml(o.disclaimer||"")+'</textarea></div>'
+
+      +'<div class="psec">Schedule</div>'
+      +'<div class="setrow2even">'
+        +'<div class="setrow"><label>Start date</label><input id="pr-start" type="date" value="'+promoDateVal(o.startAt,tz)+'"></div>'
+        +'<div class="setrow"><label>End date</label><input id="pr-end" type="date" value="'+promoDateVal(o.endAt,tz)+'"></div>'
+      +'</div>'
+      +'<p class="pnote">Blank = no limit. Dates are in the dealer\'s time zone; the end date runs through 11:59 pm.</p>'
+
+      +'<div class="psec">Which vehicles</div>'
+      +'<div class="setrow"><label>Condition</label><select id="pr-cond">'
+        +[["","Any"],["new","New only"],["used","Used (includes certified)"],["certified","Certified only"]]
+          .map(function(x){ return '<option value="'+x[0]+'"'+((f.condition||"")===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join("")
+      +'</select></div>'
+      +'<div class="setrow2even">'
+        +'<div class="setrow"><label>Min price ($)</label><input id="pr-pmin" type="number" min="0" step="1" value="'+(f.price_min_cents!=null?Math.round(f.price_min_cents/100):"")+'" placeholder="none"></div>'
+        +'<div class="setrow"><label>Max price ($)</label><input id="pr-pmax" type="number" min="0" step="1" value="'+(f.price_max_cents!=null?Math.round(f.price_max_cents/100):"")+'" placeholder="none"></div>'
+      +'</div>'
+      +'<div class="setrow"><label>Makes <span style="font-weight:400;color:var(--slate)">(none selected = all makes)</span></label><div class="mkchips" id="pr-makes">'+makeChips+'</div></div>'
+      +'<div class="setrow"><label>Models <span style="font-weight:400;color:var(--slate)">(none selected = all models)</span></label><div class="mkchips" id="pr-models"></div></div>'
+      +'<div class="pmatch" id="pr-match">Checking inventory…</div>'
+
+      +'<button class="mlink" id="pr-save" style="width:100%;border:0;cursor:pointer;margin-top:10px">'+(isNew?'Create offer':'Save offer')+'</button>'
+      +(isNew?'':'<div style="text-align:center;margin-top:10px"><button class="linkbtn" id="pr-del" type="button">Delete this offer</button></div>')
+    +'</div>';
+    prModal().scrollTop=0;
+
+    var err=document.getElementById("pr-err");
+    function showErr(m){ err.className="err"; err.textContent=m; err.style.display="block"; err.scrollIntoView({block:"nearest"}); }
+    document.getElementById("pr-back").addEventListener("click", function(){ prReload(function(){ prRenderList(); }); });
+
+    // Model chips follow the chosen makes; checked models are remembered even
+    // while their make is deselected, then dropped at save if the make isn't chosen.
+    function selectedMakes(){ var a=[]; document.querySelectorAll("#pr-makes input:checked").forEach(function(cb){ a.push(cb.value); }); return a; }
+    function renderModels(){
+      var mk=selectedMakes().map(function(m){return m.toLowerCase();});
+      var list=models.filter(function(m){ return !mk.length || !m.make || mk.indexOf(m.make.toLowerCase())!==-1; });
+      var html=list.map(function(m){
+        var on=chosenModels.indexOf(m.model.toLowerCase())!==-1;
+        return '<label class="mkchip'+(on?' on':'')+'"><input type="checkbox" value="'+escapeHtml(m.model)+'"'+(on?' checked':'')+'>'
+          +(mk.length===1||!m.make?'':'<span class="ct" style="margin-right:2px">'+escapeHtml(m.make)+'</span>')
+          +escapeHtml(m.model)+' <span class="ct">'+m.n+'</span></label>';
+      }).join("");
+      var box=document.getElementById("pr-models");
+      box.innerHTML=html||'<span style="font-size:12.5px;color:var(--slate)">No models for the selected makes.</span>';
+      box.querySelectorAll("input").forEach(function(cb){
+        cb.addEventListener("change", function(){
+          cb.parentNode.classList.toggle("on", cb.checked);
+          var k=cb.value.toLowerCase(), i=chosenModels.indexOf(k);
+          if(cb.checked && i===-1) chosenModels.push(k); else if(!cb.checked && i!==-1) chosenModels.splice(i,1);
+          scheduleMatch();
+        });
+      });
+    }
+    document.querySelectorAll("#pr-makes input").forEach(function(cb){
+      cb.addEventListener("change", function(){ cb.parentNode.classList.toggle("on", cb.checked); renderModels(); scheduleMatch(); });
+    });
+
+    function buildFilter(){
+      function num(id){ var v=document.getElementById(id).value.trim(); return v===""?"":Number(v); }
+      var fl={}, cond=document.getElementById("pr-cond").value, pmin=num("pr-pmin"), pmax=num("pr-pmax");
+      if(cond) fl.condition=cond;
+      if(pmin!=="") fl.price_min_cents=Math.round(pmin*100);
+      if(pmax!=="") fl.price_max_cents=Math.round(pmax*100);
+      var mk=selectedMakes(); if(mk.length) fl.make=mk;
+      var mdl=[]; document.querySelectorAll("#pr-models input:checked").forEach(function(cb){ mdl.push(cb.value); });
+      if(mdl.length) fl.model=mdl;
+      return Object.keys(fl).length?fl:null;
+    }
+
+    // Live coverage line — asks the server, which uses the popup's own matching.
+    var matchTimer=null, matchSeq=0;
+    function scheduleMatch(){ clearTimeout(matchTimer); matchTimer=setTimeout(runMatch, 300); }
+    function runMatch(){
+      var seq=++matchSeq, el=document.getElementById("pr-match"); if(!el) return;
+      promoPost("/promo-offers/match-preview",{vehicleFilter:buildFilter(), offerId:isNew?null:o.id}).then(function(r){
+        if(seq!==matchSeq || !document.getElementById("pr-match")) return;
+        if(!r.ok){ el.className="pmatch bad"; el.textContent=r.error||"Couldn't check inventory."; return; }
+        var txt='<strong>Matches '+r.matches+' of '+r.inventoryCount+' cars</strong> on the lot now';
+        if(r.takenByHigher) txt+=' · '+r.takenByHigher+' go to offers above this one, so it would show on <strong>'+r.wins+'</strong>';
+        if(r.examples.length) txt+='<div class="pmx">e.g. '+r.examples.map(escapeHtml).join(", ")+'</div>';
+        el.className="pmatch"+(r.wins===0?" bad":"");
+        el.innerHTML=txt+(isNew&&r.matches?'<div class="pmx">New offers go to the bottom of the list. Move it up afterwards if it should win.</div>':'');
+      });
+    }
+    ["pr-cond","pr-pmin","pr-pmax"].forEach(function(id){
+      document.getElementById(id).addEventListener("input", scheduleMatch);
+      document.getElementById(id).addEventListener("change", scheduleMatch);
+    });
+
+    function renderPreview(){
+      var dollars=parseInt(document.getElementById("pr-offer").value,10);
+      var sub=document.getElementById("pr-headline").value.trim()||"this 2024 Toyota Tacoma";
+      var el=document.getElementById("pr-preview");
+      if(image){
+        el.innerHTML='<img class="pv-img" src="'+escapeHtml(API+image.path)+'" alt="Offer graphic">'
+          +'<div class="pv-cap">Showing your graphic. If it fails to load on a dealer site, the text header is used instead.</div>';
+      } else {
+        el.innerHTML='<div class="pv-band"><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
+          +'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>'
+          +'<div class="pv-sub">'+escapeHtml(sub)+'</div></div>'
+          +'<div class="pv-cap">Header color comes from the dealer\'s site tag (accentColor). Vehicle name fills in per car.</div>';
+      }
+    }
+    function renderImageRow(){
+      var row=document.getElementById("pr-imgrow"); if(!row) return;
+      if(!image){ row.innerHTML=""; return; }
+      row.innerHTML='<img src="'+escapeHtml(API+image.path)+'" alt="">'
+        +'<span style="font-size:12px;color:var(--slate)">'+(image.width&&image.height?image.width+"×"+image.height+" · ":"")+Math.round(image.bytes/1024)+' KB</span>'
+        +'<button class="linkbtn" id="pr-imgdel" type="button">Remove</button>';
+      document.getElementById("pr-imgdel").addEventListener("click", function(){
+        if(!confirm("Remove this offer's graphic? It goes back to the text header.")) return;
+        promoPost("/promo-offers/"+o.id+"/image/delete",{}).then(function(res){
+          if(!res.ok) return showErr(res.error||"Could not remove image.");
+          image=null; renderImageRow(); renderPreview();
+        });
+      });
+    }
+    ["pr-offer","pr-headline"].forEach(function(id){ document.getElementById(id).addEventListener("input", renderPreview); });
+    renderPreview(); renderImageRow(); renderModels(); runMatch();
+
+    var imgInput=document.getElementById("pr-image");
+    if(imgInput) imgInput.addEventListener("change", function(){
+      var input=this, file=input.files && input.files[0]; if(!file) return;
+      err.style.display="none";
+      var row=document.getElementById("pr-imgrow");
+      row.innerHTML='<span style="font-size:12.5px;color:var(--slate)">Uploading…</span>';
+      prepPromoImage(file).then(function(p){
+        return promoPost("/promo-offers/"+o.id+"/image",{dataBase64:p.dataUrl,width:p.width,height:p.height});
+      }).then(function(res){
+        input.value="";
+        if(!res.ok){ renderImageRow(); return showErr(res.error||"Upload failed."); }
+        image=res.image; renderImageRow(); renderPreview();
+      }).catch(function(e){ input.value=""; renderImageRow(); showErr(e.message||"Upload failed."); });
+    });
+
+    var del=document.getElementById("pr-del");
+    if(del) del.addEventListener("click", function(){
+      if(!confirm('Delete "'+o.name+'"? It stops showing immediately. Leads it already brought in are kept.')) return;
+      promoPost("/promo-offers/"+o.id+"/delete",{}).then(function(res){
+        if(!res.ok) return showErr(res.error||"Could not delete.");
+        prReload(function(){ prRenderList('Deleted "'+o.name+'".'); });
+      });
+    });
+
+    document.getElementById("pr-save").addEventListener("click", function(){
+      var btn=this; err.style.display="none";
+      var offer=document.getElementById("pr-offer").value.trim();
+      if(!document.getElementById("pr-name").value.trim()) return showErr("Give the offer a name.");
+      if(!(Number(offer)>0)) return showErr("Offer amount must be more than $0.");
+      // Keep only models whose make is still selected (or all, if no make filter).
+      var fl=buildFilter();
+      var body={
+        name: document.getElementById("pr-name").value.trim(),
+        enabled: document.getElementById("pr-on").checked,
+        offerCents: Math.round(Number(offer)*100),
+        headline: document.getElementById("pr-headline").value.trim(),
+        disclaimer: document.getElementById("pr-disclaimer").value.trim(),
+        startAt: document.getElementById("pr-start").value,
+        endAt: document.getElementById("pr-end").value,
+        vehicleFilter: fl,
+      };
+      btn.disabled=true; btn.textContent="Saving…";
+      promoPost(isNew?"/promo-offers/create":"/promo-offers/"+o.id+"/update", body).then(function(res){
+        if(!res.ok){ btn.disabled=false; btn.textContent=isNew?"Create offer":"Save offer"; return showErr(res.error||"Save failed."); }
+        prReload(function(){
+          if(isNew){
+            // Straight into the saved offer so a graphic can be added now.
+            var created=(_pr.d.offers||[]).filter(function(x){return x.id===res.id;})[0];
+            if(created){ prRenderEditor(created); var e=document.getElementById("pr-err"); e.className="pok"; e.textContent="Offer created. Add a graphic if you like, or go back to all offers."; e.style.display="block"; return; }
+          }
+          prRenderList('Saved "'+body.name+'".');
+        });
+      }).catch(function(){ btn.disabled=false; btn.textContent=isNew?"Create offer":"Save offer"; showErr("Network error. Try again."); });
+    });
+  }
+  var _promoBtn=document.getElementById("promoBtn");
+  if(_promoBtn) _promoBtn.addEventListener("click", openPromoSettings);
+
   function refresh(){
     Promise.all([loadSummary(), loadBoard()]).catch(function(e){
       document.getElementById("boardWrap").innerHTML='<div class="board"><div class="state">Could not load data: '+e.message+'</div></div>';
       document.getElementById("updated").textContent="offline";
     });
     loadSignals(); // independent — its own failure never blocks the board
+    loadPromoLeads(); // same: hidden on any failure, never blocks the board
   }
   // Start only after unlock. If this session already passed the gate, unlock now.
   if(window.__lpUnlock){ unlockApp(); }
