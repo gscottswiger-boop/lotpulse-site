@@ -27,6 +27,16 @@
 //     sets sessionStorage "lp_watched_<VIN>")
 //   • on top of an open LotPulse watch sheet (window.__lotpulseSheetOpen)
 //
+// REOPEN TAB: when a shopper closes the popup WITHOUT submitting, a small
+// "$500 OFF" bookmark tab stays on the right edge of the page. Clicking it
+// reopens the popup. It also shows on later visits to that same car while the
+// popup itself is being held back, so the offer never becomes unreachable.
+// The tab has its own small × ; closing it hides it for the don't-show-again
+// window. It never shows after a submit, or on a car the shopper is watching.
+// Optional GTM config:  reopenTab: false        (turn the tab off for a site)
+//                       reopenTabTop: "60%"     (move it; % / px / vh from top,
+//                                                e.g. to clear a chat widget)
+//
 // GTM snippet (its own tag, after the LotPulse tag or standalone):
 //   <script>
 //     window.__lotpulsePromoConfig = {
@@ -55,6 +65,8 @@
   var KEY = CONFIG.publicKey || "";
   var ACCENT = /^#[0-9a-fA-F]{3,8}$/.test(CONFIG.accentColor || "") ? CONFIG.accentColor : "#1F2A44";
   var TEST = /[?&]lp_promo_test=1\b/.test(window.location.search);
+  var TAB_ON = CONFIG.reopenTab !== false;
+  var TAB_TOP = /^\d{1,4}(%|px|vh)$/.test(CONFIG.reopenTabTop || "") ? CONFIG.reopenTabTop : "50%";
 
   if (!API || !KEY) {
     console.warn("[Promo] missing apiBase or publicKey; promo not loaded");
@@ -163,6 +175,7 @@
   // ── State ──────────────────────────────────────────────────────────────────
   var VIN = null, CFG = null, IMG = null, shown = false, host = null, root = null;
   var lastFocus = null, savedOverflow = null, sheetWaits = 0;
+  var tabHost = null, lastTrigger = "timed", offerGone = false, viaTab = false;
 
   function isDesktopPointer() {
     try { return window.matchMedia("(hover: hover) and (pointer: fine)").matches; } catch (e) { return false; }
@@ -301,9 +314,15 @@
   }
 
   // ── Show / hide ────────────────────────────────────────────────────────────
-  function show(trigger) {
-    if (shown) return;
+  // reopen=true: the shopper clicked the reopen tab. That is a deliberate
+  // click, so none of the "is this a good moment" checks apply, and it is NOT
+  // counted as a new impression (it would inflate views and understate the
+  // conversion rate on the settings screen).
+  function show(trigger, reopen) {
+    if (host) return;                 // already open
+    if (shown && !reopen) return;
 
+    if (!reopen) {
     // Re-check the watch signals at the moment of showing — the shopper may
     // have watched the car (or opened the watch sheet) during the delay.
     if (!TEST && ssGet("lp_watched_" + VIN)) { log("skip: watched this VIN during delay"); return; }
@@ -323,7 +342,11 @@
       document.addEventListener("visibilitychange", onVis);
       return;
     }
+    lastTrigger = trigger;
+    }
 
+    removeTab();
+    if (reopen) viaTab = true;
     shown = true;
     ssSet("lp_promo_shown_" + VIN, "1");
     lsSet("lp_promo_seen_" + VIN, String(Date.now()));
@@ -334,7 +357,7 @@
     var useImage = !!(IMG && IMG.complete && IMG.naturalWidth > 0);
     root.innerHTML = "<style>" + css() + "</style>" + html(useImage);
     document.body.appendChild(host);
-    wire(trigger);
+    wire(lastTrigger);
 
     lastFocus = document.activeElement;
     savedOverflow = document.documentElement.style.overflow;
@@ -345,6 +368,16 @@
       setTimeout(function () { var n = root.getElementById("n"); if (n) n.focus(); }, 240);
     });
 
+    if (reopen) {
+      promoEvent("lp_promo_reopened", {
+        item_id: VIN, page_type: "item", element_type: "popup",
+        event_action_result: "popup",
+        offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
+        page_location: window.location.href,
+      });
+      log("reopened from tab");
+      return;
+    }
     apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
     promoEvent("lp_promo_view", {
       item_id: VIN, page_type: "item", element_type: "popup",
@@ -370,7 +403,75 @@
         item_id: VIN, page_type: "item", element_type: "popup",
         event_action_result: "close", close_method: reason, page_location: window.location.href,
       });
+      // Closed without submitting: leave the reopen tab on the page edge.
+      setTimeout(showTab, 300);
     }
+  }
+
+  // ── Reopen tab ─────────────────────────────────────────────────────────────
+  // A small bookmark on the right edge. Its own shadow root, so the dealer
+  // site's CSS can't restyle it and ours can't leak. Deliberately quiet: no
+  // animation loop, no badge, and the shopper can close it.
+  function tabClosed() {
+    if (TEST) return false;
+    if (ssGet("lp_promo_tab_closed_" + VIN)) return true;
+    return withinDays(lsGet("lp_promo_tab_closed_" + VIN), (CFG && CFG.suppressDays) || 7);
+  }
+  function removeTab() {
+    if (tabHost && tabHost.parentNode) tabHost.parentNode.removeChild(tabHost);
+    tabHost = null;
+  }
+  function showTab() {
+    if (!TAB_ON || tabHost || host || !CFG || submitted || offerGone) return;
+    // Never after a submit (this visit or within the window), never on a car
+    // the shopper is already watching, never once they've closed the tab.
+    if (!TEST && (ssGet("lp_promo_submitted_s")
+        || withinDays(lsGet("lp_promo_submitted"), CFG.suppressDays || 7)
+        || ssGet("lp_watched_" + VIN))) return;
+    if (tabClosed()) return;
+
+    var amount = amountLabel();
+    tabHost = document.createElement("div");
+    tabHost.id = "lp-promo-tab-host";
+    var r = tabHost.attachShadow ? tabHost.attachShadow({ mode: "open" }) : tabHost;
+    r.innerHTML = "<style>"
+      + ":host{all:initial}"
+      + "*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}"
+      + ".wrap{position:fixed;right:0;top:" + TAB_TOP + ";z-index:2147483000;transform:translate(110%,-50%);"
+      + "transition:transform .35s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.28))}"
+      + ".wrap.in{transform:translate(0,-50%)}"
+      // Bookmark shape: flat on the page edge, V-notch on the side facing in.
+      + ".tab{display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;cursor:pointer;"
+      + "background:" + ACCENT + ";color:#fff;padding:10px 12px 10px 24px;min-width:86px;line-height:1;"
+      + "clip-path:polygon(0 0,100% 0,100% 100%,0 100%,13px 50%);transition:padding .15s}"
+      + ".tab:hover{padding-right:18px}"
+      + ".tab:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
+      + ".n{font-size:22px;font-weight:800;letter-spacing:-.01em}"
+      + ".o{font-size:11px;font-weight:800;letter-spacing:.12em;margin-top:3px}"
+      + ".tx{position:absolute;top:-9px;left:6px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;"
+      + "background:#2A303C;color:#fff;font-size:14px;line-height:17px;padding:0;cursor:pointer;text-align:center}"
+      + ".tx:hover{background:#000}"
+      + ".tx:focus-visible{outline:3px solid #7AA7FF}"
+      + "@media (max-width:560px){.tab{min-width:74px;padding:8px 9px 8px 21px}.n{font-size:19px}.o{font-size:10px}}"
+      + "@media (prefers-reduced-motion:reduce){.wrap{transition:none}}"
+      + "@media print{.wrap{display:none}}"
+      + "</style>"
+      + '<div class="wrap" id="w">'
+      +   '<button class="tab" id="t" type="button" aria-label="Reopen offer: ' + esc(amount) + ' off">'
+      +     '<span class="n">' + esc(amount) + '</span><span class="o">OFF</span></button>'
+      +   '<button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button>'
+      + '</div>';
+    document.body.appendChild(tabHost);
+    requestAnimationFrame(function () { var w = r.getElementById("w"); if (w) w.classList.add("in"); });
+
+    r.getElementById("t").addEventListener("click", function () { show(lastTrigger, true); });
+    r.getElementById("tx").addEventListener("click", function () {
+      ssSet("lp_promo_tab_closed_" + VIN, "1");
+      lsSet("lp_promo_tab_closed_" + VIN, String(Date.now()));
+      removeTab();
+      promoEvent("lp_promo_tab_dismissed", { item_id: VIN, page_type: "item", page_location: window.location.href });
+    });
+    log("reopen tab shown");
   }
 
   var submitted = false;
@@ -435,12 +536,15 @@
             // Offer was paused/ended while the popup was open. Say so plainly
             // and let them close it; don't pretend it worked.
             go.style.display = "none";
+            offerGone = true;   // nothing to reopen — don't leave a tab behind
             return fail((res.json && res.json.error) || "Sorry, this offer is no longer available.");
           }
           return fail((res.json && res.json.error) || "Something went wrong. Please try again.");
         }
         submitted = true;
         lsSet("lp_promo_submitted", String(Date.now()));
+        ssSet("lp_promo_submitted_s", "1");
+        removeTab();
         form.style.display = "none";
         var first = nm.split(/\s+/)[0];
         root.getElementById("doneH").textContent = "Thanks, " + first + "!";
@@ -451,6 +555,7 @@
         promoEvent("lp_promo_submitted", {
           item_id: VIN, page_type: "item", element_type: "form", form_type: "offer",
           event_action_result: "complete", trigger_type: trigger,
+          reopened_from_tab: viaTab ? "yes" : "no",
           offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
           page_location: window.location.href,
         });
@@ -485,7 +590,13 @@
     // Session-level checks first: they need no config, and skipping the API
     // call on repeat pageviews keeps load off the server.
     var pre = clientSuppressed(VIN, 0);
-    if (pre) { log("suppressed: " + pre); return; }
+    // Normally a session-suppressed page stops here without calling the API.
+    // The exception: the shopper already saw (and closed) the popup on this
+    // car. Then we still fetch the offer so the reopen TAB can come back —
+    // otherwise a reload would make the offer unreachable.
+    var tabOnly = pre === "shown_this_session" && TAB_ON
+      && !ssGet("lp_promo_submitted_s") && !ssGet("lp_promo_tab_closed_" + VIN);
+    if (pre && !tabOnly) { log("suppressed: " + pre); return; }
 
     apiGet("/v1/promo/config?vin=" + encodeURIComponent(VIN)).then(function (c) {
       if (!c || !c.eligible) { log("not eligible" + (c && c.reason ? ": " + c.reason : "")); return; }
@@ -494,7 +605,13 @@
       // opens (35s later by default). show() checks it actually loaded.
       if (c.imagePath) { IMG = new Image(); IMG.src = API + c.imagePath; }
       var why = clientSuppressed(VIN, c.suppressDays);
-      if (why) { log("suppressed: " + why); return; }
+      if (why) {
+        log("suppressed: " + why);
+        // Popup held back because they've already seen it on this car: show
+        // just the tab (showTab applies its own submit / watch / closed checks).
+        if (why === "shown_this_session" || why === "seen_recently") { shown = true; showTab(); }
+        return;
+      }
       armTriggers();
     }).catch(function (e) { log("config fetch failed (no popup):", e && e.message); });
   }
