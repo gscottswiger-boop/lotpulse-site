@@ -33,6 +33,19 @@
 // popup itself is being held back, so the offer never becomes unreachable.
 // The tab has its own small × ; closing it hides it for the don't-show-again
 // window. It never shows after a submit, or on a car the shopper is watching.
+// VEHICLE: the popup shows the exact car the offer is for — year, make, model,
+// trim, stock number and VIN — under the header, in both text and graphic mode.
+//
+// PRINTABLE VOUCHER: after a successful submit (and only then) the thank-you
+// screen shows the shopper's confirmation code and a "Print my offer" button.
+// The voucher carries the dealer, amount, vehicle, shopper's name, dates, fine
+// print and the code — the same code that lands in the CRM lead and the
+// dashboard's Promo leads list, so the dealer can match paper to lead. All of
+// it comes back from the server in the submit response; nothing printable
+// exists in the page before that. On phones the voucher opens in a new tab
+// (to save or screenshot) instead of going straight to a print dialog.
+// Optional GTM config:  printButton: false      (hide the print button)
+//
 // Optional GTM config:  reopenTab: false        (turn the tab off for a site)
 //                       reopenTabTop: "60%"     (move it; % / px / vh from top,
 //                                                e.g. to clear a chat widget)
@@ -66,6 +79,7 @@
   var ACCENT = /^#[0-9a-fA-F]{3,8}$/.test(CONFIG.accentColor || "") ? CONFIG.accentColor : "#1F2A44";
   var TEST = /[?&]lp_promo_test=1\b/.test(window.location.search);
   var TAB_ON = CONFIG.reopenTab !== false;
+  var PRINT_ON = CONFIG.printButton !== false;
   var TAB_TOP = /^\d{1,4}(%|px|vh)$/.test(CONFIG.reopenTabTop || "") ? CONFIG.reopenTabTop : "50%";
 
   if (!API || !KEY) {
@@ -247,6 +261,17 @@
       + "text-decoration:underline;cursor:pointer;padding:6px}"
       + ".fine{font-size:12px;line-height:1.45;color:#6A7282;margin:14px 0 0}"
       + ".fine a{color:#4A5262}"
+      // Vehicle strip: which car this offer is for.
+      + ".veh{background:#F3F5F9;border-bottom:1px solid #E3E7EE;padding:11px 24px 12px}"
+      + ".veh .vt{font-size:15.5px;font-weight:700;color:#14171F;line-height:1.3}"
+      + ".veh .vm{font-size:12px;color:#4A5262;margin-top:3px;line-height:1.5;word-break:break-word}"
+      + ".veh .vm b{font-weight:600;color:#2A303C}"
+      + ".veh .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em}"
+      + ".code{display:none;border:1.5px dashed #B9C0CC;border-radius:10px;padding:10px 12px;margin:0 0 14px}"
+      + ".code span{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:#5A6272}"
+      + ".code strong{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:24px;"
+      + "letter-spacing:.08em;color:#14171F;margin-top:2px;user-select:all}"
+      + ".go.print{display:none;margin-bottom:4px}"
       + ".done{display:none;text-align:center;padding:8px 0 4px}"
       + ".check{width:52px;height:52px;border-radius:50%;background:#E7F6EE;color:#1E8E5A;display:flex;"
       + "align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px}"
@@ -255,6 +280,15 @@
 
   function amountLabel() {
     return "$" + Math.round((CFG.offerCents || 0) / 100).toLocaleString("en-US");
+  }
+
+  // Line under the big amount. The agency's own line is shown as written. The
+  // automatic one ("this 2024 Toyota RAV4") would just repeat the vehicle strip
+  // directly below it, so it becomes "on this vehicle" and the strip names the car.
+  function subheadText() {
+    var sub = CFG.subhead || CFG.headline || "";
+    if (CFG.vehicleLabel && sub === "this " + CFG.vehicleLabel) return "on this vehicle";
+    return sub;
   }
 
   // Header: either the dealer's uploaded graphic (image mode) or the text band
@@ -274,9 +308,25 @@
       + (dealer ? '<p class="dealer">' + dealer + '</p>' : "")
       + '<h2 class="hl" id="hl">'
       +   '<span class="amt"><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></span>'
-      +   '<span class="subhl">' + esc(CFG.subhead || CFG.headline || "") + '</span>'
+      +   '<span class="subhl">' + esc(subheadText()) + '</span>'
       + '</h2>'
       + close + '</div>';
+  }
+
+  // "2024 Toyota RAV4 XLE" + "Stock # T24-4471 · VIN JTMB1RFV5RD012345".
+  // Falls back to just the VIN when the car isn't in the feed yet.
+  function vehicleHtml() {
+    var v = CFG.vehicle || {};
+    var title = [v.year, v.make, v.model, v.trim].filter(Boolean).join(" ");
+    var vin = v.vin || VIN;
+    var meta = [];
+    if (v.stockNumber) meta.push('<b>Stock #</b> <span class="mono">' + esc(v.stockNumber) + '</span>');
+    if (vin) meta.push('<b>VIN</b> <span class="mono">' + esc(vin) + '</span>');
+    if (!title && !meta.length) return "";
+    return '<div class="veh" id="veh">'
+      + (title ? '<div class="vt">' + esc(title) + '</div>' : "")
+      + (meta.length ? '<div class="vm">' + meta.join(' &nbsp;·&nbsp; ') + '</div>' : "")
+      + '</div>';
   }
 
   function html(useImage) {
@@ -285,10 +335,11 @@
       + '<div class="scrim" id="scrim"></div>'
       + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl">'
       +   headerHtml(useImage)
+      +   vehicleHtml()
       +   '<div class="body">'
       +     '<form id="form" novalidate>'
       +       '<p class="sub">Enter your info and ' + (dealer || "our team") + ' will reach out with your offer'
-      +         (CFG.vehicleLabel ? ' on this ' + esc(CFG.vehicleLabel) : '') + '.</p>'
+      +         ' on this vehicle.</p>'
       +       '<div class="err" id="err" role="alert"></div>'
       +       '<label for="n">Name</label>'
       +       '<input id="n" name="name" type="text" autocomplete="name" required maxlength="120">'
@@ -307,6 +358,8 @@
       +       '<div class="check" aria-hidden="true">&#10003;</div>'
       +       '<h3 id="doneH">You’re all set</h3>'
       +       '<p id="doneP"></p>'
+      +       '<div class="code" id="codeBox"><span>Your confirmation code</span><strong id="code"></strong></div>'
+      +       '<button class="go print" id="print" type="button">Print my offer</button>'
       +       '<button class="go" id="ok" type="button">Keep browsing</button>'
       +     '</div>'
       +   '</div>'
@@ -490,6 +543,95 @@
     }
   }
 
+  // ── Printable voucher ──────────────────────────────────────────────────────
+  // A self-contained one-page document — never the dealer's web page. Dealer-
+  // branded like the popup: no LotPulse name on it.
+  function voucherDoc(v, withPrintButton) {
+    var veh = v.vehicle || {};
+    var title = [veh.year, veh.make, veh.model, veh.trim].filter(Boolean).join(" ");
+    var amount = "$" + Math.round((v.offerCents || 0) / 100).toLocaleString("en-US");
+    function row(label, val) {
+      return val ? '<tr><th>' + label + '</th><td>' + esc(val) + '</td></tr>' : "";
+    }
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>' + esc(amount + " off — " + (v.dealerName || "Offer")) + '</title><style>'
+      + '*{box-sizing:border-box}body{margin:0;padding:28px 18px;background:#fff;color:#14171F;'
+      + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;'
+      + '-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+      + '.v{max-width:620px;margin:0 auto;border:3px dashed #14171F;border-radius:14px;padding:26px 28px}'
+      + '.d{font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#3A4150}'
+      + '.a{font-size:68px;font-weight:800;line-height:1;margin:10px 0 2px;color:' + ACCENT + ';letter-spacing:-.02em}'
+      + '.a small{font-size:30px;letter-spacing:.02em;margin-left:8px}'
+      + '.c{font-size:20px;font-weight:700;margin:14px 0 2px}'
+      + 'table{border-collapse:collapse;width:100%;margin:10px 0 0}'
+      + 'th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#5A6272;'
+      + 'font-weight:600;padding:5px 14px 5px 0;white-space:nowrap;vertical-align:top;width:1%}'
+      + 'td{font-size:15px;padding:5px 0}'
+      + '.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}'
+      + '.k{margin:20px 0 0;border:2px solid #14171F;border-radius:10px;padding:12px 16px;text-align:center}'
+      + '.k span{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5A6272}'
+      + '.k strong{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;'
+      + 'font-size:34px;letter-spacing:.1em;margin-top:2px}'
+      + '.f{font-size:12px;line-height:1.5;color:#4A5262;margin:18px 0 0}'
+      + '.pb{display:block;margin:22px auto 0;max-width:620px;width:100%;border:0;border-radius:10px;padding:14px;'
+      + 'font-size:17px;font-weight:700;color:#fff;background:' + ACCENT + ';cursor:pointer}'
+      + '@media print{body{padding:0}.pb{display:none}}'
+      + '</style></head><body><div class="v">'
+      + '<div class="d">' + esc(v.dealerName || "") + '</div>'
+      + '<div class="a">' + esc(amount) + '<small>OFF</small></div>'
+      + (title ? '<div class="c">' + esc(title) + '</div>' : "")
+      + '<table>'
+      + (veh.stockNumber ? '<tr><th>Stock #</th><td class="mono">' + esc(veh.stockNumber) + '</td></tr>' : "")
+      + (veh.vin ? '<tr><th>VIN</th><td class="mono">' + esc(veh.vin) + '</td></tr>' : "")
+      + row("Issued to", v.name) + row("Issued", v.issuedOn) + row("Offer ends", v.endsOn)
+      + '</table>'
+      + '<div class="k"><span>Confirmation code</span><strong>' + esc(v.code) + '</strong></div>'
+      + '<p class="f">' + esc(v.disclaimer || "") + ' Valid only when verified by '
+      + esc(v.dealerName || "the dealership") + '. Bring this page, or give your confirmation code.</p>'
+      + '</div>'
+      + (withPrintButton ? '<button class="pb" id="pb" type="button">Print</button>' : "")
+      + '</body></html>';
+  }
+
+  function printVoucher(v) {
+    promoEvent("lp_promo_voucher_opened", {
+      item_id: VIN, page_type: "item", element_type: "form",
+      offer_amount: v.offerCents ? Math.round(v.offerCents / 100) : null,
+      page_location: window.location.href,
+    });
+    // Phones / tablets: open the voucher in its own tab. Printing from a phone
+    // is rare; a page they can keep open, save or screenshot is what's useful.
+    if (!isDesktopPointer()) {
+      try {
+        var w = window.open("", "_blank");
+        if (w && w.document) {
+          w.document.open(); w.document.write(voucherDoc(v, true)); w.document.close();
+          var b = w.document.getElementById("pb");
+          if (b) b.onclick = function () { try { w.focus(); w.print(); } catch (e) {} };
+          return;
+        }
+      } catch (e) { /* popup blocked: fall through to the print path */ }
+    }
+    // Desktop: print just the voucher from a hidden frame, so the dealer's
+    // page itself never ends up on paper.
+    try {
+      var old = document.getElementById("lp-promo-print");
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      var f = document.createElement("iframe");
+      f.id = "lp-promo-print";
+      f.setAttribute("aria-hidden", "true");
+      f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+      document.body.appendChild(f);
+      var d = f.contentWindow.document;
+      d.open(); d.write(voucherDoc(v, false)); d.close();
+      setTimeout(function () {
+        try { f.contentWindow.focus(); f.contentWindow.print(); }
+        catch (e) { log("print failed:", e && e.message); }
+      }, 150);
+    } catch (e) { log("print failed:", e && e.message); }
+  }
+
   function wire(trigger) {
     var form = root.getElementById("form"), err = root.getElementById("err"), go = root.getElementById("go");
     var name = root.getElementById("n"), email = root.getElementById("e"), phone = root.getElementById("p");
@@ -551,7 +693,22 @@
         root.getElementById("doneP").textContent =
           (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.";
         root.getElementById("done").style.display = "block";
-        root.getElementById("ok").focus();
+        // Voucher: only the server's submit response carries it, so there is
+        // nothing to print until the shopper has actually given their details.
+        var voucher = res.json && res.json.voucher;
+        var okBtn = root.getElementById("ok");
+        if (voucher && voucher.code) {
+          root.getElementById("code").textContent = voucher.code;
+          root.getElementById("codeBox").style.display = "block";
+          if (PRINT_ON) {
+            var pb = root.getElementById("print");
+            pb.textContent = isDesktopPointer() ? "Print my offer" : "View my offer voucher";
+            pb.style.display = "block";
+            pb.addEventListener("click", function () { printVoucher(voucher); });
+            okBtn.className = "no";          // demote "Keep browsing" to a link
+            pb.focus();
+          } else { okBtn.focus(); }
+        } else { okBtn.focus(); }
         promoEvent("lp_promo_submitted", {
           item_id: VIN, page_type: "item", element_type: "form", form_type: "offer",
           event_action_result: "complete", trigger_type: trigger,
