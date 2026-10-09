@@ -163,6 +163,28 @@
     <div class="out" id="out-mydrive"></div>
   </div>
 
+  <!-- ── Dealer groups ──────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Dealer group</h2>
+    <div class="sub">Rooftops in the same group share one MyDrive list: a shopper's
+      <strong>text-delivered</strong> link shows the cars they watch at every store in the
+      group. <strong>Only group rooftops with the same owner</strong> — never unrelated
+      dealers. List first to see what exists.</div>
+    <div class="row"><label>Group name</label><input id="dg-name" placeholder="Mall of Georgia"></div>
+    <div class="row2">
+      <div class="row"><label>Add dealer slugs <span style="font-weight:400;text-transform:none">(comma-separated)</span></label><input id="dg-add" placeholder="kia-mall-of-georgia, mall-of-georgia-chrysler-dodge-jeep"></div>
+      <div class="row"><label>Remove dealer slugs <span style="font-weight:400;text-transform:none">(comma-separated)</span></label><input id="dg-remove" placeholder="kia-mall-of-georgia"></div>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" data-act="grouplist">List groups</button>
+      <button class="primary" data-act="groupadd">Add to group</button>
+      <button class="danger" data-act="groupremove">Remove from group</button>
+    </div>
+    <div class="hint">Removing a rooftop sends its shoppers' links back to that rooftop only.
+      Nothing is deleted, and re-adding restores the merged list.</div>
+    <div class="out" id="out-group"></div>
+  </div>
+
   <!-- ── Messaging service cutover ──────────────────────────────────────── -->
   <div class="card">
     <h2>A2P messaging service</h2>
@@ -347,6 +369,28 @@
       if (!ph && !sl) return show("mydrive", "Enter a phone number or a dealer slug.", true);
       var p = ph ? "?phone=" + q(ph) : "?slug=" + q(sl);
       return call("mydrive", "/admin/mydrive-link" + p, btn);
+    }
+
+    if (act === "grouplist") return call("group", "/admin/setup-group", btn);
+
+    if (act === "groupadd") {
+      var gn = val("dg-name"), ga = val("dg-add").replace(/\s+/g, "");
+      if (!gn) return show("group", "Group name is required.", true);
+      if (!ga) return show("group", "Enter at least one dealer slug to add.", true);
+      if (!confirm("Add " + ga.split(",").join(", ") + " to the group \"" + gn + "\"?\n\n"
+          + "Shoppers will see cars they watch at every rooftop in this group on one MyDrive page. "
+          + "Only do this for rooftops with the same owner."))
+        return;
+      return call("group", "/admin/setup-group?name=" + q(gn) + "&dealers=" + q(ga), btn);
+    }
+
+    if (act === "groupremove") {
+      var gr = val("dg-remove").replace(/\s+/g, "");
+      if (!gr) return show("group", "Enter at least one dealer slug to remove.", true);
+      if (!confirm("Remove " + gr.split(",").join(", ") + " from its dealer group?\n\n"
+          + "MyDrive links for that rooftop go back to showing that rooftop only."))
+        return;
+      return call("group", "/admin/setup-group?remove=" + q(gr), btn);
     }
 
     if (act === "msgsvc") {
