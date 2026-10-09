@@ -466,7 +466,7 @@
         <button id="agencyOverviewBtn" title="All rooftops" aria-label="All rooftops" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
-        <button id="promoBtn" title="Promo popup" aria-label="Promo popup settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+        <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
@@ -506,7 +506,7 @@
   <div class="sec-head">
     <h2>Demand Board</h2>
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from the promo offer popup"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Promo leads <span class="sc" id="promo-count">0</span></button>
+      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from VinPop offers"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> VinPop leads <span class="sc" id="promo-count">0</span></button>
       <button class="sig-btn" id="signalsBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Signals <span class="sc" id="sig-count">0</span></button>
       <div class="meta" id="boardMeta">Loading…</div>
     </div>
@@ -1828,7 +1828,7 @@
       _promoCache=d;
       if(!d || !d.visible){ if(btn) btn.style.display="none"; return; }
       if(cnt) cnt.textContent=d.leadsThisWeek||0;
-      if(btn){ btn.style.display="inline-flex"; btn.title=(d.leadsThisWeek||0)+" promo lead(s) this week"; }
+      if(btn){ btn.style.display="inline-flex"; btn.title=(d.leadsThisWeek||0)+" VinPop lead(s) this week"; }
     }).catch(function(){ if(btn) btn.style.display="none"; });
   }
 
@@ -1862,15 +1862,15 @@
     modal.classList.add("open"); scrim.classList.add("open");
     var closeBtn='<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>';
     fetch(API+"/dash/"+SLUG+"/promo-leads").then(function(r){return r.json();}).then(function(d){
-      if(d.error||!d.visible){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">'+escapeHtml(d.error||"The promo popup isn't set up for this rooftop.")+'</div></div>'; return; }
+      if(d.error||!d.visible){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">'+escapeHtml(d.error||"VinPop isn't set up for this rooftop.")+'</div></div>'; return; }
       var tz=(d.dealer&&d.dealer.timezone)||null, leads=d.leads||[];
       var sent=leads.filter(function(l){return l.crm==="sent";}).length;
       var notSent=leads.length-sent;
       var byTrig={timed:0,exit_intent:0}; leads.forEach(function(l){ byTrig[l.trigger]=(byTrig[l.trigger]||0)+1; });
       var rows = leads.length ? leads.map(function(l){ return promoLeadRow(l,tz); }).join("")
-        : '<div class="state" style="padding:28px 0">No promo leads yet.</div>';
+        : '<div class="state" style="padding:28px 0">No VinPop leads yet.</div>';
       modal.innerHTML='<div class="mbody">'+closeBtn
-        +'<div class="mph-title" style="margin-top:0">Promo leads · last '+(d.windowDays||90)+' days</div>'
+        +'<div class="mph-title" style="margin-top:0">VinPop leads · last '+(d.windowDays||90)+' days</div>'
         +'<div class="mstats">'
           +'<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">This<br>week</div></div>'
           +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
@@ -1970,7 +1970,7 @@
   }
   function prReload(then){
     promoPost("/promo-settings",{}).then(function(d){
-      if(!d.ok) return prFail(d.error||"Could not load promo settings");
+      if(!d.ok) return prFail(d.error||"Could not load VinPop settings");
       _pr.d=d; then();
     }).catch(function(e){ prFail("Could not load: "+e.message); });
   }
@@ -2010,11 +2010,11 @@
     if(!offers.length) cards='<div class="state" style="padding:24px 0">No offers yet. Add one to start showing the popup.</div>';
 
     prModal().innerHTML='<div class="mbody">'+prClose()
-      +'<div class="mph-title" style="margin-top:0">Promo popup — '+escapeHtml(currentDealerLabel())+'</div>'
+      +'<div class="mph-title" style="margin-top:0">VinPop — '+escapeHtml(currentDealerLabel())+'</div>'
       +'<div class="pbar">'+prStatusPill(d.status,"pr-status")
         +'<button class="killbtn'+(paused?' resume':'')+'" id="pr-kill">'+(paused?'Resume all offers':'Pause all offers')+'</button></div>'
       +(flash?'<div class="pok">'+escapeHtml(flash)+'</div>':'')
-      +(d.crmDestination?'':'<div class="pwarn">No CRM lead email is set for this rooftop, so promo leads won\'t reach the dealer\'s CRM. Set one in Dealer settings (gear icon).</div>')
+      +(d.crmDestination?'':'<div class="pwarn">No CRM lead email is set for this rooftop, so VinPop leads won\'t reach the dealer\'s CRM. Set one in Dealer settings (gear icon).</div>')
       +(d.status==="idle"?'<div class="pwarn">The popup is on, but no offer is running right now, so shoppers won\'t see anything.</div>':'')
       +'<div class="mstats">'
         +'<div class="mstat"><div class="n">'+(l7.impressions||0)+'</div><div class="l">Views<br>7 days</div></div>'

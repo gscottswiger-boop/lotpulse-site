@@ -105,7 +105,7 @@
   function promoEvent(name, params) {
     try {
       window.dataLayer = window.dataLayer || [];
-      var payload = { event: name, event_owner: "lotpulse", product_name: "LotPulse Promo" };
+      var payload = { event: name, event_owner: "lotpulse", product_name: "VinPop" };
       for (var k in params) {
         if (params.hasOwnProperty(k) && params[k] != null && params[k] !== "") payload[k] = params[k];
       }
