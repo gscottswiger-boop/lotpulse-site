@@ -27,6 +27,7 @@
   .wm-pulse{width:32px;height:32px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .wm-text{font-family:'Barlow Condensed';font-weight:700;font-size:22px;letter-spacing:.03em}
   .wm-text em{font-style:normal;color:var(--redline)}
+  .tm{font-size:.5em;font-weight:700;vertical-align:super;line-height:0;margin-left:2px;opacity:.75;letter-spacing:0}
   .rooftop{text-align:right;margin-left:auto}
   .rooftop .r1{font-family:'Barlow Condensed';font-weight:600;font-size:16px;letter-spacing:.05em;text-transform:uppercase}
   #dealerSwitch{font-family:'Barlow Condensed';font-weight:600;font-size:16px;letter-spacing:.05em;text-transform:uppercase;
@@ -432,7 +433,7 @@
     <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:13px;background:#fff;margin-bottom:18px">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg>
     </div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:#fff;letter-spacing:.02em">LotPulse</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:#fff;letter-spacing:.02em">LotPulse<sup class="tm">&trade;</sup></div>
     <div style="color:#8A929B;font-size:14px;margin:6px 0 22px">Enter your access code</div>
     <input id="gateInput" type="password" inputmode="text" autocapitalize="none" autocorrect="off" placeholder="Access code" autocomplete="off"
       style="width:100%;font-family:'Barlow',sans-serif;font-size:17px;text-align:center;letter-spacing:.1em;color:#14181D;background:#fff;border:0;border-radius:11px;padding:15px;margin-bottom:10px;outline:none">
@@ -446,7 +447,7 @@
   <div class="top">
     <div class="wordmark">
       <div class="wm-pulse"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg></div>
-      <div class="wm-text">Lot<em>Pulse</em></div>
+      <div class="wm-text">Lot<em>Pulse</em><sup class="tm">&trade;</sup></div>
     </div>
     <div class="rooftop">
       <div class="r1" id="dealerName">Loading…</div>
@@ -1560,7 +1561,7 @@
     host.innerHTML=
       '<div class="mb-report">'
         +'<div class="mb-head">'
-          +'<div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em></span> Matchback Report</div>'
+          +'<div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em><sup class="tm">&trade;</sup></span> Matchback Report</div>'
           +'<div class="mb-sub">'+escapeHtml(currentDealerLabel())+' &middot; generated '+escapeHtml(dt)+'</div>'
         +'</div>'
         +'<div class="mb-statrow">'
@@ -1788,7 +1789,7 @@
     var host=document.getElementById("mb-print-host");
     if(!host){ host=document.createElement("div"); host.id="mb-print-host"; document.body.appendChild(host); }
     host.innerHTML='<div class="mb-report">'
-      +'<div class="mb-head"><div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em></span> Pricing Signals</div>'
+      +'<div class="mb-head"><div class="mb-brand"><span class="mb-logo">Lot<em>Pulse</em><sup class="tm">&trade;</sup></span> Pricing Signals</div>'
       +'<div class="mb-sub">'+escapeHtml(dealerName)+' &middot; generated '+escapeHtml(when)+'</div></div>'
       +section("Sitting on demand — real interest, price steady", hold, "hold")
       +section("Gone cold — aged with no watch activity on your site", reprice, "reprice")
