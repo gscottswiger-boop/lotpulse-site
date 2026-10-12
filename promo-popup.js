@@ -64,7 +64,30 @@
 //
 // QA: add ?lp_promo_test=1 to a VDP URL to skip the CLIENT-side suppression
 // and use a 3-second delay. Server eligibility still applies — if the promo
-// isn't live for this dealer/VIN, nothing shows, test mode or not.
+// isn't live for this dealer/VIN, nothing shows, test mode or not. Test mode
+// also skips the "Who sees VinPop" engagement rules below.
+//
+// RUNS ON EVERY PAGE (GTM trigger: All Pages). On a page that isn't a single
+// vehicle page it never shows the popup — it only counts the visit and sends
+// the "Live now" presence heartbeat.
+//
+// WHO SEES VINPOP (engagement rules, set per rooftop by the agency):
+//   • audience "all"     — today's behaviour: every shopper on a VDP.
+//   • audience "engaged" — the timed / exit-intent triggers are NOT armed until
+//     the shopper meets ANY rule that's switched on: N distinct vehicle pages
+//     (this visit or the last 30 days), N active minutes this visit (counted
+//     only while the tab is visible), a visit on an earlier day, or N% scroll
+//     on this vehicle page. Checked every 5 seconds. Once they qualify, the
+//     normal delay and exit-intent logic runs exactly as before.
+//   The tally lives in first-party localStorage "lp_eng" on the dealer's
+//   domain: a random visitor id, first-seen time, days visited, {VIN: lastSeen}
+//   for 30 days, and this visit's active seconds. No name, no IP, no cookie.
+//   If storage is blocked: "all" still shows, "engaged" fails closed (no popup).
+//
+// LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
+// visible, when the tab is hidden/shown, and on pagehide (sendBeacon). It
+// sends the path (query string masked), the page title, the VIN on a VDP, the
+// counters above and the VinPop state. Never the full URL.
 // ════════════════════════════════════════════════════════════════════════════
 
 (function () {
@@ -99,6 +122,181 @@
   function withinDays(ts, days) {
     var t = parseInt(ts, 10);
     return Number.isFinite(t) && (Date.now() - t) < days * 86400000;
+  }
+
+  // ── Engagement tally (localStorage "lp_eng") ───────────────────────────────
+  var ENG_KEY = "lp_eng";
+  var VISIT_GAP_MS = 30 * 60 * 1000;        // 30 min of nothing = a new visit
+  var ENG_WINDOW_MS = 30 * 86400000;        // vehicles / days remembered for 30 days
+  var STORAGE_OK = (function () {
+    try { var k = "__lp_eng_t"; window.localStorage.setItem(k, "1"); window.localStorage.removeItem(k); return true; }
+    catch (e) { return false; }
+  })();
+  var ENG = null, SCROLL_MAX = 0;
+  var PAGE = { kind: null, vin: null };     // kind: "vdp" | "other"
+  var RULES = null;                         // engagement rules (config or presence response)
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function localDay(t) { var d = new Date(t); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function randomVid() {
+    var out = "";
+    try {
+      var a = new Uint8Array(12); window.crypto.getRandomValues(a);
+      for (var i = 0; i < a.length; i++) out += (a[i] < 16 ? "0" : "") + a[i].toString(16);
+      return out;
+    } catch (e) {
+      while (out.length < 24) out += Math.floor(Math.random() * 16).toString(16);
+      return out;
+    }
+  }
+  function refHost() {
+    try {
+      if (!document.referrer) return null;
+      var h = new URL(document.referrer).hostname;
+      return h && h !== window.location.hostname ? h : null;
+    } catch (e) { return null; }
+  }
+  function readEng() {
+    if (!STORAGE_OK) return null;
+    try {
+      var e = JSON.parse(window.localStorage.getItem(ENG_KEY) || "null");
+      if (!e || typeof e !== "object" || !/^[A-Za-z0-9_-]{8,40}$/.test(e.vid || "")) return null;
+      if (!Array.isArray(e.days)) e.days = [];
+      if (!e.vins || typeof e.vins !== "object") e.vins = {};
+      return e;
+    } catch (err) { return null; }
+  }
+  function writeEng(e) { if (STORAGE_OK) lsSet(ENG_KEY, JSON.stringify(e)); }
+
+  // Re-read before every write so two open tabs don't overwrite each other.
+  function engUpdate(fn) {
+    var now = Date.now();
+    var e = readEng() || ENG || { v: 1, vid: randomVid(), firstSeen: now, days: [], vins: {}, visit: null };
+    if (!e.visit || now - (e.visit.last || 0) > VISIT_GAP_MS) {
+      e.visit = { start: now, last: now, active: 0, ref: refHost() };
+    }
+    var t = localDay(now);
+    if (e.days.indexOf(t) === -1) e.days.push(t);
+    var cutoff = now - ENG_WINDOW_MS;
+    e.days = e.days.filter(function (d) { return new Date(d + "T12:00:00").getTime() > cutoff; }).slice(-31);
+    for (var v in e.vins) if (e.vins.hasOwnProperty(v) && !(e.vins[v] > cutoff)) delete e.vins[v];
+    if (fn) fn(e, now);
+    ENG = e;
+    writeEng(e);
+    return e;
+  }
+
+  // The counters the rules are checked against. Pure read of ENG.
+  function tally() {
+    var e = ENG || {}, now = Date.now(), n = 0, today = localDay(now);
+    for (var v in (e.vins || {})) if (e.vins.hasOwnProperty(v) && e.vins[v] > now - ENG_WINDOW_MS) n++;
+    return {
+      vehicles: n,
+      minutes: Math.floor(((e.visit && e.visit.active) || 0) / 60),
+      returning: (e.days || []).some(function (d) { return d !== today; }),
+      scrollPct: PAGE.kind === "vdp" ? SCROLL_MAX : 0,
+      blocked: !STORAGE_OK,
+    };
+  }
+
+  // SAME rule as qualifies() in api/lib/promo.js — keep them in sync.
+  // true if ANY switched-on rule is met; always true with audience "all";
+  // false when storage is blocked and audience is "engaged" (fail closed).
+  function qualifies(t, r) {
+    if (!r || r.audience !== "engaged") return true;
+    if (!t || t.blocked) return false;
+    if (r.vehicles != null && (t.vehicles || 0) >= r.vehicles) return true;
+    if (r.minutes != null && (t.minutes || 0) >= r.minutes) return true;
+    if (r.returning === true && t.returning === true) return true;
+    if (r.scrollPct != null && (t.scrollPct || 0) >= r.scrollPct) return true;
+    return false;
+  }
+  // Read-only hooks for QA in the browser console. Expose nothing else.
+  try { window.__vinpop = { qualifies: qualifies, tally: tally }; } catch (e) {}
+
+  function trackScroll() {
+    function measure() {
+      try {
+        var de = document.documentElement, h = Math.max(de.scrollHeight, document.body ? document.body.scrollHeight : 0);
+        if (h <= 0) return;
+        var pct = Math.min(100, Math.round(((window.scrollY || de.scrollTop || 0) + window.innerHeight) / h * 100));
+        if (pct > SCROLL_MAX) SCROLL_MAX = pct;
+      } catch (e) {}
+    }
+    window.addEventListener("scroll", measure, { passive: true });
+  }
+
+  // ── Presence heartbeat ("Live now") ────────────────────────────────────────
+  function vpState() {
+    if (ssGet("lp_promo_submitted_s") || withinDays(lsGet("lp_promo_submitted"), 30)) return "claimed";
+    if (ssGet("lp_promo_shown_any")) return "shown";
+    var r = RULES || (function () { try { return JSON.parse(ssGet("lp_eng_rules") || "null"); } catch (e) { return null; } })();
+    return r && qualifies(tally(), r) ? "qualified" : "not_qualified";
+  }
+  function beat(how) {
+    if (!STORAGE_OK || !ENG || !PAGE.kind) return;   // no stable visitor id → don't count
+    var t = tally();
+    var body = JSON.stringify({
+      vid: ENG.vid, visit: ENG.visit && ENG.visit.start, ref: ENG.visit && ENG.visit.ref,
+      // Path only. The query string can carry tokens — never send it.
+      page: window.location.pathname + (window.location.search ? "?…" : ""),
+      title: String(document.title || "").slice(0, 120),
+      vin: PAGE.kind === "vdp" ? PAGE.vin : null,
+      vehicles: t.vehicles, minutes: t.minutes, returning: t.returning, scrollPct: t.scrollPct,
+      vpState: vpState(), visible: document.visibilityState === "visible",
+    });
+    var url = API + "/v1/promo/presence?key=" + encodeURIComponent(KEY);
+    if (how === "beacon" && navigator.sendBeacon) {
+      try { if (navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }))) return; } catch (e) {}
+    }
+    try {
+      fetch(url, { method: "POST", headers: { "Content-Type": "text/plain" }, body: body, keepalive: true })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.rules) { if (!CFG) RULES = j.rules; ssSet("lp_eng_rules", JSON.stringify(j.rules)); }
+        }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // One 5-second clock: active time (visible tab only), visit freshness, the
+  // engagement gate, and the 30-second heartbeat.
+  var lastTick = Date.now(), sinceBeat = 0, waitingForQualify = false;
+  function startClock() {
+    setInterval(function () {
+      var now = Date.now(), dt = Math.min(now - lastTick, 6000);
+      lastTick = now;
+      if (document.visibilityState === "visible") {
+        engUpdate(function (e) { e.visit.active = (e.visit.active || 0) + dt / 1000; e.visit.last = now; });
+        sinceBeat += dt;
+        if (sinceBeat >= 30000) { sinceBeat = 0; beat(); }
+      }
+      if (waitingForQualify && CFG && qualifies(tally(), CFG.engagement)) {
+        waitingForQualify = false;
+        log("shopper qualified — arming triggers");
+        armTriggers();
+        beat();
+      }
+    }, 5000);
+    document.addEventListener("visibilitychange", function () {
+      lastTick = Date.now();
+      if (document.visibilityState === "hidden") beat("beacon");
+      else { sinceBeat = 0; beat(); }
+    });
+    window.addEventListener("pagehide", function () {
+      if (!PAGE.kind) PAGE.kind = "other";
+      beat("beacon");
+    });
+  }
+
+  // Called once we know what kind of page this is.
+  function classify(kind, vin) {
+    if (PAGE.kind) return;
+    PAGE.kind = kind; PAGE.vin = vin || null;
+    if (kind === "vdp" && vin) {
+      engUpdate(function (e, now) { e.vins[vin] = now; });
+      trackScroll();
+    }
+    beat();
   }
 
   // ── Analytics → dealer's own dataLayer (same approach as the watch widget) ─
@@ -402,6 +600,7 @@
     if (reopen) viaTab = true;
     shown = true;
     ssSet("lp_promo_shown_" + VIN, "1");
+    ssSet("lp_promo_shown_any", "1");
     lsSet("lp_promo_seen_" + VIN, String(Date.now()));
 
     host = document.createElement("div");
@@ -432,6 +631,7 @@
       return;
     }
     apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
+    beat();
     promoEvent("lp_promo_view", {
       item_id: VIN, page_type: "item", element_type: "popup",
       event_action_result: "popup", trigger_type: trigger,
@@ -671,6 +871,8 @@
         // lead against it (and re-checks it's still live for this car).
         vin: VIN, offerId: CFG.offerId, name: nm, email: em, phone: ph, trigger: trigger,
         pageUrl: window.location.href, company: root.getElementById("hp").value,
+        // Anonymous visitor id: links this lead to the "Live now" viewer row.
+        vid: STORAGE_OK && ENG ? ENG.vid : null,
       }).then(function (res) {
         if (!res.ok) {
           go.disabled = false; go.textContent = "Claim my offer";
@@ -687,6 +889,7 @@
         lsSet("lp_promo_submitted", String(Date.now()));
         ssSet("lp_promo_submitted_s", "1");
         removeTab();
+        beat();
         form.style.display = "none";
         var first = nm.split(/\s+/)[0];
         root.getElementById("doneH").textContent = "Thanks, " + first + "!";
@@ -761,6 +964,7 @@
       // Preload the offer graphic now so it's cached by the time the popup
       // opens (35s later by default). show() checks it actually loaded.
       if (c.imagePath) { IMG = new Image(); IMG.src = API + c.imagePath; }
+      RULES = c.engagement || RULES;
       var why = clientSuppressed(VIN, c.suppressDays);
       if (why) {
         log("suppressed: " + why);
@@ -769,19 +973,29 @@
         if (why === "shown_this_session" || why === "seen_recently") { shown = true; showTab(); }
         return;
       }
+      // Who sees VinPop: with "engaged", wait until the shopper qualifies
+      // (re-checked every 5s by the clock). Test mode skips the rules.
+      if (!TEST && !qualifies(tally(), c.engagement)) {
+        waitingForQualify = true;
+        log("waiting: shopper hasn't met the rooftop's engagement rules yet");
+        return;
+      }
       armTriggers();
     }).catch(function (e) { log("config fetch failed (no popup):", e && e.message); });
   }
 
   function boot() {
+    engUpdate();        // count the visit (every page, vehicle page or not)
+    startClock();
     var tries = 0;
     (function attempt() {
       var found = findVdpVin();
-      if (found && found.srp) { log("listing page — promo not shown"); return; }
-      if (found && found.vin) { start(found); return; }
+      if (found && found.srp) { classify("other"); log("listing page — promo not shown"); return; }
+      if (found && found.vin) { classify("vdp", found.vin); start(found); return; }
       // VDPs on some platforms render the VIN late; retry for ~6s like the
-      // watch widget's anchor wait, then give up quietly.
+      // watch widget's anchor wait, then treat it as a non-vehicle page.
       if (tries++ < 12) setTimeout(attempt, 500);
+      else classify("other");
     })();
   }
 

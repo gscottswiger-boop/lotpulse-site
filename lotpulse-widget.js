@@ -115,6 +115,18 @@
     return null;
   }
 
+  // The VinPop tag's anonymous visitor id (localStorage "lp_eng".vid on this
+  // same dealer domain), if VinPop runs here. Sent with a watch so the
+  // dashboard's "Live now" viewer can show this shopper by name on THIS
+  // rooftop. Null when VinPop isn't installed or storage is blocked.
+  function getVinpopVid() {
+    try {
+      var raw = window.localStorage.getItem("lp_eng");
+      var vid = raw && (JSON.parse(raw) || {}).vid;
+      return /^[A-Za-z0-9_-]{8,40}$/.test(vid || "") ? vid : null;
+    } catch (e) { return null; }
+  }
+
   // ── VIN detection ──────────────────────────────────────────────────────────
   // Try the most reliable sources in order. A VIN is 17 alphanumeric chars,
   // excluding I/O/Q. We look in: JSON-LD vehicle schema, common data attributes,
@@ -1031,7 +1043,7 @@
       // and the visitor's session. Harmless extra fields if the API ignores them.
       apiPost("/v1/watch", {
         vin: vin, phone: raw, smsConsent: smsConsent,
-        gclid: getGclid(), clientId: getClientId(),
+        gclid: getGclid(), clientId: getClientId(), vid: getVinpopVid(),
       }).then(function (res) {
         confirm.disabled = false;
         if (!res.ok) {
@@ -1436,7 +1448,7 @@
       confirm.disabled = true;
       apiPost("/v1/watch", {
         vin: srpActiveVin, phone: raw, smsConsent: smsConsent,
-        gclid: getGclid(), clientId: getClientId(),
+        gclid: getGclid(), clientId: getClientId(), vid: getVinpopVid(),
       }).then(function (res) {
         srpSubmittedThisSession = true;
         if (res && res.ok) markWatched(srpActiveVin);

@@ -439,6 +439,90 @@
   .plresend:hover{background:var(--action);color:#fff}
   .plresend:disabled{opacity:.6;cursor:default}
 
+  /* ── VinPop: "Who sees VinPop" (engagement rules, agency-only) ── */
+  .newtag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0E7C66;color:#fff;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:1px}
+  .wv-seg{display:inline-flex;background:var(--porcelain);border-radius:10px;padding:3px;margin:0 0 4px;flex-wrap:wrap}
+  .wv-seg button{border:0;background:none;font:600 14px 'Barlow',sans-serif;padding:8px 16px;border-radius:8px;cursor:pointer;color:var(--slate)}
+  .wv-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .wv-rules{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:opacity .2s}
+  .wv-rules.off{opacity:.4;pointer-events:none}
+  .wv-any{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);padding:6px 14px;background:var(--porcelain)}
+  .wv-rule{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+  .wv-rule:last-child{border-bottom:0}
+  .wv-rule .txt{flex:1;font-size:14px;min-width:0}
+  .wv-rule .txt small{display:block;color:var(--slate);font-size:12px}
+  .wv-rule input[type=number]{width:62px;font:600 15px 'Barlow',sans-serif;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;text-align:center;color:var(--ink);background:#fff}
+  .wv-rule input[type=number]:disabled{opacity:.45}
+  .wv-rule .unit{font-size:12px;color:var(--slate);width:52px}
+  .wv-sw{position:relative;width:38px;height:22px;flex-shrink:0;display:inline-block}
+  .wv-sw input{opacity:0;width:0;height:0;position:absolute}
+  .wv-sw i{position:absolute;inset:0;background:#CBD2CC;border-radius:22px;cursor:pointer;transition:.2s}
+  .wv-sw i:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .wv-sw input:checked + i{background:#0E7C66}
+  .wv-sw input:checked + i:before{transform:translateX(16px)}
+  .wv-sw input:focus-visible + i{outline:3px solid var(--amber);outline-offset:2px}
+  .wv-summary{margin-top:12px;background:#E6F4F0;color:#0E7C66;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600}
+  .wv-summary.none{background:var(--red-soft);color:var(--redline)}
+  .wv-q{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+  .wv-q .qs{background:var(--porcelain);border-radius:10px;padding:10px;text-align:center}
+  .wv-q .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px;line-height:1}
+  .wv-q .l{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);margin-top:4px}
+
+  /* ── Live now viewer ── */
+  .lv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:40px}
+  .lv-head h2{font-family:'Barlow Condensed';font-weight:700;font-size:24px;letter-spacing:.02em;line-height:1.1;flex:1 1 0;min-width:0}
+  .lv-pulse{width:10px;height:10px;border-radius:50%;background:var(--win);box-shadow:0 0 0 0 rgba(30,142,90,.5);animation:lvp 1.6s infinite;flex-shrink:0}
+  @keyframes lvp{70%{box-shadow:0 0 0 9px rgba(30,142,90,0)}100%{box-shadow:0 0 0 0 rgba(30,142,90,0)}}
+  .lv-upd{margin-left:auto;font-size:12px;color:var(--slate)}
+  .lv .mstats{margin:16px 0}
+  .lv .mstat .n{font-size:28px}
+  .lv-hot{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+  .lv-hot .t{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--slate);margin-right:4px}
+  .lv-chip{background:var(--amber-soft);border-radius:20px;padding:4px 11px;font-size:13px;font-weight:600}
+  .lv-chip b{color:#B26B00}
+  .lv-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .lv-filters button{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:5px 13px;font:600 13px 'Barlow',sans-serif;cursor:pointer;color:var(--slate)}
+  .lv-filters button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .lv-row{border-bottom:1px solid var(--line-soft);padding:12px 4px;cursor:pointer}
+  .lv-row:hover{background:#FAFBFA}
+  .lv-row:focus-visible{outline:3px solid var(--amber);outline-offset:-3px}
+  .lv-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .lv-name{font-weight:700;font-size:15px}
+  .lv-name.anon{color:var(--slate);font-weight:600}
+  .lv-tag{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.02em}
+  .lv-tag.watcher{background:var(--new-soft);color:#2348C9}
+  .lv-tag.lead{background:#E6F4F0;color:#0E7C66}
+  .lv-tag.returning{background:var(--porcelain);color:var(--slate)}
+  .lv-lvl{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+  .lv-bar{width:70px;height:7px;border-radius:4px;background:var(--line-soft);overflow:hidden}
+  .lv-bar i{display:block;height:100%;border-radius:4px}
+  .lv-lvl.browsing{color:var(--slate)} .lv-lvl.browsing i{background:#AEB6B0}
+  .lv-lvl.warming{color:#B26B00} .lv-lvl.warming i{background:var(--amber)}
+  .lv-lvl.engaged{color:var(--redline)} .lv-lvl.engaged i{background:var(--redline)}
+  .lv-now{font-size:13px;margin-top:4px;color:#2A323A}
+  .lv-now b{font-weight:600}
+  .lv-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--slate);margin-top:4px}
+  .lv-vp{font-weight:700}
+  .lv-vp.qualified{color:#0E7C66} .lv-vp.shown{color:#2348C9} .lv-vp.claimed{color:var(--win)} .lv-vp.not_qualified{color:#AEB6B0}
+  .lv-path{display:none;margin-top:10px;background:var(--porcelain);border-radius:10px;padding:10px 12px;font-size:12.5px}
+  .lv-row.open .lv-path{display:block}
+  .lv-path div{padding:3px 0;display:flex;gap:10px}
+  .lv-path span{color:var(--slate);min-width:58px;font-family:'IBM Plex Mono';font-size:11.5px;flex-shrink:0}
+  .lv-rec{display:inline-block;margin-top:6px;border:0;background:none;padding:2px 0;color:var(--action);font:600 12.5px 'Barlow',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .lv-row.idle{opacity:.55}
+  .lv-empty{padding:18px 4px;color:var(--slate);font-size:14px}
+  .lv-foot{font-size:11.5px;color:var(--slate);margin-top:14px;line-height:1.5}
+  .lv-flash{animation:lvflash 2.2s ease-out}
+  @keyframes lvflash{0%{background:var(--amber-soft)}100%{background:transparent}}
+  @media (max-width:620px){ .lv-lvl{margin-left:0;width:100%} }
+  @media (max-width:520px){
+    .lv-head h2{font-size:21px}
+    .lv-upd{margin-left:20px;width:100%}
+    .wv-rule{gap:10px;padding:11px 12px}
+    .wv-rule .unit{width:auto;min-width:30px}
+    .wv-rule input[type=number]{width:54px}
+  }
+
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -481,6 +565,9 @@
         </button>
         <button id="agencyOverviewBtn" title="All rooftops" aria-label="All rooftops" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+        <button id="liveBtn" title="Live now: who's on the website" aria-label="Live now" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--win)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
         </button>
         <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -905,7 +992,7 @@
       }
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
-  function closeDetail(){ document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
+  function closeDetail(){ if(window.__lpStopLive) window.__lpStopLive(); document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
   document.getElementById("scrim").addEventListener("click", closeDetail);
   window.closeDetail = closeDetail;
 
@@ -1914,7 +2001,7 @@
       : '<span class="statpill '+(l.crm==="failed"?'bad':'pending')+'" title="'+escapeHtml(l.crmError||"")+'">'
           +(l.crm==="failed"?"CRM failed":"CRM pending")+'</span>'
         +' <button class="plresend" data-plid="'+escapeHtml(String(l.id))+'">Resend</button>';
-    return '<div class="msgrow">'
+    return '<div class="msgrow" data-plrow="'+escapeHtml(String(l.id))+'">'
       +'<div class="msgtop"><div class="msgwho"><span class="msgphone" style="color:var(--ink)">'+escapeHtml(l.name)+'</span></div>'
         +'<span class="msgtime">'+escapeHtml(fmtWatchedAt(l.createdAt,tz))+'</span></div>'
       +'<div class="msgpills"><span class="kindpill promo">'+escapeHtml(promoDollars(l.offerCents))+(l.offerName?' · '+escapeHtml(l.offerName):' offer')+'</span>'
@@ -2102,6 +2189,8 @@
       +'<div id="pr-offers">'+cards+'</div>'
       +'<button class="mlink" id="pr-add" style="width:100%;border:0;cursor:pointer;margin-top:4px;background:#fff;color:var(--action);border:1.5px solid var(--action)">+ Add offer</button>'
 
+      +wvBlockHtml(d)
+
       +'<div class="psec">Rooftop settings</div>'
       +'<div class="consent" style="margin:0 0 14px"><input type="checkbox" id="pr-enabled"'+(s.enabled?' checked':'')+'>'
         +'<span class="cbx" aria-hidden="true"></span><label for="pr-enabled" style="cursor:pointer;font-weight:600">Popup on for this rooftop</label></div>'
@@ -2136,6 +2225,7 @@
       }).catch(function(){ b.disabled=false; b.textContent="Save rooftop settings"; showErr("Network error. Try again."); });
     });
     document.getElementById("pr-add").addEventListener("click", function(){ prRenderEditor(null); });
+    wvWire(d, showErr);
 
     prModal().querySelectorAll(".ocard").forEach(function(card){
       var id=card.getAttribute("data-oid");
@@ -2162,6 +2252,92 @@
           });
         });
       });
+    });
+  }
+
+  // ── "Who sees VinPop" (engagement rules) ──
+  // Everyone = today's behaviour. Engaged shoppers only = the popup's triggers
+  // arm once the shopper hits ANY rule that's on. The server re-validates
+  // (agency-only, and "engaged with every rule off" is rejected).
+  function wvBlockHtml(d){
+    var e=(d.settings&&d.settings.engagement)||{audience:"all",vehicles:2,minutes:2,returning:true,scrollPct:null};
+    var lim=d.engagementLimits||{vehicles:[1,20],minutes:[1,30],scrollPct:[10,100]};
+    function rule(id,on,label,sub,val,range,step,unit){
+      return '<div class="wv-rule"><label class="wv-sw"><input type="checkbox" id="wv-'+id+'-on"'+(on?' checked':'')+' aria-label="'+escapeHtml(label)+'"><i></i></label>'
+        +'<div class="txt">'+escapeHtml(label)+'<small>'+escapeHtml(sub)+'</small></div>'
+        +(unit?'<input type="number" id="wv-'+id+'" value="'+val+'" min="'+range[0]+'" max="'+range[1]+'" step="'+step+'" inputmode="numeric" aria-label="'+escapeHtml(label)+' threshold"'+(on?'':' disabled')+'><div class="unit">'+unit+'</div>':'')
+        +'</div>';
+    }
+    return '<div class="psec">Who sees VinPop <span class="newtag">New</span></div>'
+      +'<div class="wv-seg" id="wv-seg" role="group" aria-label="Who sees VinPop">'
+        +'<button type="button" data-v="all">Everyone</button><button type="button" data-v="engaged">Engaged shoppers only</button></div>'
+      +'<div class="wv-rules" id="wv-rules"><div class="wv-any">Show once a shopper hits ANY of these</div>'
+        +rule("veh", e.vehicles!=null, "Vehicles viewed", "Different vehicle pages, this visit or the last 30 days", e.vehicles!=null?e.vehicles:2, lim.vehicles, 1, "vehicles")
+        +rule("min", e.minutes!=null, "Active time on site", "Only counts while the tab is in front", e.minutes!=null?e.minutes:2, lim.minutes, 1, "minutes")
+        +rule("ret", e.returning===true, "Returning visitor", "Came back on a different day")
+        +rule("scr", e.scrollPct!=null, "Scrolled the vehicle page", "Past the photos and into the specs", e.scrollPct!=null?e.scrollPct:60, lim.scrollPct, 10, "% page")
+      +'</div>'
+      +'<div class="wv-summary" id="wv-summary"></div>'
+      +'<div class="wv-q" id="wv-q"></div>'
+      +'<p class="pnote" id="wv-note"></p>'
+      +'<button class="mlink" id="wv-save" style="width:100%;border:0;cursor:pointer">Save who sees VinPop</button>';
+  }
+  function wvWire(d, showErr){
+    var e=(d.settings&&d.settings.engagement)||{audience:"all"};
+    var mode=e.audience==="engaged"?"engaged":"all";
+    var ids=["veh","min","ret","scr"];
+    function on(id){ return document.getElementById("wv-"+id+"-on").checked; }
+    function val(id){ return document.getElementById("wv-"+id).value; }
+    function summarize(){
+      document.querySelectorAll("#wv-seg button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-v")===mode); });
+      document.getElementById("wv-rules").classList.toggle("off", mode==="all");
+      ["veh","min","scr"].forEach(function(id){ document.getElementById("wv-"+id).disabled=!on(id); });
+      var parts=[];
+      if(on("veh")) parts.push(val("veh")+"+ vehicle"+(val("veh")==="1"?"":"s"));
+      if(on("min")) parts.push(val("min")+"+ min on site");
+      if(on("ret")) parts.push("a return visit");
+      if(on("scr")) parts.push("scrolls "+val("scr")+"% of a vehicle page");
+      var sum=document.getElementById("wv-summary");
+      sum.className="wv-summary"+(mode==="engaged"&&!parts.length?" none":"");
+      sum.textContent = mode==="all" ? "Shows to every shopper (today's behavior)."
+        : parts.length ? "Shows after "+parts.join(" or ")+"." : "No rules on, so nobody would see VinPop. Turn one on or choose Everyone.";
+      var t=d.engagementToday, q=document.getElementById("wv-q"), note=document.getElementById("wv-note");
+      if(!t){ q.style.display="none"; note.textContent="Visitor counts appear once the live-viewer tables are set up."; return; }
+      var screened=Math.max(0,(t.visitors||0)-(t.qualified||0));
+      var labels = mode==="engaged" ? ["Visitors today","Qualified","Screened out"] : ["Visitors today","Would qualify","Would screen out"];
+      q.style.display="";
+      q.innerHTML='<div class="qs"><div class="n">'+(t.visitors||0)+'</div><div class="l">'+labels[0]+'</div></div>'
+        +'<div class="qs"><div class="n" style="color:#0E7C66">'+(t.qualified||0)+'</div><div class="l">'+labels[1]+'</div></div>'
+        +'<div class="qs"><div class="n">'+screened+'</div><div class="l">'+labels[2]+'</div></div>';
+      note.innerHTML = (t.visitors ? "" : "Counts start once the VinPop tag fires on <strong>All Pages</strong> in GTM. ")
+        +(mode==="engaged"
+          ? "Qualified and Screened out use the saved rules, so fewer popup views don't look like a problem. "
+          : "Everyone sees VinPop right now. These counts show what the saved rules would do. ")
+        +"Test mode (?lp_promo_test=1) still shows the popup right away. Once a shopper qualifies, the normal delay and exit-intent triggers apply.";
+    }
+    document.querySelectorAll("#wv-seg button").forEach(function(b){
+      b.addEventListener("click", function(){ mode=b.getAttribute("data-v"); summarize(); });
+    });
+    ids.forEach(function(id){
+      document.getElementById("wv-"+id+"-on").addEventListener("change", summarize);
+      var n=document.getElementById("wv-"+id); if(n){ n.addEventListener("input", summarize); }
+    });
+    summarize();
+    document.getElementById("wv-save").addEventListener("click", function(){
+      var b=this;
+      var body={ audience:mode,
+        engVehicles: on("veh")?Number(val("veh")):null,
+        engMinutes: on("min")?Number(val("min")):null,
+        engReturn: on("ret"),
+        engScrollPct: on("scr")?Number(val("scr")):null };
+      if(mode==="engaged" && body.engVehicles==null && body.engMinutes==null && !body.engReturn && body.engScrollPct==null){
+        return showErr("Turn on at least one rule, or choose Everyone");
+      }
+      b.disabled=true; b.textContent="Saving…";
+      promoPost("/promo-settings/update", body).then(function(res){
+        if(!res.ok){ b.disabled=false; b.textContent="Save who sees VinPop"; return showErr(res.error||"Save failed."); }
+        prReload(function(){ prRenderList(mode==="engaged" ? "Saved. VinPop now shows to engaged shoppers only." : "Saved. VinPop shows to every shopper."); });
+      }).catch(function(){ b.disabled=false; b.textContent="Save who sees VinPop"; showErr("Network error. Try again."); });
     });
   }
 
@@ -2388,6 +2564,160 @@
   var _promoBtn=document.getElementById("promoBtn");
   if(_promoBtn) _promoBtn.addEventListener("click", openPromoSettings);
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // LIVE NOW — who is on this rooftop's website right now
+  // ══════════════════════════════════════════════════════════════════════════
+  // Fed by the VinPop tag's presence heartbeats. Dealer-scoped like Shoppers.
+  // The button stays hidden until presence has arrived in the last 7 days, so
+  // a rooftop whose GTM tag isn't on All Pages yet shows nothing, not an empty
+  // pane. The modal polls every 10 seconds ONLY while it is open.
+  var _lv=null;   // { timer, ticker, data, filter, open:{key:true}, at, slug }
+
+  function loadLiveProbe(){
+    var btn=document.getElementById("liveBtn"), forSlug=SLUG;
+    if(!btn) return;
+    fetch(API+"/dash/"+SLUG+"/live?probe=1").then(function(r){return r.json();}).then(function(d){
+      if(forSlug!==SLUG) return;
+      btn.style.display = d && d.available ? "inline-flex" : "none";
+    }).catch(function(){ btn.style.display="none"; });
+  }
+
+  function stopLive(){
+    if(!_lv) return;
+    clearInterval(_lv.timer); clearInterval(_lv.ticker);
+    _lv=null;
+    var m=document.getElementById("modal"); if(m) m.style.width="";
+  }
+  window.__lpStopLive=stopLive;
+
+  function lvTime(iso, tz){
+    try{ var o={hour:"numeric",minute:"2-digit"}; if(tz) o.timeZone=tz; return new Date(iso).toLocaleTimeString("en-US",o); }
+    catch(e){ return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+  }
+
+  function lvFilterRows(rows, f){
+    return rows.filter(function(v){
+      if(f==="engaged") return v.level==="engaged";
+      if(f==="named") return v.known;
+      if(f==="vp") return v.vpState!=="not_qualified";
+      return true;
+    });
+  }
+
+  function lvRender(){
+    if(!_lv || !_lv.data) return;
+    var d=_lv.data, tz=d.dealer&&d.dealer.timezone;
+    var upd=document.getElementById("lv-upd"); if(upd) upd.textContent="updated just now";
+    var LVL={browsing:"Browsing",warming:"Warming",engaged:"Engaged"};
+    document.getElementById("lv-s-live").textContent=d.onSiteNow;
+    document.getElementById("lv-s-eng").textContent=d.engaged;
+    document.getElementById("lv-s-named").textContent=d.knownByName;
+    document.getElementById("lv-s-vp").textContent=d.vpQualifiedToday;
+    var hot=document.getElementById("lv-hot");
+    hot.innerHTML = (d.hotNow||[]).length
+      ? '<span class="t">Being viewed right now</span>'+d.hotNow.map(function(h){ return '<span class="lv-chip">'+escapeHtml(h.label)+' <b>· '+h.count+'</b></span>'; }).join("")
+      : '';
+    hot.style.display=(d.hotNow||[]).length?"":"none";
+    document.querySelectorAll("#lv-filters button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-f")===_lv.filter); });
+    var rows=lvFilterRows(d.visitors||[], _lv.filter);
+    var list=document.getElementById("lv-list");
+    if(!(d.visitors||[]).length){ list.innerHTML='<div class="lv-empty">Nobody on the site right now.</div>'; return; }
+    if(!rows.length){ list.innerHTML='<div class="lv-empty">Nobody matching right now.</div>'; return; }
+    list.innerHTML=rows.map(function(v){
+      var tags=(v.tags||[]).map(function(t){ return '<span class="lv-tag '+escapeHtml(t.kind)+'">'+escapeHtml(t.label)+'</span>'; }).join("");
+      var rec = v.watcherId ? '<button type="button" class="lv-rec" data-w="'+escapeHtml(v.watcherId)+'">Open watcher record →</button>'
+              : v.promoLeadId ? '<button type="button" class="lv-rec" data-l="'+escapeHtml(v.promoLeadId)+'">Open VinPop lead →</button>' : '';
+      return '<div class="lv-row'+(v.idle?' idle':'')+(_lv.open[v.key]?' open':'')+'" data-k="'+escapeHtml(v.key)+'" tabindex="0" role="button" aria-expanded="'+(_lv.open[v.key]?'true':'false')+'">'
+        +'<div class="lv-top"><span class="lv-name'+(v.known?'':' anon')+'">'+escapeHtml(v.name)+'</span>'+tags
+          +'<span class="lv-lvl '+escapeHtml(v.level)+'"><span class="lv-bar"><i style="width:'+Math.max(2,Math.min(100,v.score))+'%"></i></span>'+(LVL[v.level]||v.level)+'</span></div>'
+        +'<div class="lv-now">Now viewing: <b>'+escapeHtml(v.now)+'</b>'+(v.idle?' · tab in background':'')+'</div>'
+        +'<div class="lv-meta"><span>'+v.vehicles+' vehicle'+(v.vehicles===1?'':'s')+'</span><span>'+v.minutes+' min active</span>'
+          +'<span>'+(v.returning?'Returning':'New visitor')+'</span><span class="lv-vp '+escapeHtml(v.vpState)+'">VinPop: '+escapeHtml(v.vpText)+'</span></div>'
+        +'<div class="lv-path">'+(v.path||[]).map(function(p){ return '<div><span>'+escapeHtml(lvTime(p.at,tz))+'</span>'+escapeHtml(p.label)+'</div>'; }).join("")
+          +rec+'</div>'
+      +'</div>';
+    }).join("");
+    list.querySelectorAll(".lv-row").forEach(function(r){
+      function toggle(){ var k=r.getAttribute("data-k"); _lv.open[k]=!_lv.open[k]; r.classList.toggle("open",!!_lv.open[k]); r.setAttribute("aria-expanded",_lv.open[k]?"true":"false"); }
+      r.addEventListener("click", function(e){ if(e.target.closest(".lv-rec")) return; toggle(); });
+      r.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); } });
+    });
+    list.querySelectorAll(".lv-rec").forEach(function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var w=b.getAttribute("data-w"), l=b.getAttribute("data-l");
+        stopLive();
+        if(w){ openShoppers(); lvJumpTo('[data-shopper="'+w+'"]'); }
+        else { openPromoLeads(); lvJumpTo('[data-plrow="'+l+'"]'); }
+      });
+    });
+  }
+
+  // After opening Shoppers / VinPop leads, scroll to that person's record.
+  function lvJumpTo(sel){
+    var tries=0;
+    (function look(){
+      var el=document.querySelector("#modal "+sel);
+      if(el){ el.scrollIntoView({block:"center"}); el.classList.add("lv-flash"); return; }
+      if(tries++<30) setTimeout(look,150);
+    })();
+  }
+
+  function lvFetch(){
+    if(!_lv) return;
+    var mine=_lv;
+    fetch(API+"/dash/"+mine.slug+"/live").then(function(r){return r.json();}).then(function(d){
+      if(_lv!==mine) return;                                   // closed or reopened meanwhile
+      if(!document.getElementById("lv-root")){ stopLive(); return; }   // modal now shows something else
+      if(d.error){ document.getElementById("lv-list").innerHTML='<div class="lv-empty">'+escapeHtml(d.error)+'</div>'; return; }
+      mine.data=d; mine.at=Date.now();
+      lvRender();
+    }).catch(function(){
+      if(_lv===mine && document.getElementById("lv-upd")) document.getElementById("lv-upd").textContent="reconnecting…";
+    });
+  }
+
+  function openLive(){
+    stopLive();
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.style.width="min(720px,calc(100vw - 32px))";
+    modal.innerHTML='<div class="mbody lv" id="lv-root">'
+      +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+      +'<div class="lv-head"><span class="lv-pulse" aria-hidden="true"></span><h2>Live now — '+escapeHtml(currentDealerLabel())+'</h2>'
+        +'<span class="lv-upd" id="lv-upd">loading…</span></div>'
+      +'<div class="mstats four">'
+        +'<div class="mstat"><div class="n" id="lv-s-live">—</div><div class="l">On site now</div></div>'
+        +'<div class="mstat"><div class="n" style="color:var(--redline)" id="lv-s-eng">—</div><div class="l">Engaged</div></div>'
+        +'<div class="mstat"><div class="n" style="color:#2348C9" id="lv-s-named">—</div><div class="l">Known by name</div></div>'
+        +'<div class="mstat"><div class="n vp" id="lv-s-vp">—</div><div class="l">VinPop qualified today</div></div>'
+      +'</div>'
+      +'<div class="lv-hot" id="lv-hot"></div>'
+      +'<div class="lv-filters" id="lv-filters">'
+        +'<button type="button" data-f="all" class="on">Everyone</button>'
+        +'<button type="button" data-f="engaged">Engaged</button>'
+        +'<button type="button" data-f="named">Known by name</button>'
+        +'<button type="button" data-f="vp">VinPop qualified</button>'
+      +'</div>'
+      +'<div id="lv-list"><div class="lv-empty">Loading…</div></div>'
+      +'<div class="lv-foot">Shows everyone active in the last 5 minutes. Visitors stay anonymous unless they\'ve watched a car or claimed a VinPop offer on this site. Activity is kept for 24 hours, then deleted. No IP addresses are stored.</div>'
+    +'</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    modal.scrollTop=0;
+    _lv={ slug:SLUG, filter:"all", open:{}, data:null, at:0 };
+    document.querySelectorAll("#lv-filters button").forEach(function(b){
+      b.addEventListener("click", function(){ if(!_lv) return; _lv.filter=b.getAttribute("data-f"); lvRender(); });
+    });
+    _lv.timer=setInterval(lvFetch, 10000);
+    _lv.ticker=setInterval(function(){
+      var el=document.getElementById("lv-upd");
+      if(!_lv || !el){ stopLive(); return; }
+      if(_lv.at){ var s=Math.round((Date.now()-_lv.at)/1000); el.textContent = s<3 ? "updated just now" : "updated "+s+"s ago"; }
+    }, 1000);
+    lvFetch();
+  }
+  var _liveBtn=document.getElementById("liveBtn");
+  if(_liveBtn) _liveBtn.addEventListener("click", openLive);
+
   function refresh(){
     Promise.all([loadSummary(), loadBoard()]).catch(function(e){
       document.getElementById("boardWrap").innerHTML='<div class="board"><div class="state">Could not load data: '+e.message+'</div></div>';
@@ -2395,6 +2725,7 @@
     });
     loadSignals(); // independent — its own failure never blocks the board
     loadPromoLeads(); // same: hidden on any failure, never blocks the board
+    loadLiveProbe();  // Live now button: shown only once presence has arrived
   }
   // Start only after unlock. If this session already passed the gate, unlock now.
   if(window.__lpUnlock){ unlockApp(); }
