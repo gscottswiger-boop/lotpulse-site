@@ -62,7 +62,7 @@
       var payload = {
         event: eventName,
         event_owner: "lotpulse",     // ASC: company sending the events
-        product_name: "LotPulse",    // ASC: the widget/tool generating the event
+        product_name: "VinWatch",    // ASC: the widget/tool generating the event (LotPulse platform)
       };
       for (var k in params) {
         if (params.hasOwnProperty(k) && params[k] !== null && params[k] !== undefined && params[k] !== "") {
