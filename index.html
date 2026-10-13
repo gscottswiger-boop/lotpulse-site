@@ -345,6 +345,19 @@
   .vp-block .mb-stat .n{color:#0E7C66}
   .vp-claim{font-size:11.5px;margin-top:3px;color:#2A323A}
   .vp-claim strong{color:#0E7C66}
+  /* VinPop lead engagement grade (A green · B teal · C amber · D gray) */
+  .gpill{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;border:0;font:800 11.5px/1 'Barlow Condensed',Arial,sans-serif;letter-spacing:.03em;cursor:pointer;flex:none}
+  .gpill.A{background:#DCFCE7;color:#15803D} .gpill.B{background:#E6F4F0;color:#0E7C66}
+  .gpill.C{background:#FEF3C7;color:#B45309} .gpill.D{background:#F1F5F9;color:#64748B}
+  .gpill:focus-visible{outline:2px solid #0E7C66;outline-offset:1px}
+  .gnone{color:#AEB6B0;font-weight:700;font-size:13px;flex:none;min-width:22px;text-align:center}
+  .gline{display:none;font-size:12px;line-height:1.45;color:#2A323A;background:#F6F7F5;border-left:3px solid #0E7C66;border-radius:4px;padding:6px 9px;margin-top:6px}
+  .gline.open{display:block}
+  .gfilter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--slate)}
+  .gfilter button{border:1px solid #D9DEDA;background:#fff;border-radius:14px;padding:4px 11px;font:700 12px/1.2 inherit;color:var(--ink);cursor:pointer}
+  .gfilter button.on{background:#0E7C66;border-color:#0E7C66;color:#fff}
+  .gfilter button .c{font-weight:500;opacity:.75;margin-left:3px}
+  .vp-grade{font-weight:800;color:#0E7C66}
   .vp-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:11px;background:#E6F4F0;color:#0E7C66;padding:1px 5px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .vp-tag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 7px;border-radius:9px;background:#E8EEFE;color:#2348C9;margin-left:6px;vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .vp-by{color:var(--slate);font-style:italic}
@@ -1666,6 +1679,7 @@
         bits.push(escapeHtml(fmtWatchedAt(c.createdAt,tz)));
         claims+='<div class="vp-claim"><strong>Claimed on VinPop:</strong> '+bits.join(" · ")
           +' · <span class="vp-code">'+escapeHtml(c.code||"")+'</span>'
+          +(c.grade?' · <span class="vp-grade">Grade '+escapeHtml(c.grade)+'</span>':'')
           +(p.matchedBy==="email"?' <span class="vp-by">· matched by email</span>':'')+'</div>';
       });
       rows+='<div class="mb-person">'
@@ -2003,18 +2017,52 @@
       : '<span class="statpill '+(l.crm==="failed"?'bad':'pending')+'" title="'+escapeHtml(l.crmError||"")+'">'
           +(l.crm==="failed"?"CRM failed":"CRM pending")+'</span>'
         +' <button class="plresend" data-plid="'+escapeHtml(String(l.id))+'">Resend</button>';
-    return '<div class="msgrow" data-plrow="'+escapeHtml(String(l.id))+'">'
-      +'<div class="msgtop"><div class="msgwho"><span class="msgphone" style="color:var(--ink)">'+escapeHtml(l.name)+'</span></div>'
+    var g=l.engagement;
+    var gHtml = g&&/^[ABCD]$/.test(g.grade)
+      ? '<button type="button" class="gpill '+g.grade+'" data-gline="'+escapeHtml(String(l.id))+'" aria-expanded="false" title="Engagement grade '+g.grade+' · tap for details">'+g.grade+'</button>'
+      : '<span class="gnone" title="No engagement grade">—</span>';
+    return '<div class="msgrow" data-plrow="'+escapeHtml(String(l.id))+'" data-grade="'+(g&&g.grade?g.grade:"")+'">'
+      +'<div class="msgtop"><div class="msgwho">'+gHtml+'<span class="msgphone" style="color:var(--ink)">'+escapeHtml(l.name)+'</span></div>'
         +'<span class="msgtime">'+escapeHtml(fmtWatchedAt(l.createdAt,tz))+'</span></div>'
       +'<div class="msgpills"><span class="kindpill promo">'+escapeHtml(promoDollars(l.offerCents))+(l.offerName?' · '+escapeHtml(l.offerName):' offer')+'</span>'
         +'<span class="kindpill trig">'+promoTrigLabel(l.trigger)+'</span>'+crm+'</div>'
       +'<div class="msgveh">'+escapeHtml(veh)+'</div>'
       +(l.code?'<div class="plcode">Voucher code <strong>'+escapeHtml(l.code)+'</strong></div>':'')
+      +(g&&g.line?'<div class="gline" id="gline-'+escapeHtml(String(l.id))+'">'+escapeHtml(g.line)+'</div>':'')
       +'<div class="plcontact">'
         +(l.phone?'<a href="tel:'+escapeHtml(l.phone)+'">'+escapeHtml(phoneDisp)+'</a>':'')
         +(l.email?'<a href="mailto:'+escapeHtml(l.email)+'">'+escapeHtml(l.email)+'</a>':'')
       +'</div>'
     +'</div>';
+  }
+
+  // Grade filter (All / A / B / C / D) — filters the rows already loaded.
+  function gradeFilterHtml(c, total){
+    var b=function(k,label,n){ return '<button type="button" data-gf="'+k+'" class="'+(k===""?"on":"")+'" aria-pressed="'+(k===""?"true":"false")+'">'+label+'<span class="c">'+n+'</span></button>'; };
+    return '<div class="gfilter" role="group" aria-label="Filter by engagement grade"><span>Grade</span>'
+      +b("","All",total)+b("A","A",c.A||0)+b("B","B",c.B||0)+b("C","C",c.C||0)+b("D","D",c.D||0)
+      +'</div>'
+      +'<p style="font-size:11.5px;color:var(--slate);margin:-4px 0 10px">Grade = how engaged the shopper was on your website before claiming (A–D, from the same score as Live now). It describes on-site engagement only. Tap a grade to see the details sent to your CRM.</p>';
+  }
+  function wireGrades(root){
+    root.querySelectorAll(".gpill[data-gline]").forEach(function(p){
+      p.addEventListener("click", function(){
+        var el=document.getElementById("gline-"+p.getAttribute("data-gline"));
+        if(!el) return;
+        var open=!el.classList.contains("open");
+        el.classList.toggle("open", open); p.setAttribute("aria-expanded", open?"true":"false");
+      });
+    });
+    root.querySelectorAll(".gfilter [data-gf]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var k=btn.getAttribute("data-gf"), shown=0;
+        root.querySelectorAll(".gfilter [data-gf]").forEach(function(x){ var on=x===btn; x.classList.toggle("on",on); x.setAttribute("aria-pressed",on?"true":"false"); });
+        root.querySelectorAll(".msgrow[data-plrow]").forEach(function(r){
+          var vis=!k||r.getAttribute("data-grade")===k; r.style.display=vis?"":"none"; if(vis) shown++;
+        });
+        var empty=root.querySelector(".gempty"); if(empty) empty.style.display=shown?"none":"block";
+      });
+    });
   }
 
   function openPromoLeads(){
@@ -2040,8 +2088,10 @@
         +'<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 12px">Shoppers who claimed the website offer. '
           +'These are separate from watchers and aren\'t scored. If a shopper brings in a printed voucher, match its code to the one shown here. '+leads.length+' total · '+sent+' sent to CRM'
           +(notSent?' · <span style="color:var(--redline);font-weight:600">'+notSent+' not yet delivered</span>':'')+'</p>'
-        +'<div class="msglist">'+rows+'</div>'
+        +(leads.length?gradeFilterHtml(d.gradeCounts||{}, leads.length):'')
+        +'<div class="msglist">'+rows+'<div class="state gempty" style="display:none;padding:22px 0">No leads with this grade.</div></div>'
       +'</div>';
+      wireGrades(modal);
       modal.querySelectorAll(".plresend").forEach(function(b){
         b.addEventListener("click", function(){
           b.disabled=true; b.textContent="Sending…";

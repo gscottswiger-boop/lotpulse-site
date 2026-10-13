@@ -199,6 +199,25 @@
     };
   }
 
+  // Sent with a VinPop submit for the lead's engagement grade (server-side,
+  // api/lib/leadGrade.js). visitNumber = distinct days in lp_eng.days.
+  function engSnapshot() {
+    var t = tally();
+    return {
+      vehicles: t.vehicles, minutes: t.minutes, returning: t.returning, scrollPct: t.scrollPct,
+      visitNumber: ((ENG && ENG.days) || []).length,
+    };
+  }
+  // Up to n VINs viewed in the last 30 days, newest first.
+  function recentVins(n) {
+    var e = ENG || {}, now = Date.now(), list = [];
+    for (var v in (e.vins || {})) {
+      if (e.vins.hasOwnProperty(v) && e.vins[v] > now - ENG_WINDOW_MS) list.push([v, e.vins[v]]);
+    }
+    list.sort(function (a, b) { return b[1] - a[1]; });
+    return list.slice(0, n).map(function (x) { return x[0]; });
+  }
+
   // SAME rule as qualifies() in api/lib/promo.js — keep them in sync.
   // true if ANY switched-on rule is met; always true with audience "all";
   // false when storage is blocked and audience is "engaged" (fail closed).
@@ -873,6 +892,12 @@
         pageUrl: window.location.href, company: root.getElementById("hp").value,
         // Anonymous visitor id: links this lead to the "Live now" viewer row.
         vid: STORAGE_OK && ENG ? ENG.vid : null,
+        // Engagement grade inputs (the server prefers its own live / trail
+        // counters and only falls back to these, clamped). Counts and VINs
+        // only — never pages, titles, referrers or timestamps.
+        visit: STORAGE_OK && ENG && ENG.visit ? ENG.visit.start : null,
+        eng: STORAGE_OK && ENG ? engSnapshot() : null,
+        vins: STORAGE_OK && ENG ? recentVins(10) : [],
       }).then(function (res) {
         if (!res.ok) {
           go.disabled = false; go.textContent = "Claim my offer";
