@@ -1134,7 +1134,7 @@
     // text properly nested inside .hit (a good anchor). Whichever method
     // below runs first must not "lock in" a bad anchor and block the good
     // one from ever overriding it — so dedup by quality, not by arrival order.
-    function consider(vin, el) {
+    function consider(vin, el, mapped) {
       if (!vin) return;
       var verified = hasHitAncestor(el);
       if (indexOf.hasOwnProperty(vin)) {
@@ -1143,7 +1143,7 @@
         return;
       }
       indexOf[vin] = out.length;
-      out.push({ vin: vin, el: el, verified: verified });
+      out.push({ vin: vin, el: el, verified: verified, mapped: !!mapped });
     }
 
     // Method 1: grid-view template — VIN sits in a real attribute.
@@ -1163,7 +1163,81 @@
       var m = (vinTextEls[k].textContent || "").match(/\b([A-HJ-NPR-Z0-9]{17})\b/);
       consider(m ? cleanVin(m[1]) : null, vinTextEls[k]);
     }
+    // Method 3: Dealer.com cards with NO per-card VIN element.
+    // On DDC the only per-card VIN is the Capital One financing button's
+    // data-vin (confirmed by Elements inspection, Aug 2026). KIMA's NEW SRP
+    // cards don't render that Capital One block at all (new cards show OEM
+    // incentives instead), so Methods 1-2 find nothing and no button mounts.
+    // Map cards back to VINs through page-level data instead:
+    //   (a) a link in the card whose path matches a JSON-LD vehicle's url
+    //   (b) a card [data-uuid] matching DDC.dataLayer.vehicles[].uuid
+    // Both are no-ops when the signal is absent, so DI and used DDC cards are
+    // untouched (and consider() still prefers any real data-vin it finds).
+    var maps = vinMapsFromPageData();
+    if (maps.byPath) {
+      var links = document.querySelectorAll("a[href]");
+      for (var a = 0; a < links.length; a++) {
+        var p = normPath(links[a].getAttribute("href"));
+        if (p && maps.byPath[p] && inRealCard(links[a])) consider(maps.byPath[p], links[a], true);
+      }
+    }
+    if (maps.byUuid) {
+      var uu = document.querySelectorAll("[data-uuid]");
+      for (var u = 0; u < uu.length; u++) {
+        var id = uu[u].getAttribute("data-uuid");
+        if (id && maps.byUuid[id] && inRealCard(uu[u])) consider(maps.byUuid[id], uu[u], true);
+      }
+    }
     return out;
+  }
+
+  // Method 3 only: the matched element must resolve to a card that owns a
+  // native CTA stack. Without this, the FIRST matching link on the page wins
+  // the VIN (e.g. a "recently viewed" strip above the grid) and the real
+  // card link is discarded as a duplicate.
+  function inRealCard(el) {
+    try { return !!findCtaStack(findCardContainer(el)); } catch (e) { return false; }
+  }
+
+  function normPath(href) {
+    if (!href) return null;
+    try {
+      var p = new URL(href, window.location.href).pathname.replace(/\/+$/, "").toLowerCase();
+      return p.length > 1 ? p : null;
+    } catch (e) { return null; }
+  }
+
+  // Page-level VIN maps for Method 3. Cached per call site is unnecessary:
+  // this runs on the debounced scan only, and both sources are small.
+  function vinMapsFromPageData() {
+    var byPath = null, byUuid = null;
+    function walk(node) {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) { for (var i = 0; i < node.length; i++) walk(node[i]); return; }
+      if (node.vehicleIdentificationNumber) {
+        var v = cleanVin(node.vehicleIdentificationNumber);
+        var urls = [node.url, node["@id"], node.offers && node.offers.url];
+        for (var j = 0; j < urls.length; j++) {
+          var p = typeof urls[j] === "string" ? normPath(urls[j]) : null;
+          if (v && p) { byPath = byPath || {}; byPath[p] = v; }
+        }
+      }
+      for (var k in node) { if (typeof node[k] === "object") walk(node[k]); }
+    }
+    var scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    for (var s = 0; s < scripts.length; s++) {
+      try { walk(JSON.parse(scripts[s].textContent)); } catch (e) { /* ignore */ }
+    }
+    try {
+      var vs = window.DDC && window.DDC.dataLayer && window.DDC.dataLayer.vehicles;
+      if (vs && vs.length) {
+        for (var q = 0; q < vs.length; q++) {
+          var vv = cleanVin(vs[q] && vs[q].vin), id = vs[q] && vs[q].uuid;
+          if (vv && id) { byUuid = byUuid || {}; byUuid[id] = vv; }
+        }
+      }
+    } catch (e) { /* ignore */ }
+    return { byPath: byPath, byUuid: byUuid };
   }
 
   // Walk up from a VIN's source element to find the card boundary. Dealer
@@ -1211,6 +1285,10 @@
     var best = el, cur = el.parentElement;
     for (var j = 0; j < 10 && cur && cur !== document.body; j++) {
       if (distinctVinCount(cur) > 1) break;
+      // A level holding TWO cards' CTA stacks has already swallowed a sibling
+      // card. Matters for cards with zero VIN elements (KIMA new), where the
+      // VIN-count break above can never fire.
+      if (cur.querySelectorAll && cur.querySelectorAll(".vehicle-ctas, .hit-additional-ctas").length > 1) break;
       best = cur;
       if (cur.querySelector && cur.querySelector(
         ".vehicle-ctas, [data-testid^='vehicle-cta-'], .hit-additional-ctas")) break;
@@ -1509,7 +1587,7 @@
         + "background:#1F4FE0;color:#fff;"
         + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
         + "font-size:14px;font-weight:600;padding:11px 14px;"
-        + "border-radius:8px;margin-top:6px;transition:background .15s;";
+        + "border-radius:8px;margin:10px 0;transition:background .15s;";
       btn.addEventListener("mouseenter", function () { btn.style.background = "#1740B8"; });
       btn.addEventListener("mouseleave", function () { btn.style.background = "#1F4FE0"; });
       // This stack is sized by Dealer Inspire to fit exactly the 2 buttons
@@ -1594,6 +1672,10 @@
   function mountAllSrp(found) {
     found.forEach(function (entry) {
       var card = findCardContainer(entry.el);
+      // Page-data matches (Method 3) only mount INTO a real card CTA stack —
+      // never the floating-icon fallback — so a stray matching link outside
+      // the results grid can't park a button somewhere arbitrary.
+      if (entry.mapped && !findCtaStack(card)) return;
       var hadHit = card && card.classList && card.classList.contains("hit");
       var didMount = mountSrpButton(entry.vin, card);
       if (didMount) {
