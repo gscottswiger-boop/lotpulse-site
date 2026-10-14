@@ -1476,7 +1476,7 @@
         page_type: ascPageType("srp"),
         element_type: "item_details",
         element_subtype: "cta_button",
-        element_text: "Watch — Get Price Alerts",
+        element_text: "Watch this car",
         event_action: "click",
         event_action_result: "popup",
         flow_name: "alert",
@@ -1563,6 +1563,31 @@
     });
   }
 
+  // One <style> tag for the SRP button (pseudo-states and the dot's pulse
+  // can't be done with inline styles). Prefixed + !important where dealer
+  // themes commonly restyle generic <button>s.
+  function ensureSrpStyle() {
+    if (document.getElementById("lp-srp-style")) return;
+    var st = document.createElement("style");
+    st.id = "lp-srp-style";
+    st.textContent =
+      ".lp-srp-btn{display:flex!important;align-items:center;justify-content:space-between;gap:10px;"
+      + "width:100%;flex-shrink:0;flex-basis:auto;box-sizing:border-box;margin:10px 0!important;"
+      + "padding:11px 14px!important;background:#fff!important;color:#1F4FE0!important;"
+      + "border:2px solid #1F4FE0!important;border-radius:10px!important;cursor:pointer;text-transform:none!important;"
+      + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif!important;line-height:1.2!important;"
+      + "letter-spacing:normal!important;box-shadow:none!important;transition:background .15s}"
+      + ".lp-srp-btn:hover{background:#EEF3FF!important}"
+      + ".lp-srp-btn:focus-visible{outline:3px solid #9DB5F5;outline-offset:2px}"
+      + ".lp-srp-l{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;min-width:0;white-space:nowrap}"
+      + ".lp-srp-r{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:#0C447C;white-space:nowrap}"
+      + ".lp-srp-dot{width:9px;height:9px;border-radius:50%;background:#22C55E;flex-shrink:0;animation:lpSrpPulse 1.8s infinite}"
+      + "@keyframes lpSrpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}"
+      + "@media (prefers-reduced-motion:reduce){.lp-srp-dot{animation:none}}"
+      + "@media (max-width:300px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}";
+    (document.head || document.documentElement).appendChild(st);
+  }
+
   function mountSrpButton(vin, cardEl) {
     if (cardEl.querySelector('[data-lp-srp="' + vin + '"]')) return false; // already mounted
 
@@ -1577,19 +1602,18 @@
       // page instead of a foreign overlay. This is the slim, compelling
       // version: one clear line, no extra height.
       btn.setAttribute("data-lp-mode", "button");
+      btn.setAttribute("aria-label", "Watch this car \u2014 get price drop texts");
+      // Option A "live outline" (Oct 2026): every other block in a dealer CTA
+      // stack is a solid fill, so a white outlined button with a live green
+      // dot is what contrasts instead of blending in as one more slab.
+      ensureSrpStyle();
+      btn.className = "lp-srp-btn";
       btn.innerHTML =
-        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" '
-        + 'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'
-        + '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
-        + '<span>Watch \u2014 Get Price Alerts</span>';
-      btn.style.cssText =
-        "display:flex;align-items:center;justify-content:center;gap:8px;width:100%;flex-shrink:0;flex-basis:auto;box-sizing:border-box;border:0;cursor:pointer;"
-        + "background:#1F4FE0;color:#fff;"
-        + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
-        + "font-size:14px;font-weight:600;padding:11px 14px;"
-        + "border-radius:8px;margin:10px 0;transition:background .15s;";
-      btn.addEventListener("mouseenter", function () { btn.style.background = "#1740B8"; });
-      btn.addEventListener("mouseleave", function () { btn.style.background = "#1F4FE0"; });
+        '<span class="lp-srp-l"><span class="lp-srp-dot" aria-hidden="true"></span>'
+        + '<span>Watch this car</span></span>'
+        + '<span class="lp-srp-r">Price drop texts '
+        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '
+        + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></span>';
       // This stack is sized by Dealer Inspire to fit exactly the 2 buttons
       // it ships with — confirmed by measuring it at ~95px tall, almost
       // exactly 2 buttons' worth. Adding a 3rd button without forcing the
