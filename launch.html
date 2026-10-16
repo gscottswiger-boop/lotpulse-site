@@ -68,6 +68,12 @@
     border-radius:7px;padding:6px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Barlow'}
   .copybtn:hover{background:rgba(255,255,255,.22)}
   .copybtn.done{background:var(--win)}
+  .taglabel{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .taglabel .opt{font-weight:400;text-transform:none;letter-spacing:0;color:var(--slate)}
+  .brandrow{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font-size:12.5px;color:var(--slate)}
+  .brandrow input[type=text]{width:110px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 8px}
+  .brandrow input[type=color]{width:34px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  .brandrow .bad{color:#B42318}
   .summarygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
   .summarygrid .cell{background:var(--porcelain);border-radius:9px;padding:10px;text-align:center}
   .summarygrid .cell .n{font-family:'Barlow Condensed';font-weight:700;font-size:20px}
@@ -202,17 +208,30 @@
       <div class="k">Dashboard</div><div class="v"><a href="#" id="r-dashurl" target="_blank">—</a></div>
     </div>
 
-    <label>GTM Custom HTML tag — paste into the dealer's GTM container</label>
+    <label>VinWatch GTM tag — Custom HTML, name it "VinWatch"</label>
     <div class="copybox">
       <button class="copybtn" id="copyGtm">Copy</button>
       <pre id="gtmSnippet"></pre>
     </div>
 
+    <label class="taglabel">VinPop GTM tag — Custom HTML, name it "VinPop" <span class="opt">only if the dealer is buying VinPop</span></label>
+    <div class="brandrow">
+      <span>Brand color</span>
+      <input type="color" id="vpColorPick" value="#1F2A44" aria-label="Pick the dealer's brand color">
+      <input type="text" id="vpColor" placeholder="#B3001B" maxlength="7" aria-label="Brand color hex">
+      <span id="vpColorMsg">optional — blank uses the default navy</span>
+    </div>
+    <div class="copybox">
+      <button class="copybtn" id="copyVinPop">Copy</button>
+      <pre id="vinpopSnippet"></pre>
+    </div>
+
     <ul class="checklist">
-      <li>Install the GTM tag above in <strong>their</strong> Google Tag Manager, test-only trigger first</li>
-      <li>Test in GTM Preview on a real VDP before publishing</li>
-      <li>Share the dashboard link + access code with whoever needs it</li>
-      <li>When ready: point their real CRM with <code>/admin/set-crm-email</code></li>
+      <li><span>Install the VinWatch tag in <strong>their</strong> Google Tag Manager, test-only trigger first</span></li>
+      <li><span>VinPop: only after the dealer confirms their privacy policy covers on-site analytics, add the VinPop tag with trigger <strong>All Pages</strong>, create offers in the dashboard's VinPop screen, then test a VDP with <code>?lp_promo_test=1</code></span></li>
+      <li><span>Test in GTM Preview on a real VDP before publishing</span></li>
+      <li><span>Share the dashboard link + access code with whoever needs it</span></li>
+      <li><span>When ready: point their real CRM with <code>/admin/set-crm-email</code></span></li>
     </ul>
   </div>
 </div>
@@ -414,19 +433,55 @@
       '  };\n' +
       '<\/script>\n' +
       '<script src="https://lotpulse-site.onrender.com/lotpulse-widget.js"><\/script>';
+    LAST_KEY = dealer.publicKey;
+    renderVinPop();
 
     document.getElementById("results").classList.add("show");
     document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  document.getElementById("copyGtm").addEventListener("click", function(){
-    var text = document.getElementById("gtmSnippet").textContent;
-    navigator.clipboard.writeText(text).then(function(){
-      var b = document.getElementById("copyGtm");
-      b.textContent = "Copied!"; b.classList.add("done");
-      setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("done"); }, 1800);
-    });
+  // ── VinPop GTM tag ──────────────────────────────────────────────────────
+  // Same public key as VinWatch. accentColor is the only per-dealer choice; a
+  // value that isn't a #hex color is left out (the popup ignores it anyway).
+  var LAST_KEY = "";
+  function vinpopSnippet(key, color){
+    return '<script>\n' +
+      '  window.__lotpulsePromoConfig = {\n' +
+      '    apiBase: "' + API + '",\n' +
+      '    publicKey: "' + key + '"' + (color ? ',\n    accentColor: "' + color + '"' : '') + '\n' +
+      '  };\n' +
+      '<\/script>\n' +
+      '<script src="https://login.lotpulse.io/promo-popup.js" async><\/script>';
+  }
+  function cleanHex(v){
+    v = String(v || "").trim(); if (v && v.charAt(0) !== "#") v = "#" + v;
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v) ? v.toUpperCase() : null;
+  }
+  function renderVinPop(){
+    var raw = document.getElementById("vpColor").value, c = cleanHex(raw);
+    var msg = document.getElementById("vpColorMsg");
+    if (raw.trim() && !c) { msg.textContent = "not a hex color — left out"; msg.className = "bad"; }
+    else { msg.textContent = c ? "" : "optional — blank uses the default navy"; msg.className = ""; }
+    if (c && c.length === 7) document.getElementById("vpColorPick").value = c;
+    document.getElementById("vinpopSnippet").textContent = vinpopSnippet(LAST_KEY, c);
+  }
+  document.getElementById("vpColor").addEventListener("input", renderVinPop);
+  document.getElementById("vpColorPick").addEventListener("input", function(e){
+    document.getElementById("vpColor").value = e.target.value.toUpperCase(); renderVinPop();
   });
+
+  function wireCopy(btnId, preId){
+    document.getElementById(btnId).addEventListener("click", function(){
+      var b = document.getElementById(btnId);
+      var text = document.getElementById(preId).textContent;
+      navigator.clipboard.writeText(text).then(function(){
+        b.textContent = "Copied!"; b.classList.add("done");
+        setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("done"); }, 1800);
+      });
+    });
+  }
+  wireCopy("copyGtm", "gtmSnippet");
+  wireCopy("copyVinPop", "vinpopSnippet");
 </script>
 </body>
 </html>

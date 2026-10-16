@@ -80,6 +80,20 @@
   .out.show{display:block}
   .out .ok{color:#7EE2A8}.out .bad{color:#FF8A84}.out .k{color:#8FB8FF}
   .hint{font-size:11.5px;color:var(--slate);margin-top:7px;line-height:1.5}
+  /* GTM tags shown after "Read dealer" */
+  .tags{display:none;margin-top:14px}
+  .tags.show{display:block}
+  .tags h3{font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;text-transform:uppercase;margin:12px 0 6px}
+  .tags h3 .opt{font-family:inherit;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--slate)}
+  .copybox{position:relative;background:#14181D;border-radius:10px;padding:14px 14px 14px}
+  .copybox pre{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#D9F0E2;white-space:pre-wrap;word-break:break-all;line-height:1.6;margin:0;padding-right:64px}
+  .copybtn{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer}
+  .copybtn:hover{background:rgba(255,255,255,.22)}
+  .copybtn.done{background:#1E8E5A}
+  .brandrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;font-size:12.5px;color:var(--slate)}
+  .brandrow input[type=text]{width:110px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 8px}
+  .brandrow input[type=color]{width:34px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  .brandrow .bad{color:#B42318}
   .linkout{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:12px;
     background:var(--win-soft);color:#12684180;border:1px solid #C7E7D4;border-radius:7px;
     padding:7px 10px;margin-top:8px;word-break:break-all;color:#126841}
@@ -212,6 +226,20 @@
       <button class="primary" data-act="sync">Run sync</button>
     </div>
     <div class="out" id="out-dealer"></div>
+    <div class="tags" id="tags-dealer">
+      <h3>VinWatch GTM tag <span class="opt">Custom HTML, name it "VinWatch"</span></h3>
+      <div class="copybox"><button class="copybtn" data-copy="snip-vw">Copy</button><pre id="snip-vw"></pre></div>
+      <h3>VinPop GTM tag <span class="opt">Custom HTML, name it "VinPop" · trigger All Pages</span></h3>
+      <div class="brandrow">
+        <span>Brand color</span>
+        <input type="color" id="vp-pick" value="#1F2A44" aria-label="Pick the dealer's brand color">
+        <input type="text" id="vp-color" placeholder="#B3001B" maxlength="7" aria-label="Brand color hex">
+        <span id="vp-msg">optional — blank uses the default navy</span>
+      </div>
+      <div class="copybox"><button class="copybtn" data-copy="snip-vp">Copy</button><pre id="snip-vp"></pre></div>
+      <div class="hint">Add the VinPop tag only after the dealer confirms their privacy policy covers on-site
+        analytics. Then create offers in the dashboard's VinPop screen and test a VDP with <code>?lp_promo_test=1</code>.</div>
+    </div>
   </div>
 
   <!-- ── Access code ────────────────────────────────────────────────────── -->
@@ -337,7 +365,7 @@
   }
 
   // Every request carries the token in a HEADER. No query string, ever.
-  function call(id, path, btn){
+  function call(id, path, btn, onOk){
     if (!TOKEN) { show(id, "Paste the admin token first.", true); return; }
     var label = btn.textContent;
     btn.disabled = true; btn.textContent = "Running\u2026";
@@ -350,12 +378,53 @@
           return j;
         });
       })
-      .then(function(j){ show(id, j, false); })
+      .then(function(j){ show(id, j, false); if (onOk) onOk(j); })
       .catch(function(e){ show(id, e.message, true); })
       .finally(function(){ btn.disabled = false; btn.textContent = label; });
   }
 
   function val(id){ return document.getElementById(id).value.trim(); }
+
+  // ── GTM tags for a rooftop (from "Read dealer") ────────────────────────────
+  // Built from the dealer's PUBLIC key, which is meant to be on the dealer's
+  // site. Same snippets as launch.html gives at launch.
+  var TAG_KEY = "";
+  function cleanHex(v){
+    v = String(v || "").trim(); if (v && v.charAt(0) !== "#") v = "#" + v;
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v) ? v.toUpperCase() : null;
+  }
+  function renderTags(){
+    var raw = document.getElementById("vp-color").value, c = cleanHex(raw);
+    var msg = document.getElementById("vp-msg");
+    if (raw.trim() && !c) { msg.textContent = "not a hex color — left out"; msg.className = "bad"; }
+    else { msg.textContent = c ? "" : "optional — blank uses the default navy"; msg.className = ""; }
+    if (c && c.length === 7) document.getElementById("vp-pick").value = c;
+    document.getElementById("snip-vw").textContent =
+      '<script>\n  window.__lotpulseConfig = {\n    apiBase: "' + API + '",\n    publicKey: "' + TAG_KEY + '"\n  };\n<\/script>\n'
+      + '<script src="https://lotpulse-site.onrender.com/lotpulse-widget.js"><\/script>';
+    document.getElementById("snip-vp").textContent =
+      '<script>\n  window.__lotpulsePromoConfig = {\n    apiBase: "' + API + '",\n    publicKey: "' + TAG_KEY + '"'
+      + (c ? ',\n    accentColor: "' + c + '"' : '') + '\n  };\n<\/script>\n'
+      + '<script src="https://login.lotpulse.io/promo-popup.js" async><\/script>';
+  }
+  function showTags(j){
+    var key = j && j.dealer && j.dealer.public_key;
+    if (!key || !/^[A-Za-z0-9]{8,64}$/.test(key)) return;
+    TAG_KEY = key; renderTags();
+    document.getElementById("tags-dealer").classList.add("show");
+  }
+  function hideTags(){ document.getElementById("tags-dealer").classList.remove("show"); }
+  document.getElementById("vp-color").addEventListener("input", renderTags);
+  document.getElementById("vp-pick").addEventListener("input", function(e){
+    document.getElementById("vp-color").value = e.target.value.toUpperCase(); renderTags();
+  });
+  document.addEventListener("click", function(e){
+    var b = e.target.closest("[data-copy]"); if (!b) return;
+    navigator.clipboard.writeText(document.getElementById(b.getAttribute("data-copy")).textContent).then(function(){
+      b.textContent = "Copied!"; b.classList.add("done");
+      setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("done"); }, 1800);
+    });
+  });
   function q(v){ return encodeURIComponent(v); }
 
   document.addEventListener("click", function(e){
@@ -407,12 +476,14 @@
     if (act === "dealer") {
       var ds = val("d-slug");
       if (!ds) return show("dealer", "Dealer slug is required.", true);
-      return call("dealer", "/admin/dealer/" + q(ds), btn);
+      hideTags();
+      return call("dealer", "/admin/dealer/" + q(ds), btn, showTags);
     }
 
     if (act === "sync") {
       var ss = val("d-slug");
       if (!ss) return show("dealer", "Dealer slug is required.", true);
+      hideTags();
       return call("dealer", "/admin/sync/" + q(ss), btn);
     }
 
