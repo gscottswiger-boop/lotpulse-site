@@ -456,6 +456,33 @@
 
   /* ── VinPop: "Who sees VinPop" (engagement rules, agency-only) ── */
   .newtag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0E7C66;color:#fff;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:1px}
+  /* VinPop offer areas ("Which shoppers") */
+  .ar-list{display:flex;flex-direction:column;gap:6px;margin:8px 0 6px}
+  .ar-city{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:4px 4px 4px 12px;background:#fff}
+  .ar-city .nm{flex:1;font-weight:600;font-size:14.5px;min-width:0}
+  .ar-city label{font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-weight:500}
+  .ar-city select{height:36px;border:1.5px solid var(--line);border-radius:8px;font:600 14px 'Barlow',sans-serif;padding:0 6px;background:#fff}
+  .ar-city button{width:36px;height:36px;border:0;background:none;color:var(--slate);border-radius:8px;cursor:pointer;font-size:20px;line-height:1}
+  .ar-city button:hover{background:var(--porcelain);color:var(--ink)}
+  .ar-add{position:relative}
+  .ar-add input{width:100%;box-sizing:border-box;height:44px;border:1.5px dashed #A9B0A8;border-radius:10px;padding:0 12px;font:500 15px 'Barlow',sans-serif;background:#fff}
+  .ar-sugg{position:absolute;left:0;right:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,24,29,.14);z-index:5;overflow:hidden}
+  .ar-sugg button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:10px 12px;font:500 14.5px 'Barlow',sans-serif;cursor:pointer;color:var(--ink)}
+  .ar-sugg button:hover,.ar-sugg button.hi{background:var(--porcelain)}
+  .ar-zips textarea{width:100%;box-sizing:border-box;min-height:64px;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font:400 14px 'IBM Plex Mono',ui-monospace,monospace;resize:vertical}
+  .ar-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
+  .ar-chips span{display:inline-flex;gap:5px;align-items:baseline;background:#E7F0F8;color:#0B5FA5;border-radius:6px;padding:4px 8px;font:500 12.5px 'IBM Plex Mono',ui-monospace,monospace}
+  .ar-chips span small{font:500 11.5px 'Barlow',sans-serif;color:#3D5A75}
+  .ar-map{height:260px;border-radius:10px;border:1px solid var(--line);margin:10px 0 8px;background:#EEF1EC}
+  .ar-reach{display:flex;gap:12px;align-items:center;background:var(--porcelain);border-radius:10px;padding:10px 14px;margin:0 0 6px;font-size:13.5px;line-height:1.4}
+  .ar-reach .n{font:700 28px 'Barlow Condensed',sans-serif;color:#0B5FA5;line-height:1}
+  .ar-reach.bad{background:var(--amber-soft);color:#7A5200}
+  .ar-lbl{background:#fff;border:0;box-shadow:0 1px 3px rgba(0,0,0,.2);border-radius:10px;padding:1px 7px;font:700 12px 'Barlow',sans-serif;color:#0B5FA5;white-space:nowrap}
+  .ar-lbl:before{display:none}
+  .gx-areas{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;font-size:12.5px;color:#2A323A;margin:-4px 0 12px}
+  .gx-areas label{display:inline-flex;align-items:center;gap:6px;font-weight:600;cursor:pointer;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)}
+  .gx-areas .k{display:inline-flex;align-items:center;gap:6px}
+  .gx-areas .k i{width:14px;height:14px;border-radius:50%;display:inline-block}
   .wv-seg{display:inline-flex;background:var(--porcelain);border-radius:10px;padding:3px;margin:0 0 4px;flex-wrap:wrap}
   .wv-seg button{border:0;background:none;font:600 14px 'Barlow',sans-serif;padding:8px 16px;border-radius:8px;cursor:pointer;color:var(--slate)}
   .wv-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -2238,17 +2265,19 @@
     var cards=offers.map(function(o,idx){
       var st=o.stats||{}, o7=st.last7||{};
       var warn="";
+      var area=!!o.targetArea;
       if(o.status==="live" && !paused && s.enabled){
         if(o.matchesOnLot===0) warn='<div class="owarn">No cars on the lot match this offer right now.</div>';
+        else if(area && o.winsOnLot===0 && o.blockedBy) warn='<div class="owarn">Shoppers in this offer\'s area get “'+escapeHtml(o.blockedBy.name)+'” instead, because it\'s higher on the list and covers the same cars for everyone. Move this offer above it.</div>';
         else if(o.winsOnLot===0) warn='<div class="owarn">Every car it matches is taken by an offer above it. Move it up or narrow the one above.</div>';
       }
       var cov = o.status==="live"
-        ? 'Showing on <strong>'+o.winsOnLot+'</strong> car'+(o.winsOnLot===1?'':'s')+(o.matchesOnLot>o.winsOnLot?' <span style="color:var(--slate)">('+(o.matchesOnLot-o.winsOnLot)+' more go to offers above)</span>':'')
+        ? 'Showing on <strong>'+o.winsOnLot+'</strong> car'+(o.winsOnLot===1?'':'s')+(area?' to shoppers in its area':'')+(o.matchesOnLot>o.winsOnLot?' <span style="color:var(--slate)">('+(o.matchesOnLot-o.winsOnLot)+' more go to offers above)</span>':'')
         : 'Matches '+o.matchesOnLot+' car'+(o.matchesOnLot===1?'':'s')+' on the lot';
       return '<div class="ocard" data-oid="'+escapeHtml(o.id)+'">'
         +'<div class="ohead"><span class="opri">'+(idx+1)+'</span>'
           +'<div class="oname"><div class="on1">'+escapeHtml(o.name)+'</div>'
-            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+escapeHtml(o.targets)+(o.image?' · graphic':'')+'</div></div>'
+            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+escapeHtml(o.targets)+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')+'</div></div>'
           +prStatusPill(o.status)+'</div>'
         +'<div class="ometa">'+cov+' · 7 days: '+(o7.impressions||0)+' views, '+(o7.submits||0)+' leads, '+prPct(o7.conversionRate)+'</div>'
         +warn
@@ -2278,7 +2307,7 @@
       +'<div class="err" id="pr-err" style="display:none"></div>'
 
       +'<div class="psec">Offers</div>'
-      +'<p class="pnote" style="margin-top:-4px">If a car matches more than one offer, the one <strong>highest on this list</strong> wins. Use the arrows to reorder.'
+      +'<p class="pnote" style="margin-top:-4px">If a car matches more than one offer, the one <strong>highest on this list</strong> wins. Use the arrows to reorder. Put offers for a city or ZIP area <strong>above</strong> your everywhere offers.'
         +(d.inventoryCount?' '+d.uncoveredOnLot+' of '+d.inventoryCount+' cars on the lot have no offer right now.':'')+'</p>'
       +'<div id="pr-offers">'+cards+'</div>'
       +'<button class="mlink" id="pr-add" style="width:100%;border:0;cursor:pointer;margin-top:4px;background:#fff;color:var(--action);border:1.5px solid var(--action)">+ Add offer</button>'
@@ -2501,6 +2530,19 @@
       +'<div class="setrow"><label>Models <span style="font-weight:400;color:var(--slate)">(none selected = all models)</span></label><div class="mkchips" id="pr-models"></div></div>'
       +'<div class="pmatch" id="pr-match">Checking inventory…</div>'
 
+      +'<div class="psec">Which shoppers see this offer <span class="newtag">New</span></div>'
+      +'<div class="wv-seg" id="ar-seg" role="group" aria-label="Which shoppers see this offer">'
+        +'<button type="button" data-v="any">Anywhere</button><button type="button" data-v="cities">Near cities</button><button type="button" data-v="zips">ZIP codes</button></div>'
+      +'<div id="ar-any" class="pnote" style="margin:6px 0 0">Every shopper can see this offer, wherever they are (as today).</div>'
+      +'<div id="ar-cities" style="display:none"><div class="ar-list" id="ar-list"></div>'
+        +'<div class="ar-add"><input id="ar-add" autocomplete="off" placeholder="+ Add a city or town…" aria-label="Add a city or town" role="combobox" aria-expanded="false" aria-controls="ar-sugg"><div class="ar-sugg" id="ar-sugg" role="listbox" style="display:none"></div></div></div>'
+      +'<div id="ar-zips" class="ar-zips" style="display:none"><textarea id="ar-ziptext" aria-label="ZIP codes" placeholder="Type or paste ZIP codes, e.g. 30501, 30504, 30506"></textarea>'
+        +'<div class="ar-chips" id="ar-chips"></div></div>'
+      +'<div id="ar-mapwrap" style="display:none"><div class="ar-map" id="ar-map" role="img" aria-label="Map of this offer\'s area"></div>'
+        +'<div class="ar-reach" id="ar-reach"></div>'
+        +'<div class="pmatch bad" id="ar-warn" style="display:none"></div>'
+        +'<p class="pnote">Location is approximate: we place shoppers by their internet connection, usually to the nearest town (phones can show up a town or two away). Shoppers we can\'t place, or who are outside the area, get the next offer down the list.</p></div>'
+
       +'<button class="mlink" id="pr-save" style="width:100%;border:0;cursor:pointer;margin-top:10px">'+(isNew?'Create offer':'Save offer')+'</button>'
       +(isNew?'':'<div style="text-align:center;margin-top:10px"><button class="linkbtn" id="pr-del" type="button">Delete this offer</button></div>')
     +'</div>';
@@ -2508,7 +2550,7 @@
 
     var err=document.getElementById("pr-err");
     function showErr(m){ err.className="err"; err.textContent=m; err.style.display="block"; err.scrollIntoView({block:"nearest"}); }
-    document.getElementById("pr-back").addEventListener("click", function(){ prReload(function(){ prRenderList(); }); });
+    document.getElementById("pr-back").addEventListener("click", function(){ arStopMap(); prReload(function(){ prRenderList(); }); });
 
     // Model chips follow the chosen makes; checked models are remembered even
     // while their make is deselected, then dropped at save if the make isn't chosen.
@@ -2562,12 +2604,167 @@
         if(r.examples.length) txt+='<div class="pmx">e.g. '+r.examples.map(escapeHtml).join(", ")+'</div>';
         el.className="pmatch"+(r.wins===0?" bad":"");
         el.innerHTML=txt+(isNew&&r.matches?'<div class="pmx">New offers go to the bottom of the list. Move it up afterwards if it should win.</div>':'');
+        lastMatch=r; arWarn();
       });
     }
+    var lastMatch=null;
     ["pr-cond","pr-pmin","pr-pmax"].forEach(function(id){
       document.getElementById(id).addEventListener("input", scheduleMatch);
       document.getElementById(id).addEventListener("change", scheduleMatch);
     });
+
+    // ── Which shoppers see this offer (offer areas) ──
+    // Anywhere = as before. Near cities = towns + radius; ZIP codes = a list.
+    // The server resolves every town to its point and checks every ZIP
+    // (area-preview), and the popup matches with the same rules.
+    var ta=o.targetArea||null, setup=d.areaSetup||{radiusChoices:[5,10,15,20,25,35,50],limits:{maxCities:10}};
+    var arMode=ta&&ta.type==="cities"?"cities":ta&&ta.type==="zips"?"zips":"any";
+    var arCities=ta&&ta.type==="cities"?ta.cities.map(function(c){ return {name:c.name,state:c.state,miles:c.miles}; }):[];
+    document.getElementById("ar-ziptext").value=ta&&ta.type==="zips"?ta.zips.join(", "):"";
+    function arZipList(){
+      var seen={}, out=[];
+      document.getElementById("ar-ziptext").value.split(/[\s,;]+/).forEach(function(z){ z=z.trim(); if(z && !seen[z]){ seen[z]=1; out.push(z); } });
+      return out;
+    }
+    function arBody(){
+      if(arMode==="cities") return {type:"cities",cities:arCities.map(function(c){ return {name:c.name,state:c.state,miles:c.miles}; })};
+      if(arMode==="zips") return {type:"zips",zips:arZipList()};
+      return null;
+    }
+    function arRenderList(){
+      var box=document.getElementById("ar-list");
+      box.innerHTML=arCities.map(function(c,i){
+        var ch=setup.radiusChoices.slice(); if(ch.indexOf(c.miles)===-1) ch.push(c.miles); ch.sort(function(a,b){return a-b;});
+        return '<div class="ar-city"><span class="nm">'+escapeHtml(c.name+", "+c.state)+'</span>'
+          +'<label>within <select data-i="'+i+'" aria-label="Radius around '+escapeHtml(c.name)+'">'
+          +ch.map(function(m){ return '<option value="'+m+'"'+(m===c.miles?' selected':'')+'>'+m+' mi</option>'; }).join("")+'</select></label>'
+          +'<button type="button" data-rm="'+i+'" aria-label="Remove '+escapeHtml(c.name)+'">×</button></div>';
+      }).join("");
+      box.querySelectorAll("select").forEach(function(sel){
+        sel.addEventListener("change", function(){ arCities[Number(sel.getAttribute("data-i"))].miles=Number(sel.value); arSchedule(); });
+      });
+      box.querySelectorAll("button[data-rm]").forEach(function(b){
+        b.addEventListener("click", function(){ arCities.splice(Number(b.getAttribute("data-rm")),1); arRenderList(); arSchedule(); });
+      });
+      document.getElementById("ar-add").disabled=arCities.length>=(setup.limits.maxCities||10);
+      document.getElementById("ar-add").placeholder=arCities.length>=(setup.limits.maxCities||10)?"Up to "+setup.limits.maxCities+" cities per offer":"+ Add a city or town…";
+    }
+    function arShow(){
+      document.querySelectorAll("#ar-seg button").forEach(function(b){ var on=b.getAttribute("data-v")===arMode; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
+      document.getElementById("ar-any").style.display=arMode==="any"?"":"none";
+      document.getElementById("ar-cities").style.display=arMode==="cities"?"":"none";
+      document.getElementById("ar-zips").style.display=arMode==="zips"?"":"none";
+      document.getElementById("ar-mapwrap").style.display=arMode==="any"?"none":"";
+      arWarn();
+    }
+    // "An Anywhere offer above this one takes these cars" — the order warning.
+    function arWarn(){
+      var w=document.getElementById("ar-warn"); if(!w) return;
+      var r=lastMatch;
+      if(arMode==="any" || !r || !r.takenByHigher){ w.style.display="none"; return; }
+      w.style.display="";
+      w.innerHTML=(r.wins===0?'<strong>Shoppers in this area won\'t see this offer.</strong> ':'<strong>Heads up:</strong> ')
+        +'“'+escapeHtml(r.takenByName||"An offer above")+'” is higher on the list and covers '+(r.wins===0?'all '+r.matches:r.takenByHigher+' of these')+' car'+((r.wins===0?r.matches:r.takenByHigher)===1?'':'s')
+        +' for every shopper, so shoppers in this area get that offer on '+(r.wins===0?'them':'those')+'. Move this offer above it in the list'+(isNew?' after you create it':'')+'.';
+    }
+    var arTimer=null, arSeq=0, arMapObj=null;
+    function arSchedule(){ clearTimeout(arTimer); arTimer=setTimeout(arPreview, 350); }
+    function arStopMap(){ if(arMapObj){ try{ arMapObj.remove(); }catch(e){} arMapObj=null; } }
+    function arPreview(){
+      if(arMode==="any"){ arStopMap(); return; }
+      var seq=++arSeq, reach=document.getElementById("ar-reach"), chips=document.getElementById("ar-chips");
+      var body=arBody();
+      if((body.cities&&!body.cities.length)||(body.zips&&!body.zips.length)){
+        reach.className="ar-reach"; reach.innerHTML='<span>'+(arMode==="cities"?"Add a city to see its area on the map.":"Add ZIP codes to see them on the map.")+'</span>';
+        if(chips) chips.innerHTML=""; arDraw({parts:[],zips:[],store:d.areaSetup&&d.areaSetup.store}); return;
+      }
+      promoPost("/promo-offers/area-preview",{targetArea:body}).then(function(r){
+        if(seq!==arSeq || !document.getElementById("ar-reach")) return;
+        if(!r.ok){ reach.className="ar-reach bad"; reach.innerHTML='<span>'+escapeHtml(r.error||"Couldn't check this area.")+'</span>'; return; }
+        if(arMode==="zips") chips.innerHTML=(r.zips||[]).map(function(z){ return '<span>'+escapeHtml(z.zip)+'<small>'+escapeHtml(z.city)+'</small></span>'; }).join("");
+        if(!r.reach){ reach.className="ar-reach"; reach.innerHTML='<span>Visitor counts for this area appear once visitor locations are set up.</span>'; }
+        else if(!r.reach.total){ reach.className="ar-reach"; reach.innerHTML='<span>No visitor locations counted in the last 30 days yet, so we can\'t estimate how many shoppers are in this area.</span>'; }
+        else {
+          var pct=Math.round(100*r.reach.visitors/r.reach.total);
+          reach.className="ar-reach";
+          reach.innerHTML='<span class="n">'+(r.reach.visitors&&pct===0?'<1':pct)+'%</span><span>About <strong>'+gxNum(r.reach.visitors)+'</strong> of '+gxNum(r.reach.total)+' visitors in the last 30 days were placed in '+(arMode==="zips"?"these ZIP codes":"this area")+'.</span>';
+        }
+        arDraw(r);
+      }).catch(function(){ if(seq===arSeq){ reach.className="ar-reach bad"; reach.textContent="Network error checking this area."; } });
+    }
+    function arDraw(r){
+      loadLeaflet().then(function(L){
+        var el=document.getElementById("ar-map"); if(!el || arMode==="any") return;
+        arStopMap();
+        var map=L.map(el,{scrollWheelZoom:false,zoomControl:true,attributionControl:true}); arMapObj=map;
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:15,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(map);
+        var b=[];
+        (r.parts||[]).filter(function(p){ return p.kind==="city"; }).forEach(function(p){
+          var c=L.circle([p.lat,p.lng],{radius:p.miles*1609.34,color:"#0B5FA5",weight:2,dashArray:"7 5",fillColor:"#0B5FA5",fillOpacity:.12}).addTo(map);
+          c.bindTooltip(escapeHtml(p.name+" · "+p.miles+" mi"),{permanent:true,direction:"center",className:"ar-lbl"});
+          b.push(L.latLng(p.lat,p.lng).toBounds(p.miles*1609.34*2));
+        });
+        var zs=r.zips||[];
+        zs.forEach(function(z){
+          L.circle([z.lat,z.lng],{radius:2.5*1609.34,color:"#0B5FA5",weight:1.5,fillColor:"#0B5FA5",fillOpacity:.18})
+            .bindTooltip(escapeHtml(z.zip+" · "+z.city),{direction:"top"}).addTo(map);   // names are in the chips above
+          b.push(L.latLng(z.lat,z.lng).toBounds(6000));
+        });
+        var st=r.store||(d.areaSetup&&d.areaSetup.store);
+        if(st){
+          L.marker([st.lat,st.lng],{keyboard:false,title:"Your store",zIndexOffset:1000,icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],
+            html:'<div class="gx-store"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V10l8-6 8 6v11z"/></svg></div>'})})
+            .bindTooltip("Your store",{direction:"top",offset:[0,-12]}).addTo(map);
+          b.push(L.latLng(st.lat,st.lng).toBounds(8000));
+        }
+        map.invalidateSize();
+        if(b.length){ var all=b[0]; b.slice(1).forEach(function(x){ all.extend(x); }); map.fitBounds(all,{padding:[16,16],maxZoom:12}); }
+        else map.setView([39.5,-98.35],4);
+      }).catch(function(e){
+        var el=document.getElementById("ar-map"); if(el) el.outerHTML='<div class="pnote">The map couldn\'t load ('+escapeHtml(e.message)+'). The area still saves and works.</div>';
+      });
+    }
+    // City search as you type (towns in the rooftop's state first).
+    var sugTimer=null, sugSeq=0, sugList=[], sugHi=0;
+    function sugHide(){ var s=document.getElementById("ar-sugg"); if(s){ s.style.display="none"; } var a=document.getElementById("ar-add"); if(a) a.setAttribute("aria-expanded","false"); }
+    function sugPick(t){
+      if(!t) return;
+      var dup=arCities.some(function(c){ return c.name.toLowerCase()===t.name.toLowerCase() && c.state===t.state; });
+      if(!dup && arCities.length<(setup.limits.maxCities||10)) arCities.push({name:t.name,state:t.state,miles:10});
+      var a=document.getElementById("ar-add"); a.value=""; sugHide(); arRenderList(); arSchedule(); a.focus();
+    }
+    function sugRender(){
+      var s=document.getElementById("ar-sugg");
+      if(!sugList.length){ s.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--slate)">No US town by that name.</div>'; }
+      else s.innerHTML=sugList.map(function(t,i){ return '<button type="button" role="option" data-i="'+i+'"'+(i===sugHi?' class="hi" aria-selected="true"':'')+'>'+escapeHtml(t.label)+'</button>'; }).join("");
+      s.style.display=""; document.getElementById("ar-add").setAttribute("aria-expanded","true");
+      s.querySelectorAll("button").forEach(function(btn){ btn.addEventListener("mousedown", function(ev){ ev.preventDefault(); sugPick(sugList[Number(btn.getAttribute("data-i"))]); }); });
+    }
+    var addIn=document.getElementById("ar-add");
+    addIn.addEventListener("input", function(){
+      clearTimeout(sugTimer); var q=addIn.value.trim();
+      if(q.length<2){ sugHide(); return; }
+      sugTimer=setTimeout(function(){
+        var seq=++sugSeq;
+        promoPost("/places/search",{q:q}).then(function(r){
+          if(seq!==sugSeq || !document.getElementById("ar-sugg")) return;
+          sugList=(r&&r.towns)||[]; sugHi=0; sugRender();
+        });
+      },180);
+    });
+    addIn.addEventListener("keydown", function(ev){
+      var open=document.getElementById("ar-sugg").style.display!=="none";
+      if(ev.key==="Enter"){ ev.preventDefault(); if(open && sugList.length) sugPick(sugList[sugHi]); }
+      else if(ev.key==="ArrowDown" && open && sugList.length){ ev.preventDefault(); sugHi=(sugHi+1)%sugList.length; sugRender(); }
+      else if(ev.key==="ArrowUp" && open && sugList.length){ ev.preventDefault(); sugHi=(sugHi-1+sugList.length)%sugList.length; sugRender(); }
+      else if(ev.key==="Escape"){ sugHide(); }
+    });
+    addIn.addEventListener("blur", function(){ setTimeout(sugHide,150); });
+    document.getElementById("ar-ziptext").addEventListener("input", arSchedule);
+    document.querySelectorAll("#ar-seg button").forEach(function(b){
+      b.addEventListener("click", function(){ arMode=b.getAttribute("data-v"); arShow(); arPreview(); });
+    });
+    arRenderList(); arShow(); if(arMode!=="any") arPreview();
 
     function renderPreview(){
       var dollars=parseInt(document.getElementById("pr-offer").value,10);
@@ -2640,10 +2837,14 @@
         startAt: document.getElementById("pr-start").value,
         endAt: document.getElementById("pr-end").value,
         vehicleFilter: fl,
+        targetArea: arBody(),
       };
+      if(arMode==="cities" && !arCities.length) return showErr("Add at least one city, or choose Anywhere.");
+      if(arMode==="zips" && !arZipList().length) return showErr("Add at least one ZIP code, or choose Anywhere.");
       btn.disabled=true; btn.textContent="Saving…";
       promoPost(isNew?"/promo-offers/create":"/promo-offers/"+o.id+"/update", body).then(function(res){
         if(!res.ok){ btn.disabled=false; btn.textContent=isNew?"Create offer":"Save offer"; return showErr(res.error||"Save failed."); }
+        arStopMap();
         prReload(function(){
           if(isNew){
             // Straight into the saved offer so a graphic can be added now.
@@ -2937,6 +3138,13 @@
       return;
     }
     html+='<div class="gx-map" id="gx-map" role="img" aria-label="Map of website visitors by city '+escapeHtml(period)+'"></div>';
+    // VinPop offer areas drawn over the map (toggle), with how each did.
+    var oa=d.offerAreas, areas=(oa&&oa.areas)||[];
+    if(areas.length){
+      html+='<div class="gx-areas"><label><input type="checkbox" id="gx-areas-on"'+(_gx.areasOn!==false?' checked':'')+'> Show VinPop offer areas</label>'
+        +'<span class="k"><i style="background:#0E7C66;opacity:.78"></i>Visitors by city</span>'
+        +'<span class="k"><i style="border:2px dashed #C2621B;background:rgba(224,138,60,.10)"></i>Offer area (approximate)</span></div>';
+    }
     if(!d.store){
       html+='<div class="gx-note" style="margin-bottom:14px">'+(agencyCode()
         ? "Set the store's location in Dealer settings (gear icon) to see distances and the 10 / 25 mile rings."
@@ -2950,6 +3158,18 @@
         {n:c.farther,shown:p.farther+"%",label:"50+ mi",c:GX_COL.farther}]);
     }
     if(oos) html+='<div style="font-size:12.5px;color:#2A323A;margin-top:8px">Out of state: '+oos+'</div>';
+    if(areas.length){
+      var STATUS={live:"",scheduled:"Scheduled",off:"Off",ended:"Ended"};
+      html+='<div class="gx-t" style="margin-top:14px">How each VinPop offer area did <small>('+escapeHtml(period)+')</small></div>'
+        +'<div class="gx-tbl"><table><thead><tr><th scope="col">Offer area</th><th scope="col">Visitors in area</th><th scope="col">Saw offer</th><th scope="col">VinPop leads</th></tr></thead><tbody>'
+        +areas.map(function(a){
+          var st=STATUS[a.status]; 
+          return '<tr><td><strong>'+escapeHtml(a.label)+'</strong><div style="font-size:12px;color:var(--slate)">'+escapeHtml(a.offerName||"")+(st?' · '+st:'')+'</div></td>'
+            +'<td class="v">'+gxNum(a.visitors)+'</td><td>'+gxNum(a.shown)+'</td><td class="l">'+gxNum(a.leads)+'</td></tr>';
+        }).join("")
+        +'</tbody></table></div>'
+        +'<div style="font-size:12.5px;color:#2A323A;margin:8px 0 4px;line-height:1.45">About '+gxNum(oa.inAnyArea)+' of '+gxNum(oa.totalVisitors)+' visitors '+escapeHtml(period)+' were placed in an offer area. Areas are approximate: shoppers are placed by their internet connection, usually to the nearest town.</div>';
+    }
     var cities=d.cities||[], shown=_gx.all?cities:cities.slice(0,6);
     html+='<div class="gx-tbl"><table><thead><tr><th scope="col">Top cities</th><th scope="col">Distance</th><th scope="col">Visitors</th><th scope="col">Engaged</th><th scope="col">Watchers</th><th scope="col">VinPop leads</th></tr></thead><tbody>'
       +shown.map(function(c){
@@ -2961,6 +3181,11 @@
     body.innerHTML=html;
     var more=document.getElementById("gx-more");
     if(more) more.addEventListener("click", function(){ _gx.all=!_gx.all; gxRender(d); });
+    var aon=document.getElementById("gx-areas-on");
+    if(aon) aon.addEventListener("change", function(){
+      _gx.areasOn=aon.checked;
+      if(_gx.map && _gx.areaLayer){ if(aon.checked) _gx.areaLayer.addTo(_gx.map); else _gx.map.removeLayer(_gx.areaLayer); }
+    });
     gxMap(d);
   }
 
@@ -2994,6 +3219,24 @@
         L.marker([d.store.lat,d.store.lng],{keyboard:false,title:"Your store",zIndexOffset:1000,icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],
           html:'<div class="gx-store"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V10l8-6 8 6v11z"/></svg></div>'})})
           .bindTooltip("Your store",{direction:"top",offset:[0,-12]}).addTo(map);
+      }
+      // VinPop offer areas: dashed orange outlines over the visitor circles.
+      var areas=(d.offerAreas&&d.offerAreas.areas)||[];
+      if(areas.length){
+        var layer=L.layerGroup();
+        areas.forEach(function(a){
+          var tip='<b>'+escapeHtml(a.label)+'</b><br>'+escapeHtml(a.offerName||"")+'<br>'+gxNum(a.visitors)+' visitors · '+gxNum(a.shown)+' saw offer · '+gxNum(a.leads)+' lead'+(a.leads===1?'':'s');
+          if(a.kind==="city"){
+            L.circle([a.lat,a.lng],{radius:a.miles*1609.34,color:"#C2621B",weight:2.5,dashArray:"8 6",fillColor:"#E08A3C",fillOpacity:.07}).bindTooltip(tip,{sticky:true}).addTo(layer);
+            if(!d.store || L.latLng(d.store.lat,d.store.lng).distanceTo([a.lat,a.lng])<120000) pts.push([a.lat,a.lng]);
+          } else (a.zips||[]).forEach(function(z){
+            L.circle([z.lat,z.lng],{radius:2.5*1609.34,color:"#C2621B",weight:2,fillColor:"#E08A3C",fillOpacity:.10})
+              .bindTooltip(tip.replace('<b>'+escapeHtml(a.label)+'</b>','<b>'+escapeHtml(z.zip+" · "+z.city)+'</b> ('+escapeHtml(a.label)+')'),{sticky:true}).addTo(layer);
+            if(!d.store || L.latLng(d.store.lat,d.store.lng).distanceTo([z.lat,z.lng])<120000) pts.push([z.lat,z.lng]);
+          });
+        });
+        mine.areaLayer=layer;
+        if(mine.areasOn!==false) layer.addTo(map);
       }
       mine.fit=function(){
         map.invalidateSize();
