@@ -2706,9 +2706,11 @@
         });
         var zs=r.zips||[];
         zs.forEach(function(z){
-          L.circle([z.lat,z.lng],{radius:2.5*1609.34,color:"#0B5FA5",weight:1.5,fillColor:"#0B5FA5",fillOpacity:.18})
-            .bindTooltip(escapeHtml(z.zip+" · "+z.city),{direction:"top"}).addTo(map);   // names are in the chips above
-          b.push(L.latLng(z.lat,z.lng).toBounds(6000));
+          // The ZIP's real outline (Census ZIP areas); a small circle when we have none.
+          var st2={color:"#0B5FA5",weight:1.5,fillColor:"#0B5FA5",fillOpacity:.18};
+          var shp=z.outline ? L.polygon(z.outline,st2) : L.circle([z.lat,z.lng],Object.assign({radius:1.5*1609.34,dashArray:"4 4"},st2));
+          shp.bindTooltip(escapeHtml(z.zip+" · "+z.city)+(z.outline?"":" (approximate spot)"),{direction:"top",sticky:true}).addTo(map);   // names are in the chips above
+          b.push(z.outline ? shp.getBounds() : L.latLng(z.lat,z.lng).toBounds(4000));
         });
         var st=r.store||(d.areaSetup&&d.areaSetup.store);
         if(st){
@@ -3230,7 +3232,8 @@
             L.circle([a.lat,a.lng],{radius:a.miles*1609.34,color:"#C2621B",weight:2.5,dashArray:"8 6",fillColor:"#E08A3C",fillOpacity:.07}).bindTooltip(tip,{sticky:true}).addTo(layer);
             if(!d.store || L.latLng(d.store.lat,d.store.lng).distanceTo([a.lat,a.lng])<120000) pts.push([a.lat,a.lng]);
           } else (a.zips||[]).forEach(function(z){
-            L.circle([z.lat,z.lng],{radius:2.5*1609.34,color:"#C2621B",weight:2,fillColor:"#E08A3C",fillOpacity:.10})
+            var st3={color:"#C2621B",weight:2,fillColor:"#E08A3C",fillOpacity:.10};
+            (z.outline ? L.polygon(z.outline,st3) : L.circle([z.lat,z.lng],Object.assign({radius:1.5*1609.34,dashArray:"4 4"},st3)))
               .bindTooltip(tip.replace('<b>'+escapeHtml(a.label)+'</b>','<b>'+escapeHtml(z.zip+" · "+z.city)+'</b> ('+escapeHtml(a.label)+')'),{sticky:true}).addTo(layer);
             if(!d.store || L.latLng(d.store.lat,d.store.lng).distanceTo([z.lat,z.lng])<120000) pts.push([z.lat,z.lng]);
           });
