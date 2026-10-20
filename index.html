@@ -538,6 +538,40 @@
     .wv-rule input[type=number]{width:54px}
   }
 
+  /* ── Location: distance in Live now + "Where shoppers come from" ── */
+  .lv-loc{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--porcelain);color:var(--slate);white-space:nowrap}
+  .lv-loc.near{background:#E7F0F9;color:#0B5FA5}
+  .lv-loc svg{flex-shrink:0}
+  .lv-dist{margin:0 0 14px}
+  .gx-t{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--slate);margin-bottom:7px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .gx-t small{font-weight:600;text-transform:none;letter-spacing:0;font-size:12px}
+  .gx-t a{margin-left:auto;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--action);cursor:pointer}
+  .gx-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px;background:var(--porcelain)}
+  .gx-bar i{display:block;min-width:4px}
+  .gx-leg{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:12.5px;color:#2A323A;margin-top:7px}
+  .gx-leg span{display:inline-flex;align-items:center;gap:6px}
+  .gx-leg em{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .gx-leg b{font-weight:700}
+  .gx-leg .muted{color:var(--slate)}
+  .gx-note{font-size:12.5px;color:#7A5200;background:var(--amber-soft);border-radius:9px;padding:9px 12px}
+  .gx-seg{display:inline-flex;background:var(--porcelain);border-radius:10px;padding:3px;margin:2px 0 14px}
+  .gx-seg button{border:0;background:none;font:600 14px 'Barlow',sans-serif;padding:8px 16px;border-radius:8px;cursor:pointer;color:var(--slate);min-height:36px}
+  .gx-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .gx-map{height:420px;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:#EEF1EC;position:relative;z-index:0}
+  .gx-map .leaflet-control-attribution{font-size:10px}
+  .gx-num{color:#fff;font:700 11px 'Barlow',sans-serif;text-align:center;line-height:16px;pointer-events:none;text-shadow:0 0 2px rgba(0,0,0,.35)}
+  .gx-store{width:24px;height:24px;border-radius:6px;background:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  .gx-tbl{overflow-x:auto;margin:14px 0 0}
+  .gx-tbl table{width:100%;min-width:520px;border-collapse:collapse;font-size:14px}
+  .gx-tbl th{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);text-align:right;padding:8px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .gx-tbl th:first-child,.gx-tbl td:first-child{text-align:left}
+  .gx-tbl td{padding:9px 4px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap}
+  .gx-tbl td:first-child{font-weight:600;white-space:normal}
+  .gx-tbl td.mi{color:var(--slate)} .gx-tbl td.v{font-weight:700} .gx-tbl td.l{color:#0E7C66;font-weight:700}
+  .gx-more{border:0;background:none;color:var(--action);font:600 13px 'Barlow',sans-serif;padding:10px 4px 0;cursor:pointer}
+  .gx-foot{font-size:11.5px;color:var(--slate);line-height:1.5;margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
+  @media (max-width:520px){ .gx-map{height:300px} .gx-seg{display:flex} .gx-seg button{flex:1} }
+
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -583,6 +617,9 @@
         </button>
         <button id="liveBtn" title="Live now: who's on the website" aria-label="Live now" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--win)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
+        </button>
+        <button id="geoBtn" title="Where shoppers come from" aria-label="Where shoppers come from" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:#0E7C66">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
         </button>
         <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -1007,7 +1044,7 @@
       }
     }).catch(function(e){ modal.innerHTML='<div class="mbody"><div class="state">Could not load: '+e.message+'</div></div>'; });
   }
-  function closeDetail(){ if(window.__lpStopLive) window.__lpStopLive(); document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
+  function closeDetail(){ if(window.__lpStopLive) window.__lpStopLive(); if(window.__lpStopGeo) window.__lpStopGeo(); document.getElementById("modal").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
   document.getElementById("scrim").addEventListener("click", closeDetail);
   window.closeDetail = closeDetail;
 
@@ -1436,6 +1473,9 @@
           +'<div class="setrow"><label>Inventory feed platform</label><select id="set-platform">'
             +['hoot|Hoot','dealer_inspire|Dealer Inspire'].map(function(o){var p=o.split("|"); return '<option value="'+p[0]+'"'+(s.platform===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join("")
           +'</select></div>'
+          +(s.storeLocationReady===false?'':'<div class="setrow"><label>Store location <span style="font-weight:400;color:var(--slate)">(latitude, longitude · used for "how far away" in Live now and the shoppers map)</span></label>'
+            +'<input id="set-geo" inputmode="decimal" autocomplete="off" value="'+escapeHtml(s.storeLocation||"")+'" placeholder="34.0661, -83.9911">'
+            +'<div style="font-size:12px;color:var(--slate);margin-top:5px">In Google Maps, right-click the dealership and click the numbers at the top to copy them.</div></div>')
           +'<div class="setrow"><label>CRM lead email</label><input id="set-crm" type="email" value="'+(s.crmLeadEmail||"")+'" placeholder="leads@dealer.com"></div>'
           +'<div class="consent" style="margin:2px 0 14px"><input type="checkbox" id="set-autosend"'+(s.crmAutosendHot?' checked':'')+'>'
             +'<span class="cbx" aria-hidden="true"></span><label for="set-autosend" style="cursor:pointer">Auto-send hot leads to CRM</label></div>'
@@ -1474,6 +1514,8 @@
           srpUrlNew: document.getElementById("set-srp-new").value.trim(),
           srpUrlUsed: document.getElementById("set-srp-used").value.trim(),
         };
+        var geoIn=document.getElementById("set-geo");
+        if(geoIn) body.storeLocation=geoIn.value.trim();
         btn.disabled=true; btn.textContent="Saving…";
         fetch(API+"/dash/"+SLUG+"/settings/update",{
           method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
@@ -2631,7 +2673,8 @@
     fetch(API+"/dash/"+SLUG+"/live?probe=1").then(function(r){return r.json();}).then(function(d){
       if(forSlug!==SLUG) return;
       btn.style.display = d && d.available ? "inline-flex" : "none";
-    }).catch(function(){ btn.style.display="none"; });
+      var gb=document.getElementById("geoBtn"); if(gb) gb.style.display = d && d.available ? "inline-flex" : "none";
+    }).catch(function(){ btn.style.display="none"; var gb=document.getElementById("geoBtn"); if(gb) gb.style.display="none"; });
   }
 
   function stopLive(){
@@ -2652,6 +2695,7 @@
       if(f==="engaged") return v.level==="engaged";
       if(f==="named") return v.known;
       if(f==="vp") return v.vpState!=="not_qualified";
+      if(f==="near") return !!(v.location && v.location.distanceMi!=null && v.location.distanceMi<25);
       return true;
     });
   }
@@ -2663,7 +2707,8 @@
     var LVL={browsing:"Browsing",warming:"Warming",engaged:"Engaged"};
     document.getElementById("lv-s-live").textContent=d.onSiteNow;
     document.getElementById("lv-s-eng").textContent=d.engaged;
-    document.getElementById("lv-s-named").textContent=d.knownByName;
+    document.getElementById("lv-s-near").textContent=d.within25Now==null?"—":d.within25Now;
+    lvDistance(d);
     document.getElementById("lv-s-vp").textContent=d.vpQualifiedToday;
     var hot=document.getElementById("lv-hot");
     hot.innerHTML = (d.hotNow||[]).length
@@ -2676,7 +2721,8 @@
     if(!(d.visitors||[]).length){ list.innerHTML='<div class="lv-empty">Nobody on the site right now.</div>'; return; }
     if(!rows.length){ list.innerHTML='<div class="lv-empty">Nobody matching right now.</div>'; return; }
     list.innerHTML=rows.map(function(v){
-      var tags=(v.tags||[]).map(function(t){ return '<span class="lv-tag '+escapeHtml(t.kind)+'">'+escapeHtml(t.label)+'</span>'; }).join("");
+      var tags=(v.tags||[]).map(function(t){ return '<span class="lv-tag '+escapeHtml(t.kind)+'">'+escapeHtml(t.label)+'</span>'; }).join("")
+        +lvLocTag(v.location);
       var rec = v.watcherId ? '<button type="button" class="lv-rec" data-w="'+escapeHtml(v.watcherId)+'">Open watcher record →</button>'
               : v.promoLeadId ? '<button type="button" class="lv-rec" data-l="'+escapeHtml(v.promoLeadId)+'">Open VinPop lead →</button>' : '';
       return '<div class="lv-row'+(v.idle?' idle':'')+(_lv.open[v.key]?' open':'')+'" data-k="'+escapeHtml(v.key)+'" tabindex="0" role="button" aria-expanded="'+(_lv.open[v.key]?'true':'false')+'">'
@@ -2729,6 +2775,41 @@
     });
   }
 
+  // ── Location (city level) in Live now ──
+  var PIN_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+  function lvLocTag(loc){
+    if(!loc) return '<span class="lv-loc">Location unknown</span>';
+    var near = loc.distanceMi!=null && loc.distanceMi<25;
+    return '<span class="lv-loc'+(near?' near':'')+'">'+PIN_SVG+escapeHtml(loc.label)+(loc.distanceMi!=null?' · '+loc.distanceMi+' mi':'')+'</span>';
+  }
+  // Distance colours: one blue ramp (near = darkest), grey for unknown.
+  var GX_COL={within10:"#0B5FA5",within25:"#5B9BD5",within50:"#B7D1EA",farther:"#E08A3C",unknown:"#DADFDB"};
+  function gxBar(parts){
+    var total=parts.reduce(function(a,p){return a+p.n;},0)||1;
+    return '<div class="gx-bar" role="img" aria-label="'+escapeHtml(parts.map(function(p){return p.n+" "+p.label;}).join(", "))+'">'
+      +parts.filter(function(p){return p.n>0;}).map(function(p){ return '<i style="flex:'+p.n+';background:'+p.c+'"></i>'; }).join("")+'</div>'
+      +'<div class="gx-leg">'+parts.map(function(p){
+        return '<span'+(p.muted?' class="muted"':'')+'><em style="background:'+p.c+'"></em><b>'+escapeHtml(p.shown!=null?p.shown:String(p.n))+'</b> '+escapeHtml(p.label)+'</span>';
+      }).join("")+'</div>';
+  }
+  function lvDistance(d){
+    var el=document.getElementById("lv-dist"); if(!el) return;
+    var x=d.distance||{}, link=' <a role="button" tabindex="0" id="lv-geo-link">Where shoppers come from →</a>';
+    if(!d.storeLocationSet){
+      el.innerHTML='<div class="gx-t">How far away, right now'+link+'</div><div class="gx-note">'
+        +(agencyCode() ? "Set the store's location in Dealer settings (gear icon) to see distances. Cities show either way."
+                       : "Distances appear once your agency sets the store's location.")+'</div>';
+    } else {
+      el.innerHTML='<div class="gx-t">How far away, right now'+link+'</div>'+gxBar([
+        {n:x.within10||0,label:"within 10 mi",c:GX_COL.within10},
+        {n:x.within25||0,label:"10–25 mi",c:GX_COL.within25},
+        {n:(x.within50||0)+(x.farther||0),label:"farther",c:GX_COL.within50},
+        {n:x.unknown||0,label:"unknown",c:GX_COL.unknown,muted:true}]);
+    }
+    var a=document.getElementById("lv-geo-link");
+    if(a){ var go=function(){ stopLive(); openGeo(); }; a.onclick=go; a.onkeydown=function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; }
+  }
+
   function openLive(){
     stopLive();
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
@@ -2740,18 +2821,20 @@
       +'<div class="mstats four">'
         +'<div class="mstat"><div class="n" id="lv-s-live">—</div><div class="l">On site now</div></div>'
         +'<div class="mstat"><div class="n" style="color:var(--redline)" id="lv-s-eng">—</div><div class="l">Engaged</div></div>'
-        +'<div class="mstat"><div class="n" style="color:#2348C9" id="lv-s-named">—</div><div class="l">Known by name</div></div>'
+        +'<div class="mstat"><div class="n" style="color:#0B5FA5" id="lv-s-near">—</div><div class="l">Within 25 miles</div></div>'
         +'<div class="mstat"><div class="n vp" id="lv-s-vp">—</div><div class="l">VinPop qualified today</div></div>'
       +'</div>'
+      +'<div class="lv-dist" id="lv-dist"></div>'
       +'<div class="lv-hot" id="lv-hot"></div>'
       +'<div class="lv-filters" id="lv-filters">'
         +'<button type="button" data-f="all" class="on">Everyone</button>'
         +'<button type="button" data-f="engaged">Engaged</button>'
         +'<button type="button" data-f="named">Known by name</button>'
         +'<button type="button" data-f="vp">VinPop qualified</button>'
+        +'<button type="button" data-f="near">Within 25 mi</button>'
       +'</div>'
       +'<div id="lv-list"><div class="lv-empty">Loading…</div></div>'
-      +'<div class="lv-foot">Shows everyone active in the last 5 minutes. Visitors stay anonymous unless they\'ve watched a car or claimed a VinPop offer on this site. Activity is kept for 24 hours, then deleted. No IP addresses are stored.</div>'
+      +'<div class="lv-foot">Shows everyone active in the last 5 minutes. Visitors stay anonymous unless they\'ve watched a car or claimed a VinPop offer on this site. Location is approximate, by city, and can be off on cell networks and VPNs. Activity is kept for 24 hours, then deleted. No IP addresses are stored. GeoLite2 data by MaxMind.</div>'
     +'</div>';
     modal.classList.add("open"); scrim.classList.add("open");
     modal.scrollTop=0;
@@ -2769,6 +2852,169 @@
   }
   var _liveBtn=document.getElementById("liveBtn");
   if(_liveBtn) _liveBtn.addEventListener("click", openLive);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // WHERE SHOPPERS COME FROM — city-level map + distance (Today / 7 / 30 days)
+  // ══════════════════════════════════════════════════════════════════════════
+  // Reads /dash/:slug/geo. Map = Leaflet (bundled in /vendor/leaflet, loaded
+  // only when this opens) on OpenStreetMap tiles. One circle per CITY sized by
+  // visitors — never a point per person. No polling.
+  var _gx=null;   // { days, map, slug, all }
+  var _leafletP=null;
+  function loadLeaflet(){
+    if(window.L) return Promise.resolve(window.L);
+    if(_leafletP) return _leafletP;
+    _leafletP=new Promise(function(resolve,reject){
+      var css=document.createElement("link"); css.rel="stylesheet"; css.href="vendor/leaflet/leaflet.css"; document.head.appendChild(css);
+      var js=document.createElement("script"); js.src="vendor/leaflet/leaflet.js";
+      js.onload=function(){ resolve(window.L); }; js.onerror=function(){ _leafletP=null; reject(new Error("map library didn't load")); };
+      document.head.appendChild(js);
+    });
+    return _leafletP;
+  }
+  function stopGeo(){
+    if(!_gx) return;
+    if(_gx.map){ try{ _gx.map.remove(); }catch(e){} }
+    _gx=null;
+    var m=document.getElementById("modal"); if(m) m.style.width="";
+  }
+  window.__lpStopGeo=stopGeo;
+
+  function gxNum(n){ return (n||0).toLocaleString("en-US"); }
+
+  function openGeo(){
+    stopGeo(); stopLive();
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.style.width="min(760px,calc(100vw - 32px))";
+    modal.innerHTML='<div class="mbody" id="gx-root">'
+      +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+      +'<div class="lv-head"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E7C66" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>'
+        +'<h2>Where shoppers come from — '+escapeHtml(currentDealerLabel())+'</h2></div>'
+      +'<div class="gx-seg" role="group" aria-label="Period" id="gx-seg" style="margin-top:14px">'
+        +'<button type="button" data-d="1">Today</button><button type="button" data-d="7" class="on">7 days</button><button type="button" data-d="30">30 days</button>'
+      +'</div>'
+      +'<div id="gx-body"><div class="lv-empty">Loading…</div></div>'
+      +'<div class="gx-foot">Counts are distinct website visitors on pages with the VinPop tag. Location is approximate, by city, from the visitor\'s network, and can be off on cell networks and VPNs. Only city-level counts are kept; no IP addresses are stored. Map © OpenStreetMap contributors · GeoLite2 data by MaxMind.</div>'
+    +'</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    modal.scrollTop=0;
+    _gx={ days:7, map:null, slug:SLUG, all:false };
+    document.querySelectorAll("#gx-seg button").forEach(function(b){
+      b.addEventListener("click", function(){
+        if(!_gx) return;
+        _gx.days=Number(b.getAttribute("data-d")); _gx.all=false;
+        document.querySelectorAll("#gx-seg button").forEach(function(x){ x.classList.toggle("on", x===b); x.setAttribute("aria-pressed", x===b?"true":"false"); });
+        gxLoad();
+      });
+    });
+    gxLoad();
+  }
+
+  function gxLoad(){
+    if(!_gx) return;
+    var mine=_gx, body=document.getElementById("gx-body");
+    fetch(API+"/dash/"+mine.slug+"/geo?days="+mine.days).then(function(r){return r.json();}).then(function(d){
+      if(_gx!==mine || !document.getElementById("gx-root")) return;
+      if(d.error){ body.innerHTML='<div class="lv-empty">'+escapeHtml(d.error)+'</div>'; return; }
+      if(!d.available){ body.innerHTML='<div class="lv-empty">Visitor locations aren\'t set up for this rooftop yet.</div>'; return; }
+      gxRender(d);
+    }).catch(function(e){ if(_gx===mine) body.innerHTML='<div class="lv-empty">Could not load: '+escapeHtml(e.message)+'</div>'; });
+  }
+
+  function gxRender(d){
+    var body=document.getElementById("gx-body"), t=d.totals||{};
+    if(_gx.map){ try{ _gx.map.remove(); }catch(e){} _gx.map=null; }
+    var period={1:"today",7:"in the last 7 days",30:"in the last 30 days"}[d.days]||"";
+    var oos=(d.outOfStateBy||[]).map(function(x){ return escapeHtml(x.state)+" "+gxNum(x.visitors); }).join(" · ");
+    var html='<div class="mstats four">'
+        +'<div class="mstat"><div class="n">'+gxNum(t.visitors)+'</div><div class="l">Website visitors</div></div>'
+        +'<div class="mstat"><div class="n" style="color:#0E7C66">'+(d.within25Pct==null?'—':d.within25Pct+'%')+'</div><div class="l">Within 25 miles</div></div>'
+        +'<div class="mstat"><div class="n">'+gxNum(t.outOfState)+'</div><div class="l">Out of state</div></div>'
+        +'<div class="mstat"><div class="n" style="color:var(--slate)">'+gxNum(t.unknown)+'</div><div class="l">Location unknown</div></div>'
+      +'</div>';
+    if(!t.visitors){
+      body.innerHTML=html+'<div class="lv-empty">No visitors '+period+' yet. Counts start once the VinPop tag fires on all pages.</div>';
+      return;
+    }
+    html+='<div class="gx-map" id="gx-map" role="img" aria-label="Map of website visitors by city '+escapeHtml(period)+'"></div>';
+    if(!d.store){
+      html+='<div class="gx-note" style="margin-bottom:14px">'+(agencyCode()
+        ? "Set the store's location in Dealer settings (gear icon) to see distances and the 10 / 25 mile rings."
+        : "Distances appear once your agency sets the store's location.")+'</div>';
+    } else if(d.distance && d.distance.measured){
+      var p=d.distance.pct, c=d.distance.counts;
+      html+='<div class="gx-t">Distance from the store <small>(visitors with a known location)</small></div>'+gxBar([
+        {n:c.within10,shown:p.within10+"%",label:"within 10 mi",c:GX_COL.within10},
+        {n:c.within25,shown:p.within25+"%",label:"10–25 mi",c:GX_COL.within25},
+        {n:c.within50,shown:p.within50+"%",label:"25–50 mi",c:GX_COL.within50},
+        {n:c.farther,shown:p.farther+"%",label:"50+ mi",c:GX_COL.farther}]);
+    }
+    if(oos) html+='<div style="font-size:12.5px;color:#2A323A;margin-top:8px">Out of state: '+oos+'</div>';
+    var cities=d.cities||[], shown=_gx.all?cities:cities.slice(0,6);
+    html+='<div class="gx-tbl"><table><thead><tr><th scope="col">Top cities</th><th scope="col">Distance</th><th scope="col">Visitors</th><th scope="col">Engaged</th><th scope="col">Watchers</th><th scope="col">VinPop leads</th></tr></thead><tbody>'
+      +shown.map(function(c){
+        return '<tr><td>'+escapeHtml(c.label)+'</td><td class="mi">'+(c.distanceMi==null?'—':c.distanceMi+' mi')+'</td><td class="v">'+gxNum(c.visitors)+'</td>'
+          +'<td>'+gxNum(c.engaged)+'</td><td>'+gxNum(c.watchers)+'</td><td class="l">'+gxNum(c.leads)+'</td></tr>';
+      }).join("")
+      +'</tbody></table></div>'
+      +(cities.length>6?'<button type="button" class="gx-more" id="gx-more">'+(_gx.all?'Show top 6':'All '+d.cityCount+' cities →')+'</button>':'');
+    body.innerHTML=html;
+    var more=document.getElementById("gx-more");
+    if(more) more.addEventListener("click", function(){ _gx.all=!_gx.all; gxRender(d); });
+    gxMap(d);
+  }
+
+  function gxMap(d){
+    var mine=_gx;
+    loadLeaflet().then(function(L){
+      var el=document.getElementById("gx-map");
+      if(_gx!==mine || !el) return;
+      var map=L.map(el,{scrollWheelZoom:false,zoomControl:true,attributionControl:true});
+      mine.map=map;
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:15,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · GeoLite2 data by MaxMind'}).addTo(map);
+      var pts=[], cities=(d.cities||[]).filter(function(c){ return c.lat!=null && c.lng!=null; });
+      var max=cities.reduce(function(a,c){ return Math.max(a,c.visitors); },1);
+      if(d.store){
+        var s=[d.store.lat,d.store.lng]; pts.push(s);
+        L.circle(s,{radius:40234,color:"#9DA69F",weight:1.5,dashArray:"5 5",fill:false,interactive:false}).addTo(map);
+        L.circle(s,{radius:16093,color:"#7D857F",weight:1.5,dashArray:"5 5",fillColor:"#fff",fillOpacity:.25,interactive:false}).addTo(map);
+      }
+      cities.forEach(function(c){
+        // Smaller circles on a phone-width map so nearby towns don't merge.
+        var small=el.clientWidth<500, r=(small?4:6)+(small?14:22)*Math.sqrt(c.visitors/max), ll=[c.lat,c.lng];
+        // Fit to the market: cities within 75 mi of the store (all if no store).
+        if(!d.store || (c.distanceMi!=null && c.distanceMi<=75)) pts.push(ll);
+        L.circleMarker(ll,{radius:r,color:"#fff",weight:1.5,fillColor:"#0E7C66",fillOpacity:.78})
+          .bindTooltip('<b>'+escapeHtml(c.label)+'</b>'+(c.distanceMi!=null?' · '+c.distanceMi+' mi':'')+'<br>'+gxNum(c.visitors)+' visitors · '+gxNum(c.engaged)+' engaged'
+            +(c.watchers?'<br>'+c.watchers+' watcher'+(c.watchers===1?'':'s'):'')+(c.leads?(c.watchers?' · ':'<br>')+c.leads+' VinPop lead'+(c.leads===1?'':'s'):''),{direction:"top",offset:[0,-r]})
+          .addTo(map);
+        if(r>=(small?11:13)) L.marker(ll,{interactive:false,keyboard:false,icon:L.divIcon({className:"gx-num",html:String(c.visitors),iconSize:[40,16],iconAnchor:[20,8]})}).addTo(map);
+      });
+      if(d.store){
+        L.marker([d.store.lat,d.store.lng],{keyboard:false,title:"Your store",zIndexOffset:1000,icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],
+          html:'<div class="gx-store"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V10l8-6 8 6v11z"/></svg></div>'})})
+          .bindTooltip("Your store",{direction:"top",offset:[0,-12]}).addTo(map);
+      }
+      mine.fit=function(){
+        map.invalidateSize();
+        if(pts.length>1) map.fitBounds(pts,{padding:[28,28],maxZoom:11});
+        else if(pts.length===1) map.setView(pts[0],10);
+        else map.setView([39.5,-98.35],4);
+      };
+      mine.fit();
+    }).catch(function(e){
+      var el=document.getElementById("gx-map");
+      if(el) el.outerHTML='<div class="gx-note" style="margin-bottom:14px">The map couldn\'t load ('+escapeHtml(e.message)+'). The numbers below are unaffected.</div>';
+    });
+  }
+  var _geoBtn=document.getElementById("geoBtn");
+  if(_geoBtn) _geoBtn.addEventListener("click", openGeo);
+  // Phone rotated / window resized while the map is open: re-fit it.
+  var _gxResize=null;
+  window.addEventListener("resize", function(){
+    clearTimeout(_gxResize);
+    _gxResize=setTimeout(function(){ if(_gx && _gx.map && _gx.fit) _gx.fit(); }, 200);
+  });
 
   function refresh(){
     Promise.all([loadSummary(), loadBoard()]).catch(function(e){
