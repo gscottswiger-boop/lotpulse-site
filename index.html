@@ -13,6 +13,8 @@
     --line:#E4E7E4; --line-soft:#EFF1EE; --action:#1F4FE0; --action-deep:#1740B8;
     --amber:#F5A300; --amber-soft:#FFF4DC; --redline:#DE3730; --red-soft:#FDEAE9;
     --win:#1E8E5A; --win-soft:#EAF6EF;
+    /* Product colors: VinPop blue, VinWatch teal (match the logos) */
+    --vp:#1447FF; --vp-deep:#0F36C7; --vp-soft:#E8EEFE; --vw:#0B7A70; --vw-soft:#E8F6F4;
     --new:#1F4FE0; --new-soft:#E8EEFE;
     --used:#5C6670; --used-soft:#EEF0EE;
     --cpo:#1E8E5A; --cpo-soft:#E7F4EC;
@@ -338,33 +340,33 @@
   .mb-none{font-size:12px;color:#A6AEA8;padding:4px 0}
   .mb-foot{margin-top:20px;border-top:1px solid var(--line);padding-top:8px;font-size:10px;color:#A6AEA8;line-height:1.5}
   /* VinPop block in the matchback — its own section, never mixed into watcher counts */
-  .vp-block{margin-top:28px;border-top:3px solid #0E7C66;padding-top:14px;break-inside:avoid-page}
+  .vp-block{margin-top:28px;border-top:3px solid var(--vp);padding-top:14px;break-inside:avoid-page}
   .vp-title{display:flex;align-items:center;gap:9px;font-family:'Barlow Condensed';font-weight:700;font-size:20px;letter-spacing:.02em}
-  .vp-mark{width:24px;height:24px;border-radius:6px;background:#0E7C66;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .vp-mark{width:24px;height:24px;border-radius:6px;background:var(--vp);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .vp-lead{font-size:12px;color:var(--slate);margin:4px 0 12px}
-  .vp-block .mb-stat .n{color:#0E7C66}
+  .vp-block .mb-stat .n{color:var(--vp)}
   .vp-claim{font-size:11.5px;margin-top:3px;color:#2A323A}
-  .vp-claim strong{color:#0E7C66}
-  /* VinPop lead engagement grade (A green · B teal · C amber · D gray) */
+  .vp-claim strong{color:var(--vp)}
+  /* VinPop lead engagement grade (A green · B blue · C amber · D gray) */
   .gpill{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;border:0;font:800 11.5px/1 'Barlow Condensed',Arial,sans-serif;letter-spacing:.03em;cursor:pointer;flex:none}
-  .gpill.A{background:#DCFCE7;color:#15803D} .gpill.B{background:#E6F4F0;color:#0E7C66}
+  .gpill.A{background:#DCFCE7;color:#15803D} .gpill.B{background:var(--vp-soft);color:var(--vp-deep)}
   .gpill.C{background:#FEF3C7;color:#B45309} .gpill.D{background:#F1F5F9;color:#64748B}
-  .gpill:focus-visible{outline:2px solid #0E7C66;outline-offset:1px}
+  .gpill:focus-visible{outline:2px solid var(--vp);outline-offset:1px}
   .gnone{color:#AEB6B0;font-weight:700;font-size:13px;flex:none;min-width:22px;text-align:center}
-  .gline{display:none;font-size:12px;line-height:1.45;color:#2A323A;background:#F6F7F5;border-left:3px solid #0E7C66;border-radius:4px;padding:6px 9px;margin-top:6px}
+  .gline{display:none;font-size:12px;line-height:1.45;color:#2A323A;background:#F6F7F5;border-left:3px solid var(--vp);border-radius:4px;padding:6px 9px;margin-top:6px}
   .gline.open{display:block}
   .gfilter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--slate)}
   .gfilter button{border:1px solid #D9DEDA;background:#fff;border-radius:14px;padding:4px 11px;font:700 12px/1.2 inherit;color:var(--ink);cursor:pointer}
-  .gfilter button.on{background:#0E7C66;border-color:#0E7C66;color:#fff}
+  .gfilter button.on{background:var(--vp);border-color:var(--vp);color:#fff}
   .gfilter button .c{font-weight:500;opacity:.75;margin-left:3px}
-  .vp-grade{font-weight:800;color:#0E7C66}
-  .vp-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:11px;background:#E6F4F0;color:#0E7C66;padding:1px 5px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .vp-tag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 7px;border-radius:9px;background:#E8EEFE;color:#2348C9;margin-left:6px;vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .vp-grade{font-weight:800;color:var(--vp)}
+  .vp-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:11px;background:var(--vp-soft);color:var(--vp-deep);padding:1px 5px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .vp-tag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 7px;border-radius:9px;background:var(--vw-soft);color:var(--vw);margin-left:6px;vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .vp-by{color:var(--slate);font-style:italic}
   .mstats.four{grid-template-columns:repeat(4,minmax(0,1fr))}
   @media (max-width:520px){ .mstats.four{grid-template-columns:repeat(2,minmax(0,1fr))} }
-  .mstat .n.vp{color:#0E7C66}
-  .aov-s.vp{color:#0E7C66}
+  .mstat .n.vp{color:var(--vp)}
+  .aov-s.vp{color:var(--vp)}
   @media print{
     body.mb-printing > *{display:none!important}
     body.mb-printing > #mb-print-host{display:block!important}
@@ -385,7 +387,7 @@
   }
   /* ── Promo popup (agency settings + dealer lead list) ── */
   .prod-tag{display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;border-radius:5px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.03em;line-height:1.4;text-transform:none}
-  .prod-tag.vw{background:#E8F6F4;color:#0B7A70}
+  .prod-tag.vw{background:var(--vw-soft);color:var(--vw)}
   /* Product marks: small VinPop / VinWatch icons (logo tag without wordmark or cursor) */
   .pmark{display:inline-block;width:16px;height:16px;flex:none;vertical-align:-3px;line-height:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .pmark svg{display:block;width:100%;height:100%}
@@ -394,9 +396,9 @@
   .mph-title .pmark,.mb-sec .pmark{margin-right:6px}
   .vp-tag .pmark{margin-right:3px}
   .lv-src{display:inline-flex;gap:3px;align-items:center}
-  .sig-btn.promo{border-color:var(--win);color:var(--win)}
-  .sig-btn.promo:hover{background:var(--win);color:#fff}
-  .sig-btn.promo .sc{background:var(--win)}
+  .sig-btn.promo{border-color:var(--vp);color:var(--vp)}
+  .sig-btn.promo:hover{background:var(--vp);color:#fff}
+  .sig-btn.promo .sc{background:var(--vp)}
   .sig-btn.promo:hover .sc{background:rgba(255,255,255,.25)}
   .pstat{font-family:'Barlow Condensed';font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:3px 10px}
   .pstat.live{background:var(--win-soft);color:var(--win)}
@@ -463,7 +465,7 @@
   .plresend:disabled{opacity:.6;cursor:default}
 
   /* ── VinPop: "Who sees VinPop" (engagement rules, agency-only) ── */
-  .newtag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0E7C66;color:#fff;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:1px}
+  .newtag{display:inline-block;font-family:'Barlow';font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--vp);color:#fff;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:1px}
   /* VinPop offer areas ("Which shoppers") */
   .ar-list{display:flex;flex-direction:column;gap:6px;margin:8px 0 6px}
   .ar-city{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:4px 4px 4px 12px;background:#fff}
@@ -508,10 +510,10 @@
   .wv-sw input{opacity:0;width:0;height:0;position:absolute}
   .wv-sw i{position:absolute;inset:0;background:#CBD2CC;border-radius:22px;cursor:pointer;transition:.2s}
   .wv-sw i:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
-  .wv-sw input:checked + i{background:#0E7C66}
+  .wv-sw input:checked + i{background:var(--vp)}
   .wv-sw input:checked + i:before{transform:translateX(16px)}
   .wv-sw input:focus-visible + i{outline:3px solid var(--amber);outline-offset:2px}
-  .wv-summary{margin-top:12px;background:#E6F4F0;color:#0E7C66;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600}
+  .wv-summary{margin-top:12px;background:var(--vp-soft);color:var(--vp-deep);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600}
   .wv-summary.none{background:var(--red-soft);color:var(--redline)}
   .wv-q{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
   .wv-q .qs{background:var(--porcelain);border-radius:10px;padding:10px;text-align:center}
@@ -540,8 +542,8 @@
   .lv-name{font-weight:700;font-size:15px}
   .lv-name.anon{color:var(--slate);font-weight:600}
   .lv-tag{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.02em}
-  .lv-tag.watcher{background:var(--new-soft);color:#2348C9}
-  .lv-tag.lead{background:#E6F4F0;color:#0E7C66}
+  .lv-tag.watcher{background:var(--vw-soft);color:var(--vw)}
+  .lv-tag.lead{background:var(--vp-soft);color:var(--vp-deep)}
   .lv-tag.returning{background:var(--porcelain);color:var(--slate)}
   .lv-lvl{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
   .lv-bar{width:70px;height:7px;border-radius:4px;background:var(--line-soft);overflow:hidden}
@@ -553,7 +555,7 @@
   .lv-now b{font-weight:600}
   .lv-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--slate);margin-top:4px}
   .lv-vp{font-weight:700}
-  .lv-vp.qualified{color:#0E7C66} .lv-vp.shown{color:#2348C9} .lv-vp.claimed{color:var(--win)} .lv-vp.not_qualified{color:#AEB6B0}
+  .lv-vp.qualified{color:var(--vp)} .lv-vp.shown{color:var(--vp-deep)} .lv-vp.claimed{color:var(--win)} .lv-vp.not_qualified{color:#AEB6B0}
   .lv-path{display:none;margin-top:10px;background:var(--porcelain);border-radius:10px;padding:10px 12px;font-size:12.5px}
   .lv-row.open .lv-path{display:block}
   .lv-path div{padding:3px 0;display:flex;gap:10px}
@@ -602,7 +604,7 @@
   .gx-tbl th:first-child,.gx-tbl td:first-child{text-align:left}
   .gx-tbl td{padding:9px 4px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap}
   .gx-tbl td:first-child{font-weight:600;white-space:normal}
-  .gx-tbl td.mi{color:var(--slate)} .gx-tbl td.v{font-weight:700} .gx-tbl td.l{color:#0E7C66;font-weight:700}
+  .gx-tbl td.mi{color:var(--slate)} .gx-tbl td.v{font-weight:700} .gx-tbl td.l{color:var(--vp);font-weight:700}
   .gx-more{border:0;background:none;color:var(--action);font:600 13px 'Barlow',sans-serif;padding:10px 4px 0;cursor:pointer}
   .gx-foot{font-size:11.5px;color:var(--slate);line-height:1.5;margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
   @media (max-width:520px){ .gx-map{height:300px} .gx-seg{display:flex} .gx-seg button{flex:1} }
@@ -2448,7 +2450,7 @@
       var labels = mode==="engaged" ? ["Visitors today","Qualified","Screened out"] : ["Visitors today","Would qualify","Would screen out"];
       q.style.display="";
       q.innerHTML='<div class="qs"><div class="n">'+(t.visitors||0)+'</div><div class="l">'+labels[0]+'</div></div>'
-        +'<div class="qs"><div class="n" style="color:#0E7C66">'+(t.qualified||0)+'</div><div class="l">'+labels[1]+'</div></div>'
+        +'<div class="qs"><div class="n" style="color:var(--vp)">'+(t.qualified||0)+'</div><div class="l">'+labels[1]+'</div></div>'
         +'<div class="qs"><div class="n">'+screened+'</div><div class="l">'+labels[2]+'</div></div>';
       note.innerHTML = (t.visitors ? "" : "Counts start once the VinPop tag fires on <strong>All Pages</strong> in GTM. ")
         +(mode==="engaged"
