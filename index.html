@@ -386,6 +386,14 @@
   /* ── Promo popup (agency settings + dealer lead list) ── */
   .prod-tag{display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;border-radius:5px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.03em;line-height:1.4;text-transform:none}
   .prod-tag.vw{background:#E8F6F4;color:#0B7A70}
+  /* Product marks: small VinPop / VinWatch icons (logo tag without wordmark or cursor) */
+  .pmark{display:inline-block;width:16px;height:16px;flex:none;vertical-align:-3px;line-height:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pmark svg{display:block;width:100%;height:100%}
+  .pmark.sm{width:13px;height:13px;vertical-align:-2px} .pmark.lg{width:24px;height:24px}
+  .prod-tag .pmark{margin-right:4px;vertical-align:-3px}
+  .mph-title .pmark,.mb-sec .pmark{margin-right:6px}
+  .vp-tag .pmark{margin-right:3px}
+  .lv-src{display:inline-flex;gap:3px;align-items:center}
   .sig-btn.promo{border-color:var(--win);color:var(--win)}
   .sig-btn.promo:hover{background:var(--win);color:#fff}
   .sig-btn.promo .sc{background:var(--win)}
@@ -649,7 +657,7 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
         </button>
         <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span data-pmark="vp"></span>
         </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
@@ -686,9 +694,9 @@
   </div>
 
   <div class="sec-head">
-    <h2>Demand Board <span class="prod-tag vw">VinWatch</span></h2>
+    <h2>Demand Board <span class="prod-tag vw"><span data-pmark="vw" data-pmark-size="sm"></span>VinWatch</span></h2>
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from VinPop offers"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> VinPop leads <span class="sc" id="promo-count">0</span></button>
+      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from VinPop offers"><span data-pmark="vp" data-pmark-size="sm"></span> VinPop leads <span class="sc" id="promo-count">0</span></button>
       <button class="sig-btn" id="signalsBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Signals <span class="sc" id="sig-count">0</span></button>
       <div class="meta" id="boardMeta">Loading…</div>
     </div>
@@ -712,6 +720,16 @@
   // Falls back to Big O so the original bookmark/link still works unchanged.
   var SLUG = new URLSearchParams(location.search).get("dealer") || "big-o-cdjr";
   var API = "https://lotpulse-q249.onrender.com";
+
+  // ── Product marks (VinPop / VinWatch icons) ──
+  var PMARK_SVG = {
+    vp: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 4.2Q2 2 4.2 2H13.2L21.4 10.2Q23 11.8 21.4 13.4L13.4 21.4Q11.8 23 10.2 21.4L2 13.2Z" fill="#1447FF"/><circle cx="6.4" cy="6.4" r="1.5" fill="#fff"/><path d="M14.6 9.3c-.5-.9-1.5-1.4-2.6-1.4-1.6 0-2.7.9-2.7 2.1 0 2.8 5.6 1.6 5.6 4.5 0 1.3-1.2 2.2-2.9 2.2-1.2 0-2.3-.6-2.8-1.6M12 6.3v1.6M12 16.7v1.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>',
+    vw: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 4.2Q2 2 4.2 2H13.2L21.4 10.2Q23 11.8 21.4 13.4L13.4 21.4Q11.8 23 10.2 21.4L2 13.2Z" fill="#0D9488"/><circle cx="6.4" cy="6.4" r="1.5" fill="#fff"/><path d="M6.2 13.2Q12.2 6.6 18.2 13.2Q12.2 19.8 6.2 13.2Z" fill="#fff"/><circle cx="12.2" cy="13.2" r="2.7" fill="#0D9488"/><circle cx="12.2" cy="13.2" r="1.25" fill="#14213D"/></svg>'
+  };
+  var PMARK_NAME = { vp:"VinPop", vw:"VinWatch" };
+  function pmark(k, size){ return '<span class="pmark'+(size?' '+size:'')+'" aria-hidden="true">'+PMARK_SVG[k]+'</span>'; }
+  function fillPmarks(){ document.querySelectorAll("[data-pmark]").forEach(function(el){ el.outerHTML = pmark(el.getAttribute("data-pmark"), el.getAttribute("data-pmark-size")||""); }); }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", fillPmarks); else fillPmarks();
 
   // ── Access gate ──
   // The code is validated server-side, per dealer — nothing sensitive sits in
@@ -1300,7 +1318,7 @@
       modal.innerHTML=
         '<div class="mbody">'
           +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
-          +'<div class="mph-title" style="margin-top:0">VinWatch shoppers watching your lot</div>'
+          +'<div class="mph-title" style="margin-top:0">'+pmark("vw")+'VinWatch shoppers watching your lot</div>'
           +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Tap a number to call. Hot = watching multiple cars or clicking alerts.</p>'
           +'<div class="stopbox">'
             +'<div class="sbt">Stop messaging a number</div>'
@@ -1753,7 +1771,7 @@
       });
       rows+='<div class="mb-person">'
         +'<div class="mb-phead"><span class="mb-name">'+escapeHtml(p.name||"(no name)")
-          +(p.alsoWatcher?'<span class="vp-tag">Also a VinWatch watcher</span>':'')+'</span>'
+          +(p.alsoWatcher?'<span class="vp-tag">'+pmark("vw","sm")+'Also a VinWatch watcher</span>':'')+'</span>'
         +'<span class="mb-phone">'+escapeHtml(vpPhone(p.phone)||p.email||"")+'</span></div>'
         +(p.crmVehicle?'<div class="mb-car"><strong>From your list:</strong> '+escapeHtml(p.crmVehicle)+'</div>':'')
         +claims
@@ -1766,7 +1784,7 @@
     if(!vp||!vp.visible) return "";
     var t=vp.totals||{};
     return '<div class="vp-block">'
-      +'<div class="vp-title"><span class="vp-mark">$</span>VinPop Offer Leads</div>'
+      +'<div class="vp-title">'+pmark("vp","lg")+'VinPop Offer Leads</div>'
       +'<div class="vp-lead">Shoppers who claimed a website offer, matched by phone <em>or</em> email against the same lists.</div>'
       +'<div class="mb-statrow">'
         +'<div class="mb-stat"><div class="n">'+(t.buyers||0)+'</div><div class="l">Bought</div><div class="dsc">Claimed an offer, then purchased</div></div>'
@@ -1800,9 +1818,9 @@
           +'<div class="mb-stat"><div class="n">'+d.totals.influencedShoppers+'</div><div class="l">Influenced Shoppers</div><div class="dsc">Watching &amp; in CRM as a prospect</div></div>'
           +'<div class="mb-stat"><div class="n">'+d.totals.lotpulseWatchers+'</div><div class="l">Total Watchers</div><div class="dsc">All VinWatch watchers, this rooftop</div></div>'
         +'</div>'
-        +'<div class="mb-sec">VinWatch &middot; Influenced Buyers &mdash; watched, then bought</div>'
+        +'<div class="mb-sec">'+pmark("vw","sm")+'VinWatch &middot; Influenced Buyers &mdash; watched, then bought</div>'
         +mbPersonRows(d.influencedBuyers, tz)
-        +'<div class="mb-sec">VinWatch &middot; Influenced Shoppers &mdash; watching, still a prospect</div>'
+        +'<div class="mb-sec">'+pmark("vw","sm")+'VinWatch &middot; Influenced Shoppers &mdash; watching, still a prospect</div>'
         +mbPersonRows(d.influencedShoppers, tz)
         +vpMatchbackBlock(d.vinpop, tz)
         +'<div class="mb-foot">Matched by phone number against dealer-provided lists ('
@@ -2148,7 +2166,7 @@
       var rows = leads.length ? leads.map(function(l){ return promoLeadRow(l,tz); }).join("")
         : '<div class="state" style="padding:28px 0">No VinPop leads yet.</div>';
       modal.innerHTML='<div class="mbody">'+closeBtn
-        +'<div class="mph-title" style="margin-top:0">VinPop leads · last '+(d.windowDays||90)+' days</div>'
+        +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop leads · last '+(d.windowDays||90)+' days</div>'
         +'<div class="mstats">'
           +'<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">This<br>week</div></div>'
           +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
@@ -2292,7 +2310,7 @@
     if(!offers.length) cards='<div class="state" style="padding:24px 0">No offers yet. Add one to start showing the popup.</div>';
 
     prModal().innerHTML='<div class="mbody">'+prClose()
-      +'<div class="mph-title" style="margin-top:0">VinPop — '+escapeHtml(currentDealerLabel())+'</div>'
+      +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop — '+escapeHtml(currentDealerLabel())+'</div>'
       +'<div class="pbar">'+prStatusPill(d.status,"pr-status")
         +'<button class="killbtn'+(paused?' resume':'')+'" id="pr-kill">'+(paused?'Resume all offers':'Pause all offers')+'</button></div>'
       +(flash?'<div class="pok">'+escapeHtml(flash)+'</div>':'')
@@ -2929,7 +2947,7 @@
       var rec = v.watcherId ? '<button type="button" class="lv-rec" data-w="'+escapeHtml(v.watcherId)+'">Open watcher record →</button>'
               : v.promoLeadId ? '<button type="button" class="lv-rec" data-l="'+escapeHtml(v.promoLeadId)+'">Open VinPop lead →</button>' : '';
       return '<div class="lv-row'+(v.idle?' idle':'')+(_lv.open[v.key]?' open':'')+'" data-k="'+escapeHtml(v.key)+'" tabindex="0" role="button" aria-expanded="'+(_lv.open[v.key]?'true':'false')+'">'
-        +'<div class="lv-top"><span class="lv-name'+(v.known?'':' anon')+'">'+escapeHtml(v.name)+'</span>'+tags
+        +'<div class="lv-top"><span class="lv-name'+(v.known?'':' anon')+'">'+escapeHtml(v.name)+'</span>'+((v.watcherId||v.promoLeadId)?'<span class="lv-src" title="'+[v.watcherId?'VinWatch watcher':'',v.promoLeadId?'VinPop lead':''].filter(Boolean).join(' + ')+'">'+(v.watcherId?pmark("vw"):'')+(v.promoLeadId?pmark("vp"):'')+'</span>':'')+tags
           +'<span class="lv-lvl '+escapeHtml(v.level)+'"><span class="lv-bar"><i style="width:'+Math.max(2,Math.min(100,v.score))+'%"></i></span>'+(LVL[v.level]||v.level)+'</span></div>'
         +'<div class="lv-now">Now viewing: <b>'+escapeHtml(v.now)+'</b>'+(v.idle?' · tab in background':'')+'</div>'
         +'<div class="lv-meta"><span>'+v.vehicles+' vehicle'+(v.vehicles===1?'':'s')+'</span><span>'+v.minutes+' min active</span>'
