@@ -84,6 +84,14 @@
 //   for 30 days, and this visit's active seconds. No name, no IP, no cookie.
 //   If storage is blocked: "all" still shows, "engaged" fails closed (no popup).
 //
+// DEMO: add ?vinpop=demo to any page URL to start a demo for this browser tab
+// (it stays on as you click to other vehicle pages; ?vinpop=off ends it). A
+// demo shows the popup after 3 seconds, ignores "don't show again" and the
+// engagement rules, is labelled DEMO, and its submissions are NOT saved, NOT
+// sent to the CRM and NOT counted. When the rooftop's Demo switch is on, the
+// server shows the popup ONLY to demo tabs; every other shopper sees nothing,
+// while "Live now" keeps tracking everyone.
+//
 // LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
 // visible, when the tab is hidden/shown, and on pagehide (sendBeacon). It
 // sends the path (query string masked), the page title, the VIN on a VDP, the
@@ -101,6 +109,16 @@
   var KEY = CONFIG.publicKey || "";
   var ACCENT = /^#[0-9a-fA-F]{3,8}$/.test(CONFIG.accentColor || "") ? CONFIG.accentColor : "#1F2A44";
   var TEST = /[?&]lp_promo_test=1\b/.test(window.location.search);
+  // Demo tab (see header). Remembered in sessionStorage for this tab only.
+  var DEMO = (function () {
+    var q = window.location.search;
+    try {
+      if (/[?&]vinpop=demo\b/i.test(q)) { window.sessionStorage.setItem("lp_vinpop_demo", "1"); return true; }
+      if (/[?&]vinpop=off\b/i.test(q)) { window.sessionStorage.removeItem("lp_vinpop_demo"); return false; }
+      return window.sessionStorage.getItem("lp_vinpop_demo") === "1";
+    } catch (e) { return /[?&]vinpop=demo\b/i.test(q); }
+  })();
+  if (DEMO) TEST = true;   // demo = test-mode timing: 3s, no suppression, no rules
   var TAB_ON = CONFIG.reopenTab !== false;
   var PRINT_ON = CONFIG.printButton !== false;
   var TAB_TOP = /^\d{1,4}(%|px|vh)$/.test(CONFIG.reopenTabTop || "") ? CONFIG.reopenTabTop : "50%";
@@ -459,6 +477,8 @@
       + ".art img{display:block;width:100%;height:auto;max-height:46vh;object-fit:contain}"
       + ".art .x{background:rgba(0,0,0,.45)}.art .x:hover{background:rgba(0,0,0,.65)}"
       + ".sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}"
+      + ".demo{background:#FFD54A;color:#14171F;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;"
+      + "text-align:center;padding:7px 12px;line-height:1.3}"
       + ".x{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:50%;"
       + "background:rgba(255,255,255,.16);color:#fff;font-size:22px;line-height:36px;cursor:pointer;padding:0}"
       + ".x:hover{background:rgba(255,255,255,.28)}"
@@ -551,6 +571,7 @@
     return ""
       + '<div class="scrim" id="scrim"></div>'
       + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl">'
+      +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
       +   headerHtml(useImage)
       +   vehicleHtml()
       +   '<div class="body">'
@@ -649,7 +670,7 @@
       log("reopened from tab");
       return;
     }
-    apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
+    if (!DEMO) apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
     beat();
     promoEvent("lp_promo_view", {
       item_id: VIN, page_type: "item", element_type: "popup",
@@ -796,7 +817,11 @@
       + '.pb{display:block;margin:22px auto 0;max-width:620px;width:100%;border:0;border-radius:10px;padding:14px;'
       + 'font-size:17px;font-weight:700;color:#fff;background:' + ACCENT + ';cursor:pointer}'
       + '@media print{body{padding:0}.pb{display:none}}'
-      + '</style></head><body><div class="v">'
+      + '.demo{max-width:620px;margin:0 auto 12px;background:#FFD54A;border-radius:8px;padding:8px 12px;text-align:center;'
+      + 'font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase}'
+      + '</style></head><body>'
+      + (v.demo ? '<div class="demo">Demo voucher · not a real offer · not valid at the dealership</div>' : "")
+      + '<div class="v">'
       + '<div class="d">' + esc(v.dealerName || "") + '</div>'
       + '<div class="a">' + esc(amount) + '<small>OFF</small></div>'
       + (title ? '<div class="c">' + esc(title) + '</div>' : "")
@@ -889,6 +914,7 @@
         // offerId = the offer this shopper was SHOWN; the server records the
         // lead against it (and re-checks it's still live for this car).
         vin: VIN, offerId: CFG.offerId, name: nm, email: em, phone: ph, trigger: trigger,
+        demo: DEMO || undefined,   // demo: validated, voucher returned, NOT saved or sent
         pageUrl: window.location.href, company: root.getElementById("hp").value,
         // Anonymous visitor id: links this lead to the "Live now" viewer row.
         vid: STORAGE_OK && ENG ? ENG.vid : null,
@@ -911,15 +937,18 @@
           return fail((res.json && res.json.error) || "Something went wrong. Please try again.");
         }
         submitted = true;
-        lsSet("lp_promo_submitted", String(Date.now()));
-        ssSet("lp_promo_submitted_s", "1");
+        if (!DEMO) {   // a demo submit must not hide the popup from this browser later
+          lsSet("lp_promo_submitted", String(Date.now()));
+          ssSet("lp_promo_submitted_s", "1");
+        }
         removeTab();
         beat();
         form.style.display = "none";
         var first = nm.split(/\s+/)[0];
         root.getElementById("doneH").textContent = "Thanks, " + first + "!";
-        root.getElementById("doneP").textContent =
-          (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.";
+        root.getElementById("doneP").textContent = DEMO
+          ? "Demo only: nothing was saved or sent to " + (CFG.dealerName || "the dealer") + ". A real shopper sees: “" + (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.”"
+          : (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.";
         root.getElementById("done").style.display = "block";
         // Voucher: only the server's submit response carries it, so there is
         // nothing to print until the shopper has actually given their details.
@@ -983,8 +1012,12 @@
       && !ssGet("lp_promo_submitted_s") && !ssGet("lp_promo_tab_closed_" + VIN);
     if (pre && !tabOnly) { log("suppressed: " + pre); return; }
 
-    apiGet("/v1/promo/config?vin=" + encodeURIComponent(VIN)).then(function (c) {
-      if (!c || !c.eligible) { log("not eligible" + (c && c.reason ? ": " + c.reason : "")); return; }
+    apiGet("/v1/promo/config?vin=" + encodeURIComponent(VIN) + (DEMO ? "&demo=1" : "")).then(function (c) {
+      if (!c || !c.eligible) {
+        log("not eligible" + (c && c.reason ? ": " + c.reason : "")
+          + (c && c.reason === "demo_only" ? " (Demo mode is on: add ?vinpop=demo to the URL)" : ""));
+        return;
+      }
       CFG = c;
       // Preload the offer graphic now so it's cached by the time the popup
       // opens (35s later by default). show() checks it actually loaded.

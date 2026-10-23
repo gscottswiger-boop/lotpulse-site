@@ -401,6 +401,9 @@
   .sig-btn.promo .sc{background:var(--vp)}
   .sig-btn.promo:hover .sc{background:rgba(255,255,255,.25)}
   .pstat{font-family:'Barlow Condensed';font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:3px 10px}
+  .pstat.demo{background:#FFD54A;color:#14171F}
+  .pdemo{background:#FFF6D6;border:1px solid #F0D27A;color:#3B2F00;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5;margin:0 0 12px}
+  .pdemo code,.pnote code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px}
   .pstat.live{background:var(--win-soft);color:var(--win)}
   .pstat.off,.pstat.ended{background:var(--used-soft);color:var(--slate)}
   .pstat.paused{background:var(--red-soft);color:var(--redline)}
@@ -2313,10 +2316,13 @@
 
     prModal().innerHTML='<div class="mbody">'+prClose()
       +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop — '+escapeHtml(currentDealerLabel())+'</div>'
-      +'<div class="pbar">'+prStatusPill(d.status,"pr-status")
+      +'<div class="pbar"><span style="display:inline-flex;gap:8px;align-items:center">'+prStatusPill(d.status,"pr-status")+(s.demoMode?'<span class="pstat demo">Demo</span>':'')+'</span>'
         +'<button class="killbtn'+(paused?' resume':'')+'" id="pr-kill">'+(paused?'Resume all offers':'Pause all offers')+'</button></div>'
       +(flash?'<div class="pok">'+escapeHtml(flash)+'</div>':'')
       +(d.crmDestination?'':'<div class="pwarn">No CRM lead email is set for this rooftop, so VinPop leads won\'t reach the dealer\'s CRM. Set one in Dealer settings (gear icon).</div>')
+      +(s.demoMode?'<div class="pdemo"><strong>Demo mode is on.</strong> Shoppers don\'t see VinPop. Live now still tracks every visitor. '
+        +'To show the popup, add <code>?vinpop=demo</code> to the end of any vehicle page URL (it stays on in that browser tab; <code>?vinpop=off</code> ends it). '
+        +'Demo submissions are not saved or sent to the CRM.</div>':'')
       +(d.status==="idle"?'<div class="pwarn">The popup is on, but no offer is running right now, so shoppers won\'t see anything.</div>':'')
       +'<div class="mstats">'
         +'<div class="mstat"><div class="n">'+(l7.impressions||0)+'</div><div class="l">Views<br>7 days</div></div>'
@@ -2342,6 +2348,9 @@
         +'<div class="setrow"><label>Don\'t show again for (days)</label><input id="pr-suppress" type="number" min="1" max="365" step="1" value="'+(s.suppressDays||"")+'" placeholder="'+d.defaults.suppressDays+' (default)"></div>'
       +'</div>'
       +'<p class="pnote">After a shopper sees the popup on a car, it won\'t show on that car again for this long. After they submit any offer, no popup shows on any car for this long, since the dealer is already following up.</p>'
+      +'<div class="consent" style="margin:4px 0 4px"><input type="checkbox" id="pr-demo"'+(s.demoMode?' checked':'')+'>'
+        +'<span class="cbx" aria-hidden="true"></span><label for="pr-demo" style="cursor:pointer;font-weight:600">Demo mode</label></div>'
+      +'<p class="pnote" style="margin-top:0">Only browsers that open a page with <code>?vinpop=demo</code> at the end of the URL see the popup. Everyone else sees nothing, and Live now keeps tracking all visitors. Demo submissions aren\'t saved or sent to the CRM.</p>'
       +'<button class="mlink" id="pr-save-roof" style="width:100%;border:0;cursor:pointer">Save rooftop settings</button>'
     +'</div>';
 
@@ -2361,6 +2370,7 @@
       promoPost("/promo-settings/update",{
         enabled:document.getElementById("pr-enabled").checked,
         delaySeconds:num("pr-delay"), suppressDays:num("pr-suppress"),
+        demoMode:document.getElementById("pr-demo").checked,
       }).then(function(res){
         if(!res.ok){ b.disabled=false; b.textContent="Save rooftop settings"; return showErr(res.error||"Save failed."); }
         loadPromoLeads();   // first-ever enable reveals the dealer's Promo leads button
@@ -2932,7 +2942,8 @@
     document.getElementById("lv-s-eng").textContent=d.engaged;
     document.getElementById("lv-s-near").textContent=d.within25Now==null?"—":d.within25Now;
     lvDistance(d);
-    document.getElementById("lv-s-vp").textContent=d.vpQualifiedToday;
+    document.getElementById("lv-s-vp").textContent=d.demoMode?"Demo":d.vpQualifiedToday;
+    var dm=document.getElementById("lv-demo"); if(dm) dm.style.display=d.demoMode?"":"none";
     var hot=document.getElementById("lv-hot");
     hot.innerHTML = (d.hotNow||[]).length
       ? '<span class="t">Being viewed right now</span>'+d.hotNow.map(function(h){ return '<span class="lv-chip">'+escapeHtml(h.label)+' <b>· '+h.count+'</b></span>'; }).join("")
@@ -3041,6 +3052,7 @@
       +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
       +'<div class="lv-head"><span class="lv-pulse" aria-hidden="true"></span><h2>Live now — '+escapeHtml(currentDealerLabel())+'</h2>'
         +'<span class="lv-upd" id="lv-upd">loading…</span></div>'
+      +'<div class="pdemo" id="lv-demo" style="display:none;margin:12px 0 0"><strong>VinPop demo mode is on.</strong> Shoppers don\'t see the popup (only browsers opened with <code>?vinpop=demo</code>). Visitor tracking here is unaffected.</div>'
       +'<div class="mstats four">'
         +'<div class="mstat"><div class="n" id="lv-s-live">—</div><div class="l">On site now</div></div>'
         +'<div class="mstat"><div class="n" style="color:var(--redline)" id="lv-s-eng">—</div><div class="l">Engaged</div></div>'
