@@ -38,6 +38,8 @@
   input:focus,select:focus{border-color:var(--action)}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .hint{font-size:11.5px;color:#9AA29C;margin-top:4px}
+  .hint.bad{color:#B42318}
+  .hint.note{color:#155C3C}
 
   .btn{width:100%;border:0;cursor:pointer;background:var(--action);color:#fff;border-radius:11px;
     padding:14px;font-size:15.5px;font-weight:700;font-family:'Barlow';transition:background .15s}
@@ -190,6 +192,20 @@
       </div>
     </div>
 
+    <div class="row2">
+      <div class="field">
+        <label for="agency">Agency</label>
+        <select id="agency" disabled><option value="">Paste the admin token to load&hellip;</option></select>
+        <div class="hint" id="agencyHint">Puts the rooftop behind your agency code and in the Monday rollup.</div>
+      </div>
+      <div class="field">
+        <label for="group">Dealer group <span style="font-weight:400;color:#9AA29C">(optional)</span></label>
+        <input type="text" id="group" list="groupList" placeholder="Blank = not in a group" autocomplete="off">
+        <datalist id="groupList"></datalist>
+        <div class="hint" id="groupHint">Only rooftops with the same owner. Lets MyDrive merge a shopper's watchlists.</div>
+      </div>
+    </div>
+
     <div class="err" id="formErr"></div>
     <button class="btn" id="launchBtn">Launch dealer →</button>
 
@@ -206,6 +222,8 @@
       <div class="k">Public key</div><div class="v" id="r-publickey">—</div>
       <div class="k">Access code</div><div class="v" id="r-accesscode">—</div>
       <div class="k">Dashboard</div><div class="v"><a href="#" id="r-dashurl" target="_blank">—</a></div>
+      <div class="k">Agency</div><div class="v" id="r-agency">—</div>
+      <div class="k">Dealer group</div><div class="v" id="r-group">—</div>
     </div>
 
     <label>VinWatch GTM tag — Custom HTML, name it "VinWatch"</label>
@@ -238,6 +256,8 @@
 
 <script>
   var API = "https://lotpulse-q249.onrender.com";
+  // The agency whose code unlocked this page: the default in the Agency picker.
+  var GATE_AGENCY = "";
 
   // ── Agency-code gate ─────────────────────────────────────────────────────
   // Server-validated via /dash/resolve-code, which carries the same brute-force
@@ -267,6 +287,7 @@
         return r.json().then(function(j){ return { status: r.status, body: j }; });
       }).then(function(res){
         if (res.body && res.body.ok && res.body.scope === "agency") {
+          GATE_AGENCY = (res.body.agency && res.body.agency.slug) || "";
           gate.style.display = "none";
           app.style.display = "block";
           setTimeout(function(){ var t = document.getElementById("token"); if (t) t.focus(); }, 120);
@@ -312,7 +333,8 @@
       log.appendChild(el);
     }
     el.className = "stepline" + (state ? " " + state : "");
-    el.innerHTML = '<span class="dot"></span><span>' + label + '</span>';
+    el.innerHTML = '<span class="dot"></span><span></span>';
+    el.lastChild.textContent = label;   // labels can carry agency/group names
   }
 
   // Admin auth now travels in the x-admin-token HEADER, not a ?token= query
@@ -335,6 +357,98 @@
     }).then(function(r){ return r.json().then(function(json){ return { ok: r.ok, status: r.status, json: json }; }); });
   }
 
+  // ── Agency + dealer group pickers ───────────────────────────────────────
+  // Both lists need ADMIN_TOKEN, so they load once a token is pasted. Neither
+  // call writes: /admin/agencies is read-only, and /admin/setup-group with no
+  // `dealers`/`remove` only lists. Launch then reuses the existing
+  // /admin/setup-agency and /admin/setup-group routes to attach the rooftop.
+  var NONE = "__none__";
+  var AGENCIES = null, GROUPS = [], LISTS_FOR = "";
+
+  function agencyByslug(s){
+    s = String(s || "").toLowerCase();
+    return (AGENCIES || []).filter(function(a){ return String(a.slug).toLowerCase() === s; })[0] || null;
+  }
+  function groupByName(n){
+    n = String(n || "").trim().toLowerCase();
+    return n ? GROUPS.filter(function(g){ return g.name.toLowerCase() === n; })[0] || null : null;
+  }
+
+  function loadLists(token){
+    var sel = document.getElementById("agency");
+    var hint = document.getElementById("agencyHint");
+    if (!token) return Promise.resolve(false);
+    if (AGENCIES && LISTS_FOR === token) return Promise.resolve(true);
+    sel.disabled = true;
+    sel.innerHTML = '<option value="">Loading&hellip;</option>';
+    hint.className = "hint"; hint.textContent = "Loading agencies…";
+    return Promise.all([
+      apiCall("/admin/agencies", token, {}),
+      apiCall("/admin/setup-group", token, {})
+    ]).then(function(r){
+      var a = r[0], g = r[1];
+      if (a.status === 401 || g.status === 401) throw new Error("Admin token not accepted.");
+      if (!a.ok || !a.json.ok) throw new Error("Couldn't load agencies: " + (a.json.error || a.status));
+      AGENCIES = a.json.agencies || [];
+      GROUPS = (g.ok && g.json.ok && g.json.groups) || [];
+      LISTS_FOR = token;
+
+      sel.innerHTML = "";
+      AGENCIES.forEach(function(ag){
+        var o = document.createElement("option");
+        o.value = ag.slug;
+        o.textContent = ag.name + " (" + ag.rooftops + (ag.rooftops === 1 ? " rooftop" : " rooftops") + ")";
+        sel.appendChild(o);
+      });
+      var none = document.createElement("option");
+      none.value = NONE; none.textContent = "None — direct rooftop";
+      sel.appendChild(none);
+      // Default: the agency whose code opened this page, else the busiest one.
+      var pick = agencyByslug(GATE_AGENCY) || AGENCIES[0];
+      sel.value = pick ? pick.slug : NONE;
+      sel.disabled = false;
+      hint.className = "hint";
+      hint.textContent = "Puts the rooftop behind your agency code and in the Monday rollup.";
+
+      var dl = document.getElementById("groupList");
+      dl.innerHTML = "";
+      GROUPS.forEach(function(gr){
+        var o = document.createElement("option"); o.value = gr.name; dl.appendChild(o);
+      });
+      renderGroupHint();
+      return true;
+    }).catch(function(e){
+      AGENCIES = null; LISTS_FOR = "";
+      sel.innerHTML = '<option value="">Not loaded</option>';
+      hint.className = "hint bad";
+      hint.textContent = /fetch/i.test(e.message) ? "Couldn't reach LotPulse." : e.message;
+      return false;
+    });
+  }
+
+  function renderGroupHint(){
+    var v = document.getElementById("group").value.trim();
+    var hint = document.getElementById("groupHint");
+    var g = groupByName(v);
+    if (!v) { hint.className = "hint"; hint.textContent = "Only rooftops with the same owner. Lets MyDrive merge a shopper's watchlists."; return; }
+    if (g) {
+      var names = g.dealers.map(function(d){ return d.name; });
+      hint.className = "hint note";
+      hint.textContent = "Joins " + g.name + (names.length ? " with " + names.join(", ") : " (no rooftops yet)") + ".";
+    } else {
+      hint.className = "hint";
+      hint.textContent = "Creates a new group named “" + v + "”.";
+    }
+  }
+  document.getElementById("group").addEventListener("input", renderGroupHint);
+
+  var tokenTimer = null;
+  document.getElementById("token").addEventListener("input", function(e){
+    clearTimeout(tokenTimer);
+    var t = e.target.value.trim();
+    tokenTimer = setTimeout(function(){ loadLists(t); }, 500);
+  });
+
   document.getElementById("launchBtn").addEventListener("click", function(){
     var err = document.getElementById("formErr");
     err.style.display = "none";
@@ -351,6 +465,7 @@
     var feedUrl = document.getElementById("feedUrl").value.trim();
     var accessCode = document.getElementById("accessCode").value.trim();
     var crmEmail = document.getElementById("crmEmail").value.trim();
+    var groupName = document.getElementById("group").value.trim();
 
     if (!token || !name || !slug || !feedUrl) {
       err.textContent = "Token, dealer name, slug, and feed URL are all required.";
@@ -361,8 +476,25 @@
     var btn = document.getElementById("launchBtn");
     btn.disabled = true; btn.textContent = "Launching…";
 
+    // The agency/group pickers must be loaded before anything is written, so
+    // a rooftop never gets onboarded with its agency silently skipped.
+    var agency = null;
+    loadLists(token).then(function(loaded){
+      if (!loaded) {
+        err.textContent = "Couldn't load the agency list. Check the admin token, then try again.";
+        err.style.display = "block";
+        throw new Error("lists_failed");
+      }
+      var picked = document.getElementById("agency").value;
+      agency = picked === NONE ? null : agencyByslug(picked);
+      if (picked !== NONE && !agency) {
+        err.textContent = "Pick an agency (or “None — direct rooftop”).";
+        err.style.display = "block";
+        throw new Error("lists_failed");
+      }
+
     setStep("onboard", "Saving dealer record…", "pending");
-    apiCall("/admin/onboard-dealer", token, {
+    return apiCall("/admin/onboard-dealer", token, {
       name: name, slug: slug, platform: platform, state: state || null,
       timezone: timezone, website_host: websiteHost || null, feed_url: feedUrl,
       access_code: accessCode || undefined
@@ -393,9 +525,46 @@
         return combined;
       });
     }).then(function(combined){
-      renderResults(combined.dealer, combined.sync);
+      // Agency and group failures are NOT fatal: the dealer exists and synced,
+      // and either step can be redone from admin-console.html / the raw route.
+      combined.agency = null; combined.group = null;
+      if (!agency) return combined;
+      setStep("agency", "Adding to " + agency.name + "…", "pending");
+      // setup-agency upserts by slug and also writes `name`, so pass the name
+      // exactly as stored. No accessCode is sent, so the agency code is kept.
+      return apiCall("/admin/setup-agency", token, {
+        name: agency.name, slug: agency.slug, dealers: slug
+      }).then(function(r){
+        var ok = r.ok && r.json.ok && (r.json.attachedDealers || []).length > 0;
+        setStep("agency", ok ? "Added to " + agency.name
+          : "Agency — failed: " + ((r.json && r.json.error) || (r.json && r.json.dealersNotFound ? "dealer not found" : r.status)),
+          ok ? "ok" : "fail");
+        if (ok) combined.agency = agency; else combined.agencyFailed = agency.name;
+        return combined;
+      });
+    }).then(function(combined){
+      if (!groupName) return combined;
+      setStep("group", "Adding to dealer group " + groupName + "…", "pending");
+      return apiCall("/admin/setup-group", token, { name: groupName, dealers: slug }).then(function(r){
+        var ok = r.ok && r.json.ok && (r.json.attachedDealers || []).length > 0;
+        if (ok) {
+          GROUPS = r.json.groups || GROUPS;
+          var g = groupByName(groupName);
+          var others = g ? g.dealers.filter(function(d){ return d.slug !== slug.toLowerCase(); }).map(function(d){ return d.name; }) : [];
+          combined.group = { name: g ? g.name : groupName, others: others };
+          setStep("group", "Added to dealer group " + combined.group.name +
+            (others.length ? " (with " + others.join(", ") + ")" : " (first rooftop)"), "ok");
+        } else {
+          combined.groupFailed = groupName;
+          setStep("group", "Dealer group — failed: " + ((r.json && r.json.error) || (r.json && r.json.dealersNotFound ? "dealer not found" : r.status)), "fail");
+        }
+        return combined;
+      });
+    }).then(function(combined){
+      renderResults(combined.dealer, combined.sync, combined);
+    });
     }).catch(function(e){
-      if (e.message !== "onboard_failed") {
+      if (e.message !== "onboard_failed" && e.message !== "lists_failed") {
         err.textContent = "Something went wrong: " + e.message;
         err.style.display = "block";
       }
@@ -404,7 +573,7 @@
     });
   });
 
-  function renderResults(dealer, sync){
+  function renderResults(dealer, sync, extra){
     document.getElementById("resultsSub").textContent = dealer.dealer.name + " is live in the database.";
 
     var grid = document.getElementById("summaryGrid");
@@ -424,6 +593,12 @@
     var dashLink = document.getElementById("r-dashurl");
     dashLink.textContent = dealer.dashboardUrl;
     dashLink.href = dealer.dashboardUrl;
+    var ag = extra && extra.agency, gr = extra && extra.group;
+    document.getElementById("r-agency").textContent = ag ? ag.name
+      : (extra && extra.agencyFailed ? "NOT attached to " + extra.agencyFailed + " \u2014 redo via /admin/setup-agency" : "None");
+    document.getElementById("r-group").textContent = gr
+      ? gr.name + (gr.others.length ? " (with " + gr.others.join(", ") + ")" : "")
+      : (extra && extra.groupFailed ? "NOT attached to " + extra.groupFailed + " \u2014 redo in the admin console" : "None");
 
     document.getElementById("gtmSnippet").textContent =
       '<script>\n' +
