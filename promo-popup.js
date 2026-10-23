@@ -50,6 +50,15 @@
 //                       reopenTabTop: "60%"     (move it; % / px / vh from top,
 //                                                e.g. to clear a chat widget)
 //
+// TAB + COLOR FROM THE DASHBOARD: the agency can also set the reopen tab's
+// on/off, its position and the accent color per rooftop in the VinPop panel.
+// The config response carries them as tab: { enabled, topPct, accent }, each
+// null when not set. Each one resolves on its own:
+//     dashboard value  →  GTM value (above / accentColor)  →  built-in default
+// (on · 50% · navy #1F2A44). Anything malformed falls to the next level.
+// Text on the accent (header band, buttons, tab) is white or near-black
+// (#14181D), whichever contrasts better, so a light brand color stays readable.
+//
 // GTM snippet (its own tag, after the LotPulse tag or standalone):
 //   <script>
 //     window.__lotpulsePromoConfig = {
@@ -107,8 +116,17 @@
   var CONFIG = window.__lotpulsePromoConfig || window.__lotpulseConfig || {};
   var API = (CONFIG.apiBase || "").replace(/\/$/, "");
   var KEY = CONFIG.publicKey || "";
-  var ACCENT = /^#[0-9a-fA-F]{3,8}$/.test(CONFIG.accentColor || "") ? CONFIG.accentColor : "#1F2A44";
-  var TEST = /[?&]lp_promo_test=1\b/.test(window.location.search);
+  // GTM layer of the look (see header). null = the GTM tag doesn't set it.
+  // Validation is unchanged from before, so every existing tag reads the same.
+  var GTM_ACCENT = /^#[0-9a-fA-F]{3,8}$/.test(CONFIG.accentColor || "") ? CONFIG.accentColor : null;
+  var GTM_TAB_ON = CONFIG.reopenTab === false ? false : CONFIG.reopenTab === true ? true : null;
+  var GTM_TAB_TOP = /^\d{1,4}(%|px|vh)$/.test(CONFIG.reopenTabTop || "") ? CONFIG.reopenTabTop : null;
+  var INK = "#14181D";
+  // Resolved look. Set from GTM + defaults now, then again from the dashboard
+  // values once the config response arrives (before anything is drawn).
+  var ACCENT, ON_ACCENT, TAB_ON, TAB_TOP;
+  applyLook(null);
+  var TEST =/[?&]lp_promo_test=1\b/.test(window.location.search);
   // Demo tab (see header). Remembered in sessionStorage for this tab only.
   var DEMO = (function () {
     var q = window.location.search;
@@ -119,9 +137,44 @@
     } catch (e) { return /[?&]vinpop=demo\b/i.test(q); }
   })();
   if (DEMO) TEST = true;   // demo = test-mode timing: 3s, no suppression, no rules
-  var TAB_ON = CONFIG.reopenTab !== false;
   var PRINT_ON = CONFIG.printButton !== false;
-  var TAB_TOP = /^\d{1,4}(%|px|vh)$/.test(CONFIG.reopenTabTop || "") ? CONFIG.reopenTabTop : "50%";
+
+  // ── Look: dashboard → GTM → default, per setting ───────────────────────────
+  // "#abc", "#aabbcc" or "#aabbccdd" → [r, g, b]; alpha ignored. null if junk.
+  function hexRgb(h) {
+    var s = String(h || "").replace(/^#/, "");
+    if (!/^[0-9a-fA-F]+$/.test(s)) return null;
+    if (s.length === 3 || s.length === 4) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+    if (s.length < 6) return null;
+    return [parseInt(s.substr(0, 2), 16), parseInt(s.substr(2, 2), 16), parseInt(s.substr(4, 2), 16)];
+  }
+  function luminance(rgb) {
+    var c = rgb.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  // White or near-black text on the accent — whichever has the higher WCAG
+  // contrast ratio (ties go to white). Same rule as the dashboard preview.
+  function textOn(hex) {
+    var rgb = hexRgb(hex);
+    if (!rgb) return "#fff";
+    var L = luminance(rgb), Lk = luminance(hexRgb(INK));
+    return (L + 0.05) / (Lk + 0.05) > 1.05 / (L + 0.05) ? INK : "#fff";
+  }
+  function applyLook(t) {
+    try {
+      t = t && typeof t === "object" ? t : {};
+      var acc = typeof t.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(t.accent) ? t.accent : null;
+      var on = typeof t.enabled === "boolean" ? t.enabled : null;
+      var top = typeof t.topPct === "number" && Math.floor(t.topPct) === t.topPct && t.topPct >= 10 && t.topPct <= 90
+        ? t.topPct + "%" : null;
+      ACCENT = acc || GTM_ACCENT || "#1F2A44";
+      TAB_ON = on !== null ? on : GTM_TAB_ON !== false;
+      TAB_TOP = top || GTM_TAB_TOP || "50%";
+    } catch (e) {
+      ACCENT = GTM_ACCENT || "#1F2A44"; TAB_ON = GTM_TAB_ON !== false; TAB_TOP = GTM_TAB_TOP || "50%";
+    }
+    ON_ACCENT = textOn(ACCENT);
+  }
 
   if (!API || !KEY) {
     console.warn("[Promo] missing apiBase or publicKey; promo not loaded");
@@ -459,7 +512,7 @@
       + ".box.in{transform:translate(-50%,-50%);opacity:1}"
       + "@media (max-width:560px){.box{left:0;right:0;top:auto;bottom:0;width:100%;max-height:92vh;"
       + "border-radius:18px 18px 0 0;transform:translateY(24px)}.box.in{transform:translateY(0)}}"
-      + ".band{background:" + ACCENT + ";color:#fff;padding:22px 24px 20px;border-radius:16px 16px 0 0;position:relative}"
+      + ".band{background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:22px 24px 20px;border-radius:16px 16px 0 0;position:relative}"
       + "@media (max-width:560px){.band{border-radius:18px 18px 0 0}}"
       + ".dealer{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin:0 32px 8px 0}"
       // The offer amount is the whole pitch, so it's the biggest thing on the
@@ -475,13 +528,14 @@
       + ".art{position:relative;background:" + ACCENT + ";border-radius:16px 16px 0 0;overflow:hidden;line-height:0}"
       + "@media (max-width:560px){.art{border-radius:18px 18px 0 0}}"
       + ".art img{display:block;width:100%;height:auto;max-height:46vh;object-fit:contain}"
-      + ".art .x{background:rgba(0,0,0,.45)}.art .x:hover{background:rgba(0,0,0,.65)}"
+      + ".art .x{background:rgba(0,0,0,.45);color:#fff}.art .x:hover{background:rgba(0,0,0,.65)}"
       + ".sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}"
       + ".demo{background:#FFD54A;color:#14171F;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;"
       + "text-align:center;padding:7px 12px;line-height:1.3}"
       + ".x{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:50%;"
-      + "background:rgba(255,255,255,.16);color:#fff;font-size:22px;line-height:36px;cursor:pointer;padding:0}"
-      + ".x:hover{background:rgba(255,255,255,.28)}"
+      + "background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.10)" : "rgba(255,255,255,.16)") + ";color:" + ON_ACCENT + ";"
+      + "font-size:22px;line-height:36px;cursor:pointer;padding:0}"
+      + ".x:hover{background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.18)" : "rgba(255,255,255,.28)") + "}"
       + ".x:focus-visible,.go:focus-visible,.no:focus-visible,input:focus-visible{outline:3px solid #7AA7FF;outline-offset:2px}"
       + ".body{padding:20px 24px 22px}"
       + ".sub{font-size:15px;line-height:1.45;color:#3A4150;margin:0 0 16px}"
@@ -492,7 +546,7 @@
       + ".hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}"
       + ".err{display:none;background:#FDECEC;color:#9B1C1C;font-size:14px;padding:10px 12px;border-radius:8px;margin:0 0 12px}"
       + ".go{display:block;width:100%;border:0;border-radius:10px;padding:14px 16px;font-size:17px;font-weight:700;"
-      + "color:#fff;background:" + ACCENT + ";cursor:pointer}"
+      + "color:" + ON_ACCENT + ";background:" + ACCENT + ";cursor:pointer}"
       + ".go:disabled{opacity:.6;cursor:default}"
       + ".no{display:block;margin:12px auto 0;background:none;border:0;color:#5A6272;font-size:14px;"
       + "text-decoration:underline;cursor:pointer;padding:6px}"
@@ -735,7 +789,7 @@
       + ".wrap.in{transform:translate(0,-50%)}"
       // Bookmark shape: flat on the page edge, V-notch on the side facing in.
       + ".tab{display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;cursor:pointer;"
-      + "background:" + ACCENT + ";color:#fff;padding:10px 12px 10px 24px;min-width:86px;line-height:1;"
+      + "background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:10px 12px 10px 24px;min-width:86px;line-height:1;"
       + "clip-path:polygon(0 0,100% 0,100% 100%,0 100%,13px 50%);transition:padding .15s}"
       + ".tab:hover{padding-right:18px}"
       + ".tab:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
@@ -801,7 +855,7 @@
       + '-webkit-print-color-adjust:exact;print-color-adjust:exact}'
       + '.v{max-width:620px;margin:0 auto;border:3px dashed #14171F;border-radius:14px;padding:26px 28px}'
       + '.d{font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#3A4150}'
-      + '.a{font-size:68px;font-weight:800;line-height:1;margin:10px 0 2px;color:' + ACCENT + ';letter-spacing:-.02em}'
+      + '.a{font-size:68px;font-weight:800;line-height:1;margin:10px 0 2px;color:' + (ON_ACCENT === INK ? INK : ACCENT) + ';letter-spacing:-.02em}'
       + '.a small{font-size:30px;letter-spacing:.02em;margin-left:8px}'
       + '.c{font-size:20px;font-weight:700;margin:14px 0 2px}'
       + 'table{border-collapse:collapse;width:100%;margin:10px 0 0}'
@@ -815,7 +869,7 @@
       + 'font-size:34px;letter-spacing:.1em;margin-top:2px}'
       + '.f{font-size:12px;line-height:1.5;color:#4A5262;margin:18px 0 0}'
       + '.pb{display:block;margin:22px auto 0;max-width:620px;width:100%;border:0;border-radius:10px;padding:14px;'
-      + 'font-size:17px;font-weight:700;color:#fff;background:' + ACCENT + ';cursor:pointer}'
+      + 'font-size:17px;font-weight:700;color:' + ON_ACCENT + ';background:' + ACCENT + ';cursor:pointer}'
       + '@media print{body{padding:0}.pb{display:none}}'
       + '.demo{max-width:620px;margin:0 auto 12px;background:#FFD54A;border-radius:8px;padding:8px 12px;text-align:center;'
       + 'font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase}'
@@ -1008,7 +1062,12 @@
     // The exception: the shopper already saw (and closed) the popup on this
     // car. Then we still fetch the offer so the reopen TAB can come back —
     // otherwise a reload would make the offer unreachable.
-    var tabOnly = pre === "shown_this_session" && TAB_ON
+    // Whether the tab can be on is only fully known from the config response
+    // (the dashboard can override GTM either way), so use what this tab's
+    // last config said ("1"/"0"; "" = not set in the dashboard → GTM decides).
+    var srvTab = ssGet("lp_promo_tab_srv");
+    var tabMaybeOn = srvTab === "1" ? true : srvTab === "0" ? false : GTM_TAB_ON !== false;
+    var tabOnly = pre === "shown_this_session" && tabMaybeOn
       && !ssGet("lp_promo_submitted_s") && !ssGet("lp_promo_tab_closed_" + VIN);
     if (pre && !tabOnly) { log("suppressed: " + pre); return; }
 
@@ -1019,6 +1078,11 @@
         return;
       }
       CFG = c;
+      // Dashboard tab / color settings win over GTM. Applied before anything
+      // is drawn, so the tab never shows in the wrong color or spot.
+      applyLook(c.tab);
+      var te = c.tab && typeof c.tab.enabled === "boolean" ? (c.tab.enabled ? "1" : "0") : "";
+      ssSet("lp_promo_tab_srv", te);
       // Preload the offer graphic now so it's cached by the time the popup
       // opens (35s later by default). show() checks it actually loaded.
       if (c.imagePath) { IMG = new Image(); IMG.src = API + c.imagePath; }

@@ -522,6 +522,43 @@
   .wv-q .qs{background:var(--porcelain);border-radius:10px;padding:10px;text-align:center}
   .wv-q .n{font-family:'Barlow Condensed';font-weight:700;font-size:22px;line-height:1}
   .wv-q .l{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);margin-top:4px}
+  /* VinPop: reopen tab (agency-only). Preview = a small mock browser window. */
+  .rt-row{display:flex;align-items:center;gap:12px;padding:2px 0 4px}
+  .rt-row .txt{flex:1;font-size:14px;font-weight:600;min-width:0}
+  .rt-row .txt small{display:block;color:var(--slate);font-size:12px;font-weight:400;margin-top:1px}
+  .rt-row .txt .rt-link{margin-top:2px}
+  .rt-row .txt .rt-link:disabled{display:none}
+  .rt-link{background:none;border:0;padding:2px 0;color:var(--action);font:600 12.5px 'Barlow',sans-serif;cursor:pointer;text-decoration:underline;white-space:nowrap}
+  .rt-link:disabled{color:#AEB6B0;cursor:default;text-decoration:none}
+  .rt-prev{margin:10px 0 14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(20,24,29,.06)}
+  .rt-bar{display:flex;align-items:center;gap:5px;padding:7px 10px;background:var(--porcelain);border-bottom:1px solid var(--line)}
+  .rt-bar i{width:8px;height:8px;border-radius:50%;background:#D5DAD5;flex-shrink:0}
+  .rt-bar span{flex:1;margin-left:6px;height:16px;border-radius:8px;background:#fff;border:1px solid var(--line);font:500 10.5px 'IBM Plex Mono',ui-monospace,monospace;color:#9AA29C;padding:1px 8px;overflow:hidden;white-space:nowrap}
+  .rt-page{position:relative;height:190px;padding:14px 92px 14px 16px;overflow:hidden}
+  .rt-page .ph{background:#EEF1EC;border-radius:6px}
+  .rt-page .ph.img{height:84px;margin-bottom:10px}
+  .rt-page .ph.l{height:9px;margin-bottom:7px}
+  .rt-tab{position:absolute;right:0;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:6px 8px 6px 17px;min-width:62px;line-height:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    clip-path:polygon(0 0,100% 0,100% 100%,0 100%,9px 50%);filter:drop-shadow(0 2px 5px rgba(0,0,0,.25));transition:top .15s}
+  .rt-tab b{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .rt-tab em{font-style:normal;font-size:8px;font-weight:800;letter-spacing:.12em;margin-top:2px}
+  .rt-off{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--slate);background:var(--porcelain);border-radius:7px;padding:5px 8px;max-width:120px;text-align:center;line-height:1.3}
+  .rt-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:6px 10px;border-top:1px solid var(--line)}
+  .rt-lbl{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:11.5px;font-weight:600;color:var(--slate);letter-spacing:.03em;text-transform:uppercase;margin:0 0 6px}
+  .rt-color{display:flex;align-items:center;gap:8px}
+  .rt-color input[type=color]{width:44px;height:40px;padding:2px;border:1.5px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;flex-shrink:0}
+  .rt-color input[type=text]{flex:1;min-width:0;font:500 14.5px 'IBM Plex Mono',ui-monospace,monospace;color:var(--ink);background:var(--porcelain);border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;outline:none;text-transform:uppercase}
+  .rt-color input[type=text]:focus{border-color:var(--action)}
+  .rt-color input[type=text]::placeholder{text-transform:none;font-family:'Barlow',sans-serif;color:#9AA29C}
+  .rt-color input[type=text].bad{border-color:var(--redline);background:var(--red-soft)}
+  .rt-sub{font-size:12px;color:var(--slate);margin:5px 0 0;line-height:1.4}
+  .rt-sub.bad{color:var(--redline);font-weight:600}
+  .rt-pos{display:flex;align-items:center;gap:12px}
+  .rt-pos input[type=range]{flex:1;min-width:0;accent-color:var(--vp)}
+  .rt-pos output{font:700 15px 'Barlow',sans-serif;min-width:44px;text-align:right}
+  .rt-pos output.site{font-weight:500;color:var(--slate);font-size:12.5px;min-width:72px}
+  .rt-field{margin:0 0 14px}
 
   /* ── Live now viewer ── */
   .lv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:40px}
@@ -2340,6 +2377,8 @@
 
       +wvBlockHtml(d)
 
+      +rtBlockHtml(d)
+
       +'<div class="psec">Rooftop settings</div>'
       +'<div class="consent" style="margin:0 0 14px"><input type="checkbox" id="pr-enabled"'+(s.enabled?' checked':'')+'>'
         +'<span class="cbx" aria-hidden="true"></span><label for="pr-enabled" style="cursor:pointer;font-weight:600">Popup on for this rooftop</label></div>'
@@ -2379,6 +2418,7 @@
     });
     document.getElementById("pr-add").addEventListener("click", function(){ prRenderEditor(null); });
     wvWire(d, showErr);
+    rtWire(d);
 
     prModal().querySelectorAll(".ocard").forEach(function(card){
       var id=card.getAttribute("data-oid");
@@ -2491,6 +2531,116 @@
         if(!res.ok){ b.disabled=false; b.textContent="Save who sees VinPop"; return showErr(res.error||"Save failed."); }
         prReload(function(){ prRenderList(mode==="engaged" ? "Saved. VinPop now shows to engaged shoppers only." : "Saved. VinPop shows to every shopper."); });
       }).catch(function(){ b.disabled=false; b.textContent="Save who sees VinPop"; showErr("Network error. Try again."); });
+    });
+  }
+
+  // ── Reopen tab (the "bookmark" a shopper uses to reopen a closed popup) ──
+  // Per rooftop, agency-only. Each setting is null until someone sets it here,
+  // and null means "use what the site's GTM tag sets". The popup resolves
+  // dashboard → GTM → default (on · 50% · navy) itself. The dashboard can't
+  // read a dealer's GTM container, so it never claims to know what GTM sets.
+  var RT_NAVY="#1F2A44", RT_INK="#14181D";
+  // White or near-black text on the accent, whichever contrasts better (WCAG
+  // ratio, ties go to white). The SAME rule as promo-popup.js textOn().
+  function rtTextOn(hex){
+    var s=String(hex||"").replace(/^#/,"");
+    if(!/^[0-9a-fA-F]{6}$/.test(s)) return "#fff";
+    function lum(h){
+      var c=[0,2,4].map(function(i){ var v=parseInt(h.substr(i,2),16)/255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); });
+      return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+    }
+    var L=lum(s), Lk=lum(RT_INK.slice(1));
+    return (L+0.05)/(Lk+0.05) > 1.05/(L+0.05) ? RT_INK : "#fff";
+  }
+  // The amount on the preview tab: the offer highest on the list that's live
+  // (what most shoppers would get), else the first offer, else the default.
+  function rtTopCents(d){
+    var offers=d.offers||[];
+    var o=offers.filter(function(x){ return x.status==="live"; })[0]||offers[0];
+    return o?o.offerCents:(d.defaults||{}).offerCents;
+  }
+  function rtBlockHtml(d){
+    var lim=(d.tabLimits&&d.tabLimits.topPct)||[10,90];
+    return '<div class="psec">Reopen tab <span class="newtag">New</span></div>'
+      +(d.tabReady===false?'<div class="pwarn">Run /admin/patch first. Until then the tab follows the site\'s GTM tag and these settings can\'t be saved.</div>':'')
+      +'<div class="rt-row"><label class="wv-sw"><input type="checkbox" id="rt-on" aria-label="Show a tab to reopen the offer after a shopper closes it"><i></i></label>'
+        +'<div class="txt">Show a tab to reopen the offer after a shopper closes it<small id="rt-on-sub"></small>'
+        +'<button type="button" class="rt-link" id="rt-on-clear">Use the site\'s setting</button></div></div>'
+      +'<div class="rt-prev" aria-hidden="true"><div class="rt-bar"><i></i><i></i><i></i><span>'+escapeHtml(currentDealerLabel())+' · vehicle page</span></div>'
+        +'<div class="rt-page"><div class="ph img"></div><div class="ph l" style="width:72%"></div><div class="ph l" style="width:54%"></div><div class="ph l" style="width:63%"></div>'
+          +'<div class="rt-tab" id="rt-tab"><b>'+escapeHtml(promoDollars(rtTopCents(d)))+'</b><em>OFF</em></div>'
+          +'<div class="rt-off" id="rt-off">Tab off</div></div>'
+        +'<div class="rt-cap" id="rt-cap"></div></div>'
+      +'<div class="rt-field"><div class="rt-lbl"><span>Color</span><button type="button" class="rt-link" id="rt-color-clear">Use the site\'s color</button></div>'
+        +'<div class="rt-color"><input type="color" id="rt-picker" aria-label="Pick a color">'
+          +'<input type="text" id="rt-hex" maxlength="7" placeholder="Site\'s color" spellcheck="false" autocomplete="off" aria-label="Color hex code" aria-describedby="rt-color-sub"></div>'
+        +'<p class="rt-sub" id="rt-color-sub"></p></div>'
+      +'<div class="rt-field"><div class="rt-lbl"><span>Position from the top</span><button type="button" class="rt-link" id="rt-pos-clear">Reset</button></div>'
+        +'<div class="rt-pos"><input type="range" id="rt-pos" min="'+lim[0]+'" max="'+lim[1]+'" step="1" aria-label="Tab position, percent from the top of the window"><output id="rt-pos-out"></output></div>'
+        +'<p class="rt-sub">Move it down if it covers the site\'s chat button.</p></div>'
+      +'<p class="pnote" style="margin-top:0">Leave blank to keep what the site\'s GTM tag sets. The color also styles the popup\'s header and buttons.</p>'
+      +'<div class="err" id="rt-err" style="display:none"></div>'
+      +'<button class="mlink" id="rt-save" style="width:100%;border:0;cursor:pointer'+(d.tabReady===false?';opacity:.5;cursor:default':'')+'"'+(d.tabReady===false?' disabled':'')+'>Save reopen tab</button>';
+  }
+  function rtWire(d){
+    var t=(d.settings&&d.settings.tab)||{};
+    // Working copy. enabled/top null = "the site's GTM tag decides".
+    var st={ enabled: typeof t.enabled==="boolean"?t.enabled:null, top: t.topPct==null?null:t.topPct };
+    function $(id){ return document.getElementById(id); }
+    var HEX=/^#?[0-9a-fA-F]{6}$/;
+    $("rt-hex").value=t.accent||"";
+    function hexVal(){ var v=$("rt-hex").value.trim(); if(!v) return ""; if(v[0]!=="#") v="#"+v; return v.toUpperCase(); }
+    function paint(){
+      // Not set here = shown as on: the GTM tag decides, and it's on unless the tag turns it off.
+      var on=st.enabled!==false;
+      $("rt-on").checked=on;
+      $("rt-on-sub").textContent= st.enabled===null ? "Following the site's GTM tag (on unless the tag turns it off)."
+        : on ? "On for this rooftop." : "Off for this rooftop.";
+      $("rt-on-clear").disabled= st.enabled===null;
+
+      var raw=$("rt-hex").value.trim(), hv=hexVal(), valid=!raw||HEX.test(raw);
+      $("rt-hex").classList.toggle("bad",!valid);
+      $("rt-hex").setAttribute("aria-invalid", valid?"false":"true");
+      var sub=$("rt-color-sub"); sub.classList.toggle("bad",!valid);
+      sub.textContent= !valid ? "Use a 6-digit hex code, like #1F2A44."
+        : hv ? (rtTextOn(hv)===RT_INK ? "Light color, so the text on the tab and buttons will be dark." : "Text on the tab and buttons will be white.")
+        : "Using the site's GTM color, or default navy if the tag doesn't set one.";
+      if(valid) $("rt-picker").value=(hv||RT_NAVY).toLowerCase();
+      $("rt-color-clear").disabled=!raw;
+      var acc= valid&&hv ? hv : RT_NAVY;
+
+      var top= st.top==null ? 50 : st.top;
+      $("rt-pos").value=top;
+      var out=$("rt-pos-out"); out.textContent= st.top==null ? "Site's setting" : top+"%"; out.className= st.top==null ? "site" : "";
+      $("rt-pos-clear").disabled= st.top==null;
+
+      var tab=$("rt-tab");
+      tab.style.display= on ? "" : "none"; $("rt-off").style.display= on ? "none" : "";
+      tab.style.top=top+"%"; tab.style.background=acc; tab.style.color=rtTextOn(acc);
+      $("rt-cap").textContent= !on ? "Shoppers who close the popup won't get a tab to reopen it."
+        : (hv&&valid ? "" : "Preview in default navy; the live site uses its GTM color if the tag sets one. ")
+          + (st.top==null ? "Shown at 50%; the GTM tag can move it." : "Shown "+top+"% down from the top of the window.");
+    }
+    $("rt-on").addEventListener("change", function(){ st.enabled=this.checked; paint(); });
+    $("rt-on-clear").addEventListener("click", function(){ st.enabled=null; paint(); });
+    $("rt-picker").addEventListener("input", function(){ $("rt-hex").value=this.value.toUpperCase(); paint(); });
+    $("rt-hex").addEventListener("input", paint);
+    // Tidy a valid code on leaving the field: "c8102e" → "#C8102E".
+    $("rt-hex").addEventListener("change", function(){ var v=this.value.trim(); if(v && HEX.test(v)){ this.value=hexVal(); paint(); } });
+    $("rt-color-clear").addEventListener("click", function(){ $("rt-hex").value=""; paint(); });
+    $("rt-pos").addEventListener("input", function(){ st.top=Number(this.value); paint(); });
+    $("rt-pos-clear").addEventListener("click", function(){ st.top=null; paint(); });
+    paint();
+    $("rt-save").addEventListener("click", function(){
+      var b=this, err=$("rt-err"); err.style.display="none";
+      var raw=$("rt-hex").value.trim();
+      if(raw && !HEX.test(raw)){ paint(); $("rt-hex").focus(); return; }
+      b.disabled=true; b.textContent="Saving…";
+      function fail(m){ b.disabled=false; b.textContent="Save reopen tab"; err.textContent=m; err.style.display="block"; err.scrollIntoView({block:"nearest"}); }
+      promoPost("/promo-settings/update",{ tabEnabled:st.enabled, tabTopPct:st.top, accentColor:hexVal()||null }).then(function(res){
+        if(!res.ok) return fail(res.error||"Save failed.");
+        prReload(function(){ prRenderList("Reopen tab saved."); });
+      }).catch(function(){ fail("Network error. Try again."); });
     });
   }
 
@@ -2806,10 +2956,14 @@
         el.innerHTML='<img class="pv-img" src="'+escapeHtml(API+image.path)+'" alt="Offer graphic">'
           +'<div class="pv-cap">Showing your graphic. If it fails to load on a dealer site, the text header is used instead.</div>';
       } else {
-        el.innerHTML='<div class="pv-band"><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
+        // Header color: the one saved under "Reopen tab" (it styles the
+        // popup too), else navy here and the site's GTM color on the site.
+        var acc=((d.settings||{}).tab||{}).accent;
+        el.innerHTML='<div class="pv-band"'+(acc?' style="background:'+escapeHtml(acc)+';color:'+rtTextOn(acc)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
           +'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>'
           +'<div class="pv-sub">'+escapeHtml(sub)+'</div></div>'
-          +'<div class="pv-cap">Header color comes from the dealer\'s site tag (accentColor). Vehicle name fills in per car.</div>';
+          +'<div class="pv-cap">'+(acc?'Header color is set under Reopen tab for this rooftop. '
+            :'Header color comes from the site\'s GTM tag (accentColor), or the color set under Reopen tab. ')+'Vehicle name fills in per car.</div>';
       }
     }
     function renderImageRow(){
