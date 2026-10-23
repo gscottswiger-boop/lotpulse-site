@@ -506,14 +506,25 @@
       + ".scrim{position:fixed;inset:0;background:rgba(10,12,16,.55);z-index:2147483646;opacity:0;transition:opacity .2s}"
       + ".scrim.in{opacity:1}"
       + ".box{position:fixed;z-index:2147483647;left:50%;top:50%;width:min(420px,calc(100vw - 32px));"
-      + "max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#14171F;border-radius:16px;"
-      + "box-shadow:0 24px 60px rgba(0,0,0,.28);transform:translate(-50%,-46%);opacity:0;"
+      + "max-height:calc(100vh - 32px);overflow:auto;background:transparent;color:#14171F;"
+      + "filter:drop-shadow(0 22px 30px rgba(0,0,0,.30));transform:translate(-50%,-46%);opacity:0;"
       + "transition:transform .22s ease,opacity .22s ease}"
       + ".box.in{transform:translate(-50%,-50%);opacity:1}"
       + "@media (max-width:560px){.box{left:0;right:0;top:auto;bottom:0;width:100%;max-height:92vh;"
-      + "border-radius:18px 18px 0 0;transform:translateY(24px)}.box.in{transform:translateY(0)}}"
-      + ".band{background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:22px 24px 20px;border-radius:16px 16px 0 0;position:relative}"
-      + "@media (max-width:560px){.band{border-radius:18px 18px 0 0}}"
+      + "transform:translateY(24px)}.box.in{transform:translateY(0)}}"
+      // Hang-tag top (Oct 2026, matches the VinPop logo): a pointed roof in the
+      // accent color with a punched hole that shows the page behind it. The
+      // ring is a lighter (or, on a light accent, darker) edge around the hole.
+      + ".roof{position:relative;height:84px;margin-bottom:-1px;background:" + ACCENT + ";"
+      + "clip-path:polygon(0 100%,0 calc(100% - 4px),calc(50% - 17px) 8px,calc(50% - 10px) 3px,calc(50% - 4px) .5px,50% 0,"
+      + "calc(50% + 4px) .5px,calc(50% + 10px) 3px,calc(50% + 17px) 8px,100% calc(100% - 4px),100% 100%);"
+      + "-webkit-mask:radial-gradient(circle at 50% 44px,transparent 10px,#000 10.6px);"
+      + "mask:radial-gradient(circle at 50% 44px,transparent 10px,#000 10.6px)}"
+      + ".roof i{position:absolute;left:50%;top:44px;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;"
+      + "border:3px solid " + (ON_ACCENT === INK ? "rgba(20,24,29,.22)" : "rgba(255,255,255,.5)") + "}"
+      + "@media (max-width:560px){.roof{height:68px;-webkit-mask:radial-gradient(circle at 50% 37px,transparent 9px,#000 9.6px);"
+      + "mask:radial-gradient(circle at 50% 37px,transparent 9px,#000 9.6px)}.roof i{top:37px;width:28px;height:28px;margin:-14px 0 0 -14px}}"
+      + ".band{background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:14px 24px 20px;position:relative}"
       + ".dealer{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin:0 32px 8px 0}"
       // The offer amount is the whole pitch, so it's the biggest thing on the
       // card: "$750" huge, "OFF" beside it, the vehicle / tagline underneath.
@@ -525,19 +536,19 @@
       + "@media (max-width:560px){.amt .n{font-size:58px}.amt .off{font-size:28px}.subhl{font-size:17px}}"
       // Image mode: the dealer's own graphic replaces the colored band. Shown
       // uncropped (contain), since offer art usually has text near the edges.
-      + ".art{position:relative;background:" + ACCENT + ";border-radius:16px 16px 0 0;overflow:hidden;line-height:0}"
-      + "@media (max-width:560px){.art{border-radius:18px 18px 0 0}}"
+      + ".art{position:relative;background:" + ACCENT + ";overflow:hidden;line-height:0}"
       + ".art img{display:block;width:100%;height:auto;max-height:46vh;object-fit:contain}"
       + ".art .x{background:rgba(0,0,0,.45);color:#fff}.art .x:hover{background:rgba(0,0,0,.65)}"
       + ".sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}"
       + ".demo{background:#FFD54A;color:#14171F;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;"
       + "text-align:center;padding:7px 12px;line-height:1.3}"
-      + ".x{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:50%;"
+      + ".x{position:absolute;top:4px;right:12px;width:36px;height:36px;border:0;border-radius:50%;"
       + "background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.10)" : "rgba(255,255,255,.16)") + ";color:" + ON_ACCENT + ";"
       + "font-size:22px;line-height:36px;cursor:pointer;padding:0}"
       + ".x:hover{background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.18)" : "rgba(255,255,255,.28)") + "}"
       + ".x:focus-visible,.go:focus-visible,.no:focus-visible,input:focus-visible{outline:3px solid #7AA7FF;outline-offset:2px}"
-      + ".body{padding:20px 24px 22px}"
+      + ".body{padding:20px 24px 22px;background:#fff;border-radius:0 0 16px 16px}"
+      + "@media (max-width:560px){.body{border-radius:0}}"
       + ".sub{font-size:15px;line-height:1.45;color:#3A4150;margin:0 0 16px}"
       + "label{display:block;font-size:13px;font-weight:600;color:#2A303C;margin:0 0 6px}"
       + "input{display:block;width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #CDD2DB;"
@@ -625,8 +636,9 @@
     return ""
       + '<div class="scrim" id="scrim"></div>'
       + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl">'
-      +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
+      +   '<div class="roof" aria-hidden="true"><i></i></div>'
       +   headerHtml(useImage)
+      +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
       +   vehicleHtml()
       +   '<div class="body">'
       +     '<form id="form" novalidate>'
@@ -787,25 +799,27 @@
       + ".wrap{position:fixed;right:0;top:" + TAB_TOP + ";z-index:2147483000;transform:translate(110%,-50%);"
       + "transition:transform .35s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.28))}"
       + ".wrap.in{transform:translate(0,-50%)}"
-      // Bookmark shape: flat on the page edge, V-notch on the side facing in.
-      + ".tab{display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;cursor:pointer;"
-      + "background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:10px 12px 10px 24px;min-width:86px;line-height:1;"
-      + "clip-path:polygon(0 0,100% 0,100% 100%,0 100%,13px 50%);transition:padding .15s}"
-      + ".tab:hover{padding-right:18px}"
+      // Compact price tag (Oct 2026, matches the VinPop logo): flat on the page
+      // edge, pointed end facing in with a punched hole, the amount on it.
+      + ".tab{display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;"
+      + "background:" + ACCENT + ";color:" + ON_ACCENT + ";height:50px;padding:0 15px 0 33px;min-width:98px;line-height:1;"
+      + "clip-path:polygon(1px calc(50% - 3px),19px 2px,23px 0,100% 0,100% 100%,23px 100%,19px calc(100% - 2px),1px calc(50% + 3px));"
+      + "-webkit-mask:radial-gradient(circle at 17px 50%,transparent 4.5px,#000 5px);"
+      + "mask:radial-gradient(circle at 17px 50%,transparent 4.5px,#000 5px);transition:padding .15s}"
+      + ".tab:hover{padding-right:21px}"
       + ".tab:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
-      + ".n{font-size:22px;font-weight:800;letter-spacing:-.01em}"
-      + ".o{font-size:11px;font-weight:800;letter-spacing:.12em;margin-top:3px}"
-      + ".tx{position:absolute;top:-9px;left:6px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;"
+      + ".n{font-size:21px;font-weight:800;letter-spacing:-.01em}"
+      + ".tx{position:absolute;top:-9px;left:16px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;"
       + "background:#2A303C;color:#fff;font-size:14px;line-height:17px;padding:0;cursor:pointer;text-align:center}"
       + ".tx:hover{background:#000}"
       + ".tx:focus-visible{outline:3px solid #7AA7FF}"
-      + "@media (max-width:560px){.tab{min-width:74px;padding:8px 9px 8px 21px}.n{font-size:19px}.o{font-size:10px}}"
+      + "@media (max-width:560px){.tab{height:44px;min-width:86px;padding:0 12px 0 29px;-webkit-mask:radial-gradient(circle at 15px 50%,transparent 4px,#000 4.5px);mask:radial-gradient(circle at 15px 50%,transparent 4px,#000 4.5px)}.n{font-size:18px}}"
       + "@media (prefers-reduced-motion:reduce){.wrap{transition:none}}"
       + "@media print{.wrap{display:none}}"
       + "</style>"
       + '<div class="wrap" id="w">'
       +   '<button class="tab" id="t" type="button" aria-label="Reopen offer: ' + esc(amount) + ' off">'
-      +     '<span class="n">' + esc(amount) + '</span><span class="o">OFF</span></button>'
+      +     '<span class="n">' + esc(amount) + '</span></button>'
       +   '<button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button>'
       + '</div>';
     document.body.appendChild(tabHost);

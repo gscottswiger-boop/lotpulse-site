@@ -417,14 +417,20 @@
   .pwarn{font-size:12.5px;font-weight:600;color:#9A6700;background:var(--amber-soft);border-radius:9px;padding:9px 12px;margin:0 0 14px}
   .pnote{font-size:12px;color:var(--slate);margin:-6px 0 13px;line-height:1.45}
   .psec{font-family:'Barlow Condensed';font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:20px 0 10px;padding-top:14px;border-top:1px solid var(--line-soft)}
-  .pv{border-radius:12px;overflow:hidden;margin:0 0 16px;box-shadow:0 1px 2px rgba(20,24,29,.08),0 6px 18px rgba(20,24,29,.08)}
-  .pv-band{background:#1F2A44;color:#fff;padding:16px 18px 15px}
+  .pv{margin:0 0 16px;filter:drop-shadow(0 1px 1px rgba(20,24,29,.10)) drop-shadow(0 5px 10px rgba(20,24,29,.09))}
+  /* Hang-tag top, same shape as the live popup (promo-popup.js .roof). */
+  .pv-roof{position:relative;height:56px;margin-bottom:-1px;background:#1F2A44;
+    clip-path:polygon(0 100%,0 calc(100% - 3px),calc(50% - 12px) 6px,calc(50% - 7px) 2px,calc(50% - 3px) .5px,50% 0,calc(50% + 3px) .5px,calc(50% + 7px) 2px,calc(50% + 12px) 6px,100% calc(100% - 3px),100% 100%);
+    -webkit-mask:radial-gradient(circle at 50% 30px,transparent 7px,#000 7.5px);mask:radial-gradient(circle at 50% 30px,transparent 7px,#000 7.5px)}
+  .pv-roof i{position:absolute;left:50%;top:30px;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:2px solid rgba(255,255,255,.5)}
+  .pv-roof.lt i{border-color:rgba(20,24,29,.22)}
+  .pv-band{background:#1F2A44;color:#fff;padding:8px 18px 15px}
   .pv-dealer{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
   .pv-amt{display:flex;align-items:baseline;gap:7px;font-weight:800;line-height:.95}
   .pv-amt .n{font-size:46px;letter-spacing:-.02em}.pv-amt .off{font-size:23px}
   .pv-sub{font-size:14.5px;font-weight:600;margin-top:7px;opacity:.95}
   .pv-img{display:block;width:100%;height:auto;max-height:240px;object-fit:contain;background:#1F2A44}
-  .pv-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:7px 12px}
+  .pv-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:7px 12px;border-radius:0 0 12px 12px}
   .setrow textarea{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--porcelain);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;outline:none;resize:vertical;min-height:62px}
   .setrow textarea:focus{border-color:var(--action)}
   .mkchips{display:flex;flex-wrap:wrap;gap:6px}
@@ -538,9 +544,11 @@
   .rt-page .ph{background:#EEF1EC;border-radius:6px}
   .rt-page .ph.img{height:84px;margin-bottom:10px}
   .rt-page .ph.l{height:9px;margin-bottom:7px}
-  .rt-tab{position:absolute;right:0;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:6px 8px 6px 17px;min-width:62px;line-height:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    clip-path:polygon(0 0,100% 0,100% 100%,0 100%,9px 50%);filter:drop-shadow(0 2px 5px rgba(0,0,0,.25));transition:top .15s}
+  /* Compact price tag, same shape as the live reopen tab (promo-popup.js .tab). */
+  .rt-tab{position:absolute;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;
+    height:34px;padding:0 10px 0 23px;min-width:66px;line-height:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    clip-path:polygon(1px calc(50% - 2px),13px 1px,16px 0,100% 0,100% 100%,16px 100%,13px calc(100% - 1px),1px calc(50% + 2px));
+    -webkit-mask:radial-gradient(circle at 12px 50%,transparent 3px,#000 3.5px);mask:radial-gradient(circle at 12px 50%,transparent 3px,#000 3.5px);transition:top .15s}
   .rt-tab b{font-size:15px;font-weight:800;letter-spacing:-.01em}
   .rt-tab em{font-style:normal;font-size:8px;font-weight:800;letter-spacing:.12em;margin-top:2px}
   .rt-off{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--slate);background:var(--porcelain);border-radius:7px;padding:5px 8px;max-width:120px;text-align:center;line-height:1.3}
@@ -2568,7 +2576,7 @@
         +'<button type="button" class="rt-link" id="rt-on-clear">Use the site\'s setting</button></div></div>'
       +'<div class="rt-prev" aria-hidden="true"><div class="rt-bar"><i></i><i></i><i></i><span>'+escapeHtml(currentDealerLabel())+' · vehicle page</span></div>'
         +'<div class="rt-page"><div class="ph img"></div><div class="ph l" style="width:72%"></div><div class="ph l" style="width:54%"></div><div class="ph l" style="width:63%"></div>'
-          +'<div class="rt-tab" id="rt-tab"><b>'+escapeHtml(promoDollars(rtTopCents(d)))+'</b><em>OFF</em></div>'
+          +'<div class="rt-tab" id="rt-tab"><b>'+escapeHtml(promoDollars(rtTopCents(d)))+'</b></div>'
           +'<div class="rt-off" id="rt-off">Tab off</div></div>'
         +'<div class="rt-cap" id="rt-cap"></div></div>'
       +'<div class="rt-field"><div class="rt-lbl"><span>Color</span><button type="button" class="rt-link" id="rt-color-clear">Use the site\'s color</button></div>'
@@ -2952,14 +2960,16 @@
       var dollars=parseInt(document.getElementById("pr-offer").value,10);
       var sub=document.getElementById("pr-headline").value.trim()||"this 2024 Toyota Tacoma";
       var el=document.getElementById("pr-preview");
+      var racc=((d.settings||{}).tab||{}).accent||"";
+      var roof='<div class="pv-roof'+(racc&&rtTextOn(racc)===RT_INK?' lt':'')+'"'+(racc?' style="background:'+escapeHtml(racc)+'"':'')+' aria-hidden="true"><i></i></div>';
       if(image){
-        el.innerHTML='<img class="pv-img" src="'+escapeHtml(API+image.path)+'" alt="Offer graphic">'
+        el.innerHTML=roof+'<img class="pv-img" src="'+escapeHtml(API+image.path)+'" alt="Offer graphic">'
           +'<div class="pv-cap">Showing your graphic. If it fails to load on a dealer site, the text header is used instead.</div>';
       } else {
         // Header color: the one saved under "Reopen tab" (it styles the
         // popup too), else navy here and the site's GTM color on the site.
         var acc=((d.settings||{}).tab||{}).accent;
-        el.innerHTML='<div class="pv-band"'+(acc?' style="background:'+escapeHtml(acc)+';color:'+rtTextOn(acc)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
+        el.innerHTML=roof+'<div class="pv-band"'+(acc?' style="background:'+escapeHtml(acc)+';color:'+rtTextOn(acc)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
           +'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>'
           +'<div class="pv-sub">'+escapeHtml(sub)+'</div></div>'
           +'<div class="pv-cap">'+(acc?'Header color is set under Reopen tab for this rooftop. '
