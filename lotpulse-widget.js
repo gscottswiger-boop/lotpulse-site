@@ -141,6 +141,16 @@
         if (vin) return vin;
       } catch (e) { /* ignore malformed blocks */ }
     }
+    // 1b. AutoWall: no Vehicle JSON-LD, no VIN in the URL (?vehicleId=17402),
+    // and every [data-vin] on the VDP belongs to a vendor (Capital One,
+    // DealerImagePro's autowall.js). The platform's own VIN is the
+    // "VIN: <vin>" line in the .vehicle-snapshot list — read that first.
+    var awSnap = document.querySelector(".vehicle-snapshot");
+    if (awSnap) {
+      var am = (awSnap.textContent || "").match(/VIN:\s*([A-HJ-NPR-Z0-9]{17})/i);
+      var av = am ? cleanVin(am[1]) : null;
+      if (av) return av;
+    }
     // 2. Data attributes commonly present on VDPs. Dealer.com exposes the VIN
     // as a hidden <input name="vin" value="..."> rather than a data attribute,
     // and its VDP URLs carry an item-id hash instead of the VIN — so without
@@ -291,7 +301,30 @@
     // sticky nor scroll-capped, so none of that applies.
     if (anchor.underGallery) {
       host.style.cssText = "display:block;width:100%;margin:16px 0 0;clear:both;";
-      anchor.el.appendChild(host);
+      if (anchor.position === "after") {
+        // AutoWall: the gallery is a ROW inside the column, not the column
+        // itself, so we sit after it as a sibling rather than inside it.
+        anchor.el.parentNode.insertBefore(host, anchor.el.nextSibling);
+      } else {
+        anchor.el.appendChild(host);
+      }
+      if (anchor.autowall) {
+        // Desktop and mobile galleries live in DIFFERENT columns. Crossing the
+        // 768px breakpoint (rotation, window drag) hides the copy we mounted
+        // next to — follow whichever one is visible now.
+        var awReloc = null;
+        window.addEventListener("resize", function () {
+          clearTimeout(awReloc);
+          awReloc = setTimeout(function () {
+            var a = autoWallGalleryAnchor();
+            if (a && a.el.parentNode && a.el.nextSibling !== host) {
+              a.el.parentNode.insertBefore(host, a.el.nextSibling);
+              console.log("[LotPulse] AutoWall breakpoint change — moved widget under the "
+                + (a.el.parentNode.classList.contains("col-md-7") ? "desktop" : "mobile") + " gallery");
+            }
+          }, 200);
+        });
+      }
       var rootG = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
       rootG.innerHTML = widgetHtml(demand);
       VDP_ROOT = rootG;
@@ -508,6 +541,9 @@
       var custom = document.querySelector(ANCHOR_SELECTOR);
       if (custom) return { el: custom, position: CONFIG.anchorPosition || "after", explicit: true };
     }
+    // AutoWall: under the photo gallery, same convention as DI/DDC.
+    var aw = autoWallGalleryAnchor();
+    if (aw) return aw;
     // ── Preferred VDP placement: directly beneath the photo gallery ──────────
     // Two confirmed platforms expose a photo COLUMN we can flow beneath:
     //   Dealer Inspire: .vdp-gallery-wrap (flex item, flex-basis ~66.67%)
@@ -617,6 +653,27 @@
     if (price) return { el: price, position: "after" };
     var h1 = document.querySelector("h1");
     return { el: h1 || document.body.firstElementChild, position: "after" };
+  }
+
+  // AutoWall VDP (confirmed on Long Honda of Albany, Oct 2026). The page is a
+  // Bootstrap .col-md-7 (photos + features) / .col-md-5 (price rail) split,
+  // and the gallery is rendered TWICE:
+  //   desktop: .col-md-7 > .row.d-none.d-md-block.d-print-none
+  //   mobile:  .col-md-5 > .row.d-sm-block.d-md-none   (the price column is
+  //            order-first on mobile, so photos → widget → pricing)
+  // We mount AFTER whichever copy is actually showing, in normal flow. With no
+  // explicit anchor the generic fallback grabbed the H1 and parked the card in
+  // the dead space at the top-left of the page.
+  function autoWallGalleryAnchor() {
+    // Gate on an AutoWall signature so these generic Bootstrap selectors can
+    // never claim a DI or DDC page.
+    var isAW = /^\/gs-vehicle\//.test(window.location.pathname) || !!document.querySelector(".vehicle-snapshot");
+    if (!isAW) return null;
+    var desk = document.querySelector(".col-md-7 > .row.d-none.d-md-block.d-print-none");
+    var mob = document.querySelector(".col-md-5 > .row.d-sm-block.d-md-none");
+    if (!desk && !mob) return null;
+    var el = (desk && isVisible(desk)) ? desk : (mob && isVisible(mob)) ? mob : (desk || mob);
+    return { el: el, position: "after", underGallery: true, autowall: true };
   }
 
   function dollars(cents) {
@@ -1328,6 +1385,15 @@
     // with no recognizable native stack at all.
     var ddcStack = cardEl.querySelector(".vehicle-ctas");
     if (ddcStack && isVisible(ddcStack)) return ddcStack;
+    // AutoWall (Long Honda of Albany, Oct 2026): every CTA on the card
+    // (RunMyLease "Unlock Instant Price", TradePending payment/trade) is
+    // injected by a third-party script AFTER .product-desc, at its own pace —
+    // none of them exist in the server HTML. Appending to the end of
+    // .product-desc (server-rendered: name, specs, empty tp_ slots) puts the
+    // button directly under the specs and above the vendor CTAs, and nothing
+    // that renders late can land above it and push it around.
+    var awDesc = cardEl.querySelector(".product-box > .product-desc");
+    if (awDesc && isVisible(awDesc)) return awDesc;
     var stacks = cardEl.querySelectorAll(".hit-additional-ctas");
     for (var i = 0; i < stacks.length; i++) {
       if (isVisible(stacks[i])) return stacks[i];
@@ -1584,7 +1650,12 @@
       + ".lp-srp-dot{width:9px;height:9px;border-radius:50%;background:#22C55E;flex-shrink:0;animation:lpSrpPulse 1.8s infinite}"
       + "@keyframes lpSrpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}"
       + "@media (prefers-reduced-motion:reduce){.lp-srp-dot{animation:none}}"
-      + "@media (max-width:300px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}";
+      + "@media (max-width:300px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}"
+      // AutoWall's .product-desc declares container-type:inline-size, and its
+      // cards are only ~230px inside — too narrow for both halves of the
+      // button. A container query hides the right half there. Inert on any
+      // platform whose card isn't a size container.
+      + "@container (max-width:290px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}";
     (document.head || document.documentElement).appendChild(st);
   }
 
