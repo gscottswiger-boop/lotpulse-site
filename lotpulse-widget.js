@@ -448,20 +448,26 @@
         var card = rootG.querySelector(".card");
         if (!card) return;
         var w = host.getBoundingClientRect().width;
-        var wantWide = w >= 760;
+        var wantWide = w >= 600;
+        var wantCompact = wantWide && w < 760;
         var isWide = card.classList.contains("wide");
+        if (wantWide && card.classList.contains("compact") !== wantCompact) {
+          card.classList.toggle("compact", wantCompact);
+          if (isWide) console.log("[LotPulse] gallery mount \u2192 " + (wantCompact ? "compact " : "")
+            + "WIDE layout (" + Math.round(w) + "px)");
+        }
         if (wantWide && !isWide) {
           card.classList.add("wide");
           card.style.width = "100%";
           card.style.maxWidth = "none";
-          console.log("[LotPulse] gallery mount \u2192 WIDE layout, spanning the "
-            + "full photo column (" + Math.round(w) + "px)");
+          console.log("[LotPulse] gallery mount \u2192 " + (wantCompact ? "compact " : "")
+            + "WIDE layout, spanning the full photo column (" + Math.round(w) + "px)");
         } else if (!wantWide && isWide) {
-          card.classList.remove("wide");
+          card.classList.remove("wide", "compact");
           card.style.width = "";
           card.style.maxWidth = "";
           console.log("[LotPulse] gallery mount \u2192 vertical card ("
-            + Math.round(w) + "px, below the 760px wide threshold)");
+            + Math.round(w) + "px, below the 600px wide threshold)");
         }
       };
       applyWide();
@@ -880,6 +886,13 @@
     + '.wide .cta{flex:0 0 300px;display:flex;flex-direction:column;justify-content:center;'
     +   'border-left:1px solid #EDF1F7;padding:16px}'
     + '.wide .brand{display:none}'
+    // Compact wide (600-759px hosts, e.g. AutoWall's 635px photo column): same
+    // three-column row with narrower side columns, so the middle stats keep
+    // ~245px, the width they get on a full 787px DI column.
+    + '.wide.compact .hd{flex-basis:170px;padding:16px 14px}'
+    + '.wide.compact .cta{flex-basis:220px;padding:14px}'
+    + '.wide.compact .btn{font-size:15.5px;padding:15px 12px;gap:8px}'
+    + '.wide.compact .promise{gap:4px 10px}'
     + '.wide-only{display:none}'
     + '.wide .wide-only{display:block;margin-top:10px;text-align:center;'
     +   'font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#AEB6BF;font-weight:600}'
