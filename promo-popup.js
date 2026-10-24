@@ -71,6 +71,14 @@
 // If __lotpulsePromoConfig is absent it falls back to __lotpulseConfig, so a
 // dealer already running LotPulse only needs the second <script> line.
 //
+// BOT CHECK (Cloudflare Turnstile): when the config response carries
+// turnstile: { siteKey, action }, the popup loads Cloudflare's script only
+// once it OPENS (never on page load), runs an invisible check in the
+// background while the shopper types, and sends the token with the lead. The
+// server verifies it. If Cloudflare ever wants the shopper to click a box, it
+// appears small at the bottom of the screen above the popup. No turnstile in
+// the config (the default) = none of this runs.
+//
 // QA: add ?lp_promo_test=1 to a VDP URL to skip the CLIENT-side suppression
 // and use a 3-second delay. Server eligibility still applies — if the promo
 // isn't live for this dealer/VIN, nothing shows, test mode or not. Test mode
@@ -716,6 +724,7 @@
     root.innerHTML = "<style>" + css() + "</style>" + html(useImage);
     document.body.appendChild(host);
     wire(lastTrigger);
+    tsStart();
 
     lastFocus = document.activeElement;
     savedOverflow = document.documentElement.style.overflow;
@@ -755,6 +764,7 @@
     document.documentElement.style.overflow = savedOverflow || "";
     document.removeEventListener("keydown", onKey, true);
     var h = host; host = null;
+    tsStop();
     setTimeout(function () { if (h && h.parentNode) h.parentNode.removeChild(h); }, 250);
     try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
     if (reason) {
@@ -765,6 +775,88 @@
       // Closed without submitting: leave the reopen tab on the page edge.
       setTimeout(showTab, 300);
     }
+  }
+
+  // ── Bot check (Cloudflare Turnstile) ───────────────────────────────────────
+  // Light DOM on purpose (Cloudflare's iframe isn't guaranteed inside a shadow
+  // root). Appended AFTER the popup host at the same max z-index, so if a
+  // visible check is ever needed it paints on top of the popup.
+  var TS = { box: null, id: null, token: null, err: null, waiters: [], loading: null };
+  var TS_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+  function tsWanted() { return !!(CFG && CFG.turnstile && CFG.turnstile.siteKey && !DEMO); }
+
+  function tsLoad() {
+    if (window.turnstile && window.turnstile.render) return Promise.resolve(window.turnstile);
+    if (TS.loading) return TS.loading;
+    TS.loading = new Promise(function (resolve, reject) {
+      var sc = document.createElement("script");
+      sc.src = TS_SRC; sc.async = true; sc.defer = true;
+      sc.onload = function () {
+        // render=explicit: the global is ready right after load.
+        if (window.turnstile && window.turnstile.render) resolve(window.turnstile);
+        else reject(new Error("turnstile global missing"));
+      };
+      sc.onerror = function () { TS.loading = null; reject(new Error("script blocked")); };
+      document.head.appendChild(sc);
+    });
+    return TS.loading;
+  }
+
+  function tsSettle() {
+    var w = TS.waiters; TS.waiters = [];
+    w.forEach(function (fn) { fn(); });
+  }
+
+  // Called from show(), right after the popup is on the page.
+  function tsStart() {
+    if (!tsWanted() || TS.box) return;
+    TS.token = null; TS.err = null;
+    TS.box = document.createElement("div");
+    TS.box.id = "lp-promo-ts";
+    TS.box.setAttribute("style",
+      "position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:2147483647;");
+    document.body.appendChild(TS.box);
+    tsLoad().then(function (ts) {
+      if (!TS.box) return;   // popup closed while the script loaded
+      TS.id = ts.render(TS.box, {
+        sitekey: CFG.turnstile.siteKey,
+        action: CFG.turnstile.action || "vinpop_lead",
+        appearance: "interaction-only",
+        "refresh-expired": "auto",
+        callback: function (tok) { TS.token = tok; TS.err = null; tsSettle(); },
+        "error-callback": function (code) { TS.err = "error:" + code; tsSettle(); return true; },
+        "expired-callback": function () { TS.token = null; },
+        "timeout-callback": function () { TS.token = null; TS.err = "timeout"; tsSettle(); },
+        "unsupported-callback": function () { TS.err = "unsupported"; tsSettle(); },
+      });
+    }).catch(function (e) { TS.err = "load:" + (e && e.message); log("bot check script failed:", e && e.message); tsSettle(); });
+  }
+
+  // Token for the submit. Waits for an in-flight check (up to maxMs), then
+  // resolves with whatever there is: { token, err }. Never rejects — the
+  // server decides what a missing token means.
+  function tsToken(maxMs) {
+    if (!tsWanted()) return Promise.resolve({ token: null, err: null });
+    if (TS.token || TS.err) return Promise.resolve({ token: TS.token, err: TS.err });
+    return new Promise(function (resolve) {
+      var done = false;
+      function fin() { if (done) return; done = true; resolve({ token: TS.token, err: TS.token ? null : (TS.err || "no_token_yet") }); }
+      TS.waiters.push(fin);
+      setTimeout(fin, maxMs);
+    });
+  }
+
+  // Tokens are single-use: get a fresh one after every submit attempt.
+  function tsReset() {
+    TS.token = null; TS.err = null;
+    try { if (window.turnstile && TS.id != null) window.turnstile.reset(TS.id); } catch (e) {}
+  }
+
+  function tsStop() {
+    try { if (window.turnstile && TS.id != null) window.turnstile.remove(TS.id); } catch (e) {}
+    if (TS.box && TS.box.parentNode) TS.box.parentNode.removeChild(TS.box);
+    TS.box = null; TS.id = null; TS.token = null; TS.err = null; tsSettle();
   }
 
   // ── Reopen tab ─────────────────────────────────────────────────────────────
@@ -978,7 +1070,10 @@
       if (ph.length !== 10) return fail("Please enter a valid 10-digit phone number.", phone);
 
       go.disabled = true; go.textContent = "Sending…";
-      apiPost("/v1/promo/lead", {
+      // Bot check token (only when the rooftop has Turnstile). Up to 10s for
+      // a check still running — usually it finished while they typed.
+      tsToken(10000).then(function (ts) {
+      return apiPost("/v1/promo/lead", {
         // offerId = the offer this shopper was SHOWN; the server records the
         // lead against it (and re-checks it's still live for this car).
         vin: VIN, offerId: CFG.offerId, name: nm, email: em, phone: ph, trigger: trigger,
@@ -992,8 +1087,12 @@
         visit: STORAGE_OK && ENG && ENG.visit ? ENG.visit.start : null,
         eng: STORAGE_OK && ENG ? engSnapshot() : null,
         vins: STORAGE_OK && ENG ? recentVins(10) : [],
+        turnstileToken: ts.token || undefined,
+        turnstileError: ts.err || undefined,
+      });
       }).then(function (res) {
         if (!res.ok) {
+          tsReset();   // the token is spent either way
           go.disabled = false; go.textContent = "Claim my offer";
           if (res.status === 410) {
             // Offer was paused/ended while the popup was open. Say so plainly
@@ -1042,6 +1141,7 @@
           page_location: window.location.href,
         });
       }).catch(function () {
+        tsReset();
         go.disabled = false; go.textContent = "Claim my offer";
         fail("Network error. Please try again.");
       });
