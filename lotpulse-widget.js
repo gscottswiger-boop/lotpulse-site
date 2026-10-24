@@ -284,6 +284,60 @@
     return null;
   }
 
+  // True if some ancestor of el turns position:fixed into "fixed to ME" instead
+  // of "fixed to the screen". Any transform / filter / perspective, a
+  // will-change naming one of them, paint/layout containment, or a CSS
+  // container does this. Confirmed on AutoWall (Long Honda of Albany, Oct
+  // 2026): Slideout.js gives #all-content `will-change: transform`, so our
+  // closed sheet (translateY(105%) below the "viewport") sat just below the
+  // footer — scroll to the bottom and there's the form, never clicked.
+  function fixedTrapAncestor(el) {
+    for (var n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
+      var cs = window.getComputedStyle(n);
+      var wc = cs.willChange || "";
+      var contain = cs.contain || "none";
+      if ((cs.transform && cs.transform !== "none")
+        || (cs.filter && cs.filter !== "none")
+        || (cs.perspective && cs.perspective !== "none")
+        || (cs.backdropFilter && cs.backdropFilter !== "none")
+        || /transform|perspective|filter/.test(wc)
+        || /paint|layout|strict|content/.test(contain)
+        || (cs.containerType && cs.containerType !== "normal")) {
+        return n;
+      }
+    }
+    return null;
+  }
+
+  // If the card is mounted inside a fixed-trap ancestor, move the scrim and
+  // sheet into their own shadow host on <body> so they're fixed to the screen
+  // again. Returns the lookup object wireWidget() should use: it only ever
+  // calls getElementById, so this searches the card's root, then the portal.
+  // No trap (DI, DDC) → returns the root unchanged; behaviour identical.
+  function sheetRootFor(host, root) {
+    var trap = fixedTrapAncestor(host);
+    if (!trap) return root;
+    var scrim = root.getElementById("lp-scrim");
+    var sheet = root.getElementById("lp-sheet");
+    var style = root.querySelector("style");
+    if (!scrim || !sheet || !document.body) return root;
+    var ph = document.createElement("div");
+    ph.id = "lotpulse-sheet-host";
+    document.body.appendChild(ph);
+    var pr = ph.attachShadow ? ph.attachShadow({ mode: "open" }) : ph;
+    if (style) pr.appendChild(style.cloneNode(true));
+    var font = document.createElement("style");
+    font.textContent = ':host{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}';
+    pr.appendChild(font);
+    pr.appendChild(scrim);
+    pr.appendChild(sheet);
+    console.log("[LotPulse] widget sits inside <" + trap.tagName.toLowerCase()
+      + (trap.id ? "#" + trap.id : "") + "> which captures position:fixed — "
+      + "moved the watch sheet to <body> so it stays pinned to the screen");
+    function byId(r, id) { return r.getElementById ? r.getElementById(id) : r.querySelector("#" + id); }
+    return { getElementById: function (id) { return byId(root, id) || byId(pr, id); } };
+  }
+
   function mountWidget(vin, demand) {
     var host = document.createElement("div");
     host.id = "lotpulse-widget-host";
@@ -328,7 +382,7 @@
       var rootG = host.attachShadow ? host.attachShadow({ mode: "open" }) : host;
       rootG.innerHTML = widgetHtml(demand);
       VDP_ROOT = rootG;
-      wireWidget(rootG, vin, demand);
+      wireWidget(sheetRootFor(host, rootG), vin, demand);
       emitWidgetView(vin, demand, "vdp");
 
       // Wide vs. vertical is decided by the LIVE rendered width of the host,
@@ -466,7 +520,7 @@
               + "px — keeping vertical card, gallery-aligned, clear of the rail");
           }
           VDP_ROOT = root0;
-          wireWidget(root0, vin, demand);
+          wireWidget(sheetRootFor(host, root0), vin, demand);
           emitWidgetView(vin, demand, "vdp");
           return;
         }
@@ -488,7 +542,7 @@
     root.innerHTML = widgetHtml(demand);
     VDP_ROOT = root;
 
-    wireWidget(root, vin, demand);
+    wireWidget(sheetRootFor(host, root), vin, demand);
     emitWidgetView(vin, demand, "vdp");
   }
 
