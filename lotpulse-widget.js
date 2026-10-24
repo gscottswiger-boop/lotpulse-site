@@ -338,6 +338,49 @@
     return { getElementById: function (id) { return byId(root, id) || byId(pr, id); } };
   }
 
+  // Third-party gallery widgets can wipe the column we mounted into. Confirmed
+  // on Ford of Harvey (Dealer Inspire, Oct 2026): Netlook's vHTell photo
+  // viewer replaces EVERY child of .vdp-gallery-wrap ~3.5s after load. Mount
+  // before it and the card vanishes; mount after it and the card survives --
+  // a pure timing race. So if the host ever leaves the document, put the SAME
+  // node back (its shadow root, listeners and hydrated numbers come with it)
+  // at whatever pickAnchor() says now. Capped so we can never get into a
+  // tug-of-war with a script that keeps removing us.
+  // `place` (optional) re-inserts the host itself and returns true; used by the
+  // scroll-trap escape path, whose spot is "after the hero section", not an anchor.
+  function keepMounted(host, place) {
+    if (typeof MutationObserver === "undefined" || !document.body) return;
+    var reattached = 0, pending = null, obs;
+    function reattach() {
+      pending = null;
+      if (host.isConnected) return;
+      if (reattached >= 8) {
+        obs.disconnect();
+        console.warn("[LotPulse] widget keeps being removed by another script; gave up re-attaching after 8 tries");
+        return;
+      }
+      if (place) {
+        if (!place()) return;
+        reattached++;
+        console.log("[LotPulse] widget was removed by another script; re-attached in place");
+        return;
+      }
+      var a = pickAnchor();
+      if (!a || !a.el || !a.el.parentNode) return; // anchor not back yet; next mutation retries
+      if (a.position === "append") a.el.appendChild(host);
+      else if (a.position === "prepend") a.el.insertBefore(host, a.el.firstChild);
+      else if (a.position === "before") a.el.parentNode.insertBefore(host, a.el);
+      else a.el.parentNode.insertBefore(host, a.el.nextSibling);
+      reattached++;
+      console.log("[LotPulse] widget was removed by another script; re-attached ("
+        + (a.el.className || a.el.tagName) + ", " + (a.position || "after") + ")");
+    }
+    obs = new MutationObserver(function () {
+      if (!host.isConnected && !pending) pending = setTimeout(reattach, 50);
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
   function mountWidget(vin, demand) {
     var host = document.createElement("div");
     host.id = "lotpulse-widget-host";
@@ -384,6 +427,7 @@
       VDP_ROOT = rootG;
       wireWidget(sheetRootFor(host, rootG), vin, demand);
       emitWidgetView(vin, demand, "vdp");
+      keepMounted(host);
 
       // Wide vs. vertical is decided by the LIVE rendered width of the host,
       // re-evaluated continuously — never measured just once at mount. A
@@ -522,6 +566,11 @@
           VDP_ROOT = root0;
           wireWidget(sheetRootFor(host, root0), vin, demand);
           emitWidgetView(vin, demand, "vdp");
+          keepMounted(host, function () {
+            if (!flowTarget.isConnected || !flowTarget.parentNode) return false;
+            flowTarget.parentNode.insertBefore(host, flowTarget.nextSibling);
+            return true;
+          });
           return;
         }
       }
@@ -544,6 +593,7 @@
 
     wireWidget(sheetRootFor(host, root), vin, demand);
     emitWidgetView(vin, demand, "vdp");
+    keepMounted(host);
   }
 
   // Fired once per mounted widget — the impression LotPulse has never had.
