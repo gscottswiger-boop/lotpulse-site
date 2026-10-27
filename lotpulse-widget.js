@@ -951,6 +951,23 @@
     + '.mdbtns a:hover{background:#1740B8}'
     + '.mdbtns button{background:#fff;color:#1F4FE0;border:1px solid #C7D4F8}'
     + '.mdbtns button:hover{background:#EAF1FF}'
+    // Optional first name, asked AFTER the watch is saved so it can't cost a
+    // conversion. Hidden unless showDone() decides to ask (see wireNameStep).
+    + '.nmbox{display:none;background:#fff;border:1px solid #E4E7E4;border-radius:13px;padding:13px 14px;'
+    +   'text-align:left;margin:0 0 12px}'
+    + '.nmbox .nmq{font-size:13.5px;color:#2A323A;line-height:1.4;margin:0 0 9px}'
+    + '.nmrow{display:flex;gap:8px}'
+    + '.nmrow input{flex:1;min-width:0;border:1.5px solid #E4E7E4;border-radius:10px;padding:10px 12px;'
+    +   'font-family:inherit;font-size:16px;font-weight:600;color:#14181D;background:#fff;outline:0;'
+    +   'transition:border-color .15s,box-shadow .15s}'
+    + '.nmrow input:focus{border-color:#1F4FE0;box-shadow:0 0 0 4px rgba(31,79,224,.12)}'
+    + '.nmrow button{border:0;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:700;'
+    +   'padding:0 16px;border-radius:10px;background:#1F4FE0;color:#fff;transition:background .14s}'
+    + '.nmrow button:hover{background:#1740B8}'
+    + '.nmrow button:disabled{background:#C7D3EE;cursor:default}'
+    + '.nmbox .nmerr{display:none;color:#DE3730;font-size:12.5px;font-weight:600;margin-top:7px}'
+    + '.nmbox .nmskip{font-size:11.5px;color:#9AA29C;margin-top:7px}'
+    + '.nmbox.saved{text-align:center;color:#1E8E5A;font-size:13.5px;font-weight:700}'
     + '</style>'
     + '<div class="card">'
     +   '<div class="hd"><div class="spark">'
@@ -1014,6 +1031,16 @@
     +     '<div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
     +     '<h4 id="lp-done-h">You\'re watching this car</h4>'
     +     '<p id="lp-done-p"></p>'
+    +     '<div class="nmbox" id="lp-nm">'
+    +       '<div class="nmq">Add your first name to personalize your car list. The dealer will see it too.</div>'
+    +       '<div class="nmrow">'
+    +         '<input type="text" id="lp-nm-in" maxlength="30" placeholder="First name (optional)" '
+    +           'autocomplete="given-name" name="given-name" enterkeyhint="done" aria-label="First name (optional)">'
+    +         '<button type="button" id="lp-nm-save">Save</button>'
+    +       '</div>'
+    +       '<div class="nmerr" id="lp-nm-err"></div>'
+    +       '<div class="nmskip" id="lp-nm-skip"></div>'
+    +     '</div>'
     +     '<div class="mdbox">'
     +       '<div class="lbl">Your car list</div>'
     +       '<div class="url" id="lp-md-url"></div>'
@@ -1140,7 +1167,7 @@
     // Swap the sheet's form for the success panel. Everything above the panel is
     // hidden rather than removed, so nothing has to be re-rendered if the
     // shopper reopens the sheet later.
-    function showDone(smsEnabled, mydriveUrl) {
+    function showDone(smsEnabled, mydriveUrl, hasName) {
       var sel = ["h3", ".psub", ".perks", ".field", ".consent", "#lp-confirm", "#lp-fine"];
       sel.forEach(function (q) {
         var el = sheet.querySelector(q);
@@ -1190,6 +1217,70 @@
         box.style.display = "none";
       }
       if (doneEl) doneEl.style.display = "block";
+      wireNameStep(smsEnabled, mydriveUrl, hasName);
+    }
+
+    // Optional first name, asked only AFTER the watch is saved, so it can never
+    // cost a conversion. Shown only when there's a MyDrive token to tie it to
+    // and the shopper has no name on file yet. The API cleans the name (format
+    // + profanity) and silently drops anything it rejects; this side only
+    // blocks an empty Save. Wired once per sheet: a reopened sheet keeps
+    // whatever state the box was left in.
+    var nameWired = false;
+    function wireNameStep(smsEnabled, mydriveUrl, hasName) {
+      var box = root.getElementById("lp-nm");
+      if (!box || nameWired) return;
+      var m = mydriveUrl && /[?&]t=([0-9a-f]{32})/i.exec(mydriveUrl);
+      if (!m || hasName) return;
+      nameWired = true;
+      var token = m[1];
+      var input = root.getElementById("lp-nm-in");
+      var save = root.getElementById("lp-nm-save");
+      var nmErr = root.getElementById("lp-nm-err");
+      var skip = root.getElementById("lp-nm-skip");
+      skip.textContent = smsEnabled
+        ? "Skip it anytime. Your alerts are already on."
+        : "Skip it anytime. You're already watching this car.";
+      box.style.display = "block";
+
+      function submitName() {
+        var v = (input.value || "").replace(/\s+/g, " ").trim();
+        if (!v) {
+          nmErr.textContent = "Enter a first name, or just skip it.";
+          nmErr.style.display = "block";
+          return;
+        }
+        save.disabled = true;
+        apiPost("/v1/watch/name", { token: token, firstName: v }).then(function (res) {
+          if (!res.ok) {
+            save.disabled = false;
+            nmErr.textContent = "Couldn't save that. Try again.";
+            nmErr.style.display = "block";
+            return;
+          }
+          // Same message whether the API kept or dropped the name, on purpose.
+          box.className = "nmbox saved";
+          box.textContent = "Saved. Your car list is personalized.";
+          lpEvent("lp_name_added", {
+            element_type: "form",
+            form_type: "alert",
+            event_action: "click",
+            event_action_result: "complete",
+            page_type: ascPageType("vdp"),
+            page_location: window.location.href,
+          });
+        }).catch(function () {
+          save.disabled = false;
+          nmErr.textContent = "Network error. Try again.";
+          nmErr.style.display = "block";
+        });
+      }
+
+      input.addEventListener("input", function () { nmErr.style.display = "none"; });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); submitName(); }
+      });
+      save.addEventListener("click", submitName);
     }
 
     btn.addEventListener("click", function () { if (!watching) openSheet(); });
@@ -1248,7 +1339,7 @@
         // they get, and it is the whole reason MyDrive exists.
         var smsEnabled = !!(res.json && res.json.smsEnabled);
         var mdUrl = (res.json && res.json.mydriveUrl) || null;
-        showDone(smsEnabled, mdUrl);
+        showDone(smsEnabled, mdUrl, !!(res.json && res.json.hasName));
         root.getElementById("lp-lbl").textContent = smsEnabled ? "Watching — we'll text you" : "Watching this car";
         btn.classList.add("watching");
         var promiseEl = root.getElementById("lp-promise");
