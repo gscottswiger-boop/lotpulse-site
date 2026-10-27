@@ -235,6 +235,8 @@
   .shophead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
   .shopphone{font-family:'Barlow Condensed';font-weight:700;font-size:19px;color:var(--action);text-decoration:none;letter-spacing:.01em}
   .shopphone:hover{text-decoration:underline}
+  .shopname{font-family:'Barlow Condensed';font-weight:700;font-size:19px;color:var(--ink);letter-spacing:.01em;margin-right:6px}
+  .shopname::after{content:'\00b7';margin-left:6px;color:var(--slate);font-weight:400}
   .shopmeta{font-size:11px;color:var(--slate);font-weight:600;text-align:right;white-space:nowrap;padding-top:4px}
   .scorepill{display:inline-block;font-family:'Barlow Condensed';font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:2px 8px;vertical-align:2px}
   .scorepill.hot{background:var(--red-soft);color:var(--redline)}
@@ -1111,7 +1113,7 @@
             var since=new Date(w.watchingSince).toLocaleDateString("en-US",{month:"short",day:"numeric"});
             var stopped=smsPill(w.smsStatus);
             rows+='<div class="wrow">'
-              +'<div class="wrl"><a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
+              +'<div class="wrl">'+shopName(w.firstName)+'<a class="shopphone" href="tel:'+w.phone+'">'+phoneDisp+'</a>'
                 +'<span class="wsince">since '+since+' '+stopped+'</span></div>'
               +crmButton(w.watcherId, w.vehicleId, w.crmSent)
               +'</div>';
@@ -1180,7 +1182,7 @@
             var since=new Date(wr.watchingSince).toLocaleDateString("en-US",{month:"short",day:"numeric"});
             var stopped=smsPill(wr.smsStatus);
             wrows+='<div class="wrow">'
-              +'<div class="wrl"><a class="shopphone" href="tel:'+wr.phone+'">'+phoneDisp+'</a>'
+              +'<div class="wrl">'+shopName(wr.firstName)+'<a class="shopphone" href="tel:'+wr.phone+'">'+phoneDisp+'</a>'
                 +'<span class="wsince">watching since '+since+' '+stopped+'</span></div>'
               +'</div>';
           });
@@ -1326,6 +1328,11 @@
     if(status==="no_sms")  return '<span class="notextpill">No texts</span>';
     return '';
   }
+  // Optional first name from the VinWatch confirmation step. Cleaned server-side
+  // (format + profanity) but still escaped here like every other shopper field.
+  function shopName(n){
+    return n ? '<span class="shopname">'+escapeHtml(n)+'</span>' : '';
+  }
   function openShoppers(){
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
     modal.innerHTML='<div class="state">Loading…</div>';
@@ -1356,7 +1363,7 @@
           var stopped = smsPill(s.smsStatus);
           list+='<div class="shopper" data-shopper="'+s.watcherId+'">'
             +'<div class="shophead">'
-              +'<div><a class="shopphone" href="tel:'+s.phone+'">'+phoneDisp+'</a> '+scoreBadge(s.score)+' '+stopped+'</div>'
+              +'<div>'+shopName(s.firstName)+'<a class="shopphone" href="tel:'+s.phone+'">'+phoneDisp+'</a> '+scoreBadge(s.score)+' '+stopped+'</div>'
               +'<div class="shopmeta">'+s.activeWatches+(s.activeWatches===1?' car':' cars')
                 +(s.alertClicks>0?' · '+s.alertClicks+' click'+(s.alertClicks===1?'':'s'):'')+'</div>'
             +'</div>'
