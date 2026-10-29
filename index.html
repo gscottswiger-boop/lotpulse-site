@@ -2429,6 +2429,10 @@
       +'<div class="consent" style="margin:4px 0 4px"><input type="checkbox" id="pr-demo"'+(s.demoMode?' checked':'')+'>'
         +'<span class="cbx" aria-hidden="true"></span><label for="pr-demo" style="cursor:pointer;font-weight:600">Demo mode</label></div>'
       +'<p class="pnote" style="margin-top:0">Only browsers that open a page with <code>?vinpop=demo</code> at the end of the URL see the popup. Everyone else sees nothing, and Live now keeps tracking all visitors. Demo submissions aren\'t saved or sent to the CRM.</p>'
+      +'<div class="consent" style="margin:4px 0 4px"><input type="checkbox" id="pr-followup"'+(s.followupEnabled?' checked':'')+(d.followupReady===false?' disabled':'')+'>'
+        +'<span class="cbx" aria-hidden="true"></span><label for="pr-followup" style="cursor:pointer;font-weight:600">Follow-up messages</label></div>'
+      +'<p class="pnote" style="margin-top:0">When a shopper closes the popup without claiming, the next time they see it says something new: <em>Changed your mind?</em> if they reopen it from the tab, <em>Welcome back!</em> if they come back another day, then <em>Before you go</em> the time after that. Same offer every time. A shopper who comes back another day can see it again before the don\'t-show-again time is up, up to the third message. Claiming, or closing the tab with its ×, ends it. Preview: add <code>?vinpop=demo&amp;vinpop_step=2</code> (or <code>2r</code>, <code>3</code>) to a page URL.'
+        +(d.followupReady===false?' <strong>Run /admin/patch first.</strong> Until then this can\'t be turned on.':'')+'</p>'
       +'<button class="mlink" id="pr-save-roof" style="width:100%;border:0;cursor:pointer">Save rooftop settings</button>'
     +'</div>';
 
@@ -2449,6 +2453,7 @@
         enabled:document.getElementById("pr-enabled").checked,
         delaySeconds:num("pr-delay"), suppressDays:num("pr-suppress"),
         demoMode:document.getElementById("pr-demo").checked,
+        followupEnabled:d.followupReady===false?undefined:document.getElementById("pr-followup").checked,
       }).then(function(res){
         if(!res.ok){ b.disabled=false; b.textContent="Save rooftop settings"; return showErr(res.error||"Save failed."); }
         loadPromoLeads();   // first-ever enable reveals the dealer's Promo leads button

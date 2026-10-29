@@ -121,6 +121,28 @@
 // except in demo / test mode, where each page load starts covered again.
 // dataLayer gets lp_promo_revealed with method scratch / tap.
 //
+// FOLLOW-UP MESSAGES (Oct 2026, per rooftop, off by default; config
+// followup: true). A shopper who closes the popup without claiming gets
+// different wording the next time they see it, up to three steps:
+//   step 1  today's popup
+//   step 2  reopened from the tab: "Changed your mind?"
+//           or a later day:        "Welcome back!" (names the car on a VDP)
+//   step 3  "Before you go", button "Lock in my offer"
+// The step goes up by one each time the shopper REOPENS from the tab, and
+// the first time the popup shows on a new calendar day. Same-day page views
+// don't move it. Kept per shopper (not per car) in localStorage
+// "lp_promo_step" = { n, day, via, end, t }, dropped after 30 days.
+// While n is 1 or 2, a later day may show the popup again even inside the
+// don't-show-again window; from step 3 the normal window applies. Claiming
+// or closing the reopen tab with its × ends the sequence for good (then the
+// popup is plain step 1 wording again, and no step is reported). The amount,
+// car, form, fine print and voucher never change. Leads carry step + stepVia
+// (first | reopen | return) and dataLayer events carry popup_step.
+// Demo / test mode keeps the step in memory only (each page load starts at
+// step 1, close + reopen moves it on); ?vinpop_step=2 | 2r | 3 starts a demo
+// or test page at that step (2r = the "reopened" wording), even when the
+// rooftop's switch is off, so the wording can be shown before turning it on.
+//
 // LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
 // visible, when the tab is hidden/shown, and on pagehide (sendBeacon). It
 // sends the path (query string masked), the page title, the VIN on a VDP, the
@@ -527,9 +549,92 @@
     if (TEST) return false;
     if (ssGet("lp_promo_shown_" + key)) return "shown_this_session";
     if (VIN && ssGet("lp_watched_" + VIN)) return "already_watched";
-    if (days && withinDays(lsGet("lp_promo_seen_" + key), days)) return "seen_recently";
+    if (days && withinDays(lsGet("lp_promo_seen_" + key), days) && !followupDue()) return "seen_recently";
     if (days && withinDays(lsGet("lp_promo_submitted"), days)) return "submitted_recently";
     return false;
+  }
+
+  // ── Follow-up messages (see header) ────────────────────────────────────────
+  var STEP_KEY = "lp_promo_step", STEP_TTL_MS = 30 * 86400000;
+  // What the popup on screen is showing. STEP_REPORT: send step with the lead
+  // and events (false when the switch is off or the sequence has ended).
+  var STEP = 1, STEP_VIA = "first", STEP_REPORT = false;
+  var STEP_MEM = null, STEP_FORCE = null;
+  if (TEST) {
+    var sf = /[?&]vinpop_step=(1|2r|2|3)(?:&|#|$)/i.exec(window.location.search);
+    if (sf) STEP_FORCE = { "1": { n: 1, via: "first" }, "2": { n: 2, via: "return" }, "2r": { n: 2, via: "reopen" }, "3": { n: 3, via: "return" } }[sf[1].toLowerCase()];
+  }
+  function followOn() { return !!STEP_FORCE || !!(CFG && CFG.followup === true); }
+  function readStep() {
+    var empty = { n: 0, day: null, via: null, end: false };
+    if (TEST) return STEP_MEM || empty;
+    try {
+      var r = JSON.parse(lsGet(STEP_KEY) || "null");
+      if (r && typeof r === "object" && typeof r.n === "number" && r.n >= 0 && r.n <= 3
+          && typeof r.t === "number" && Date.now() - r.t < STEP_TTL_MS) return r;
+    } catch (e) {}
+    return empty;
+  }
+  function writeStep(r) {
+    r.t = Date.now();
+    if (TEST) STEP_MEM = r; else lsSet(STEP_KEY, JSON.stringify(r));
+  }
+  // A later day, mid-sequence, not ended: the popup may show again even
+  // though this car / offer was seen inside the don't-show-again window.
+  function followupDue() {
+    if (!followOn() || !STORAGE_OK) return false;
+    var r = readStep();
+    return !r.end && r.n >= 1 && r.n < 3 && r.day !== localDay(Date.now());
+  }
+  // Claimed, or closed the reopen tab: no more follow-ups.
+  function endFollowup() {
+    if (!followOn()) return;
+    var r = readStep(); r.end = true; writeStep(r);
+  }
+  // Called each time the popup actually opens. reopen = from the tab.
+  function advanceStep(reopen) {
+    STEP = 1; STEP_VIA = "first"; STEP_REPORT = false;
+    if (!followOn() || (!STORAGE_OK && !TEST)) return;
+    var today = localDay(Date.now()), r = readStep(), n, via;
+    if (STEP_FORCE) {
+      // First open on this page uses the forced step; reopens move on from it.
+      n = STEP_FORCE.n; via = STEP_FORCE.via; STEP_FORCE = null;
+    } else if (r.end) {
+      return;                                     // sequence over: plain popup, nothing reported
+    } else if (reopen) {
+      n = Math.min(3, Math.max(r.n, 1) + 1); via = "reopen";
+    } else if (r.n === 0) {
+      n = 1; via = "first";
+    } else if (r.day !== today) {
+      n = Math.min(3, r.n + 1); via = "return";
+    } else {
+      // Same day, automatic popup (e.g. another car): keep the step. The
+      // "reopened" wording doesn't fit a popup they didn't ask for.
+      n = r.n; via = n === 1 ? "first" : "return";
+    }
+    writeStep({ n: n, day: today, via: via, end: false });
+    STEP = n; STEP_VIA = via; STEP_REPORT = true;
+  }
+  function goLabel() { return STEP === 3 ? "Lock in my offer" : "Claim my offer"; }
+  // Line above the amount area, in the white body. "" at step 1.
+  function kickerText() {
+    if (STEP === 2) return STEP_VIA === "reopen" ? "Changed your mind?" : "Welcome back!";
+    if (STEP === 3) return "Before you go";
+    return "";
+  }
+  // The sentence over the form. Same promise at every step (the dealer reaches
+  // out); only the lead-in changes. No deadlines or scarcity: the fine print
+  // carries the offer's real terms.
+  function introHtml(dealer) {
+    var who = dealer || "our team";
+    var tail = isSite() ? "about your offer." : "with your offer on this vehicle.";
+    var car = !isSite() && CFG.vehicleLabel ? String(CFG.vehicleLabel) : "";
+    if (STEP === 2 && STEP_VIA === "reopen") return "Your offer is right here. Enter your info and " + who + " will reach out " + tail;
+    if (STEP === 2) return (car ? "Still looking at the " + esc(car) + "? " : "Still thinking it over? ")
+      + "Your offer is still here. Enter your info and " + who + " will reach out " + tail;
+    if (STEP === 3) return "Claim your offer now" + (PRINT_ON ? " and bring your voucher when you visit" : "")
+      + ". Enter your info and " + who + " will reach out " + tail;
+    return "Enter your info and " + who + " will reach out " + tail;
   }
 
   // ── Markup ─────────────────────────────────────────────────────────────────
@@ -601,6 +706,8 @@
       + ".body{padding:20px 24px 22px;background:#fff;border-radius:0 0 16px 16px}"
       + "@media (max-width:560px){.body{padding:16px 18px 18px}.band{padding:12px 18px 16px}.veh{padding:10px 18px 11px}}"
       + ".sub{font-size:15px;line-height:1.45;color:#3A4150;margin:0 0 16px}"
+      + ".kick{font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.01em;color:#14171F;margin:0 0 8px}"
+      + "@media (max-width:560px){.kick{font-size:18px}}"
       + "label{display:block;font-size:13px;font-weight:600;color:#2A303C;margin:0 0 6px}"
       + "input{display:block;width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #CDD2DB;"
       + "border-radius:10px;margin:0 0 12px;color:#14171F;background:#fff}"
@@ -741,11 +848,11 @@
       +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
       +   (isSite() ? "" : vehicleHtml())
       +   '<div class="body">'
+      +     (kickerText() ? '<p class="kick" id="kick">' + esc(kickerText()) + '</p>' : "")
       +     (isScratch() ? prizeHtml(useImage) : "")
       +     (isScratch() && !REVEALED ? '<button class="no" id="no0" type="button">No thanks</button>' : "")
       +     '<form id="form" novalidate' + (isScratch() && !REVEALED ? ' style="display:none"' : "") + '>'
-      +       '<p class="sub">Enter your info and ' + (dealer || "our team") + ' will reach out '
-      +         (isSite() ? 'about your offer.' : 'with your offer on this vehicle.') + '</p>'
+      +       '<p class="sub">' + introHtml(dealer) + '</p>'
       +       '<div class="err" id="err" role="alert"></div>'
       +       '<label for="n">Name</label>'
       +       '<input id="n" name="name" type="text" autocomplete="name" required maxlength="120">'
@@ -754,7 +861,7 @@
       +       '<label for="p">Phone</label>'
       +       '<input id="p" name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="(555) 555-5555">'
       +       '<input class="hp" id="hp" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">'
-      +       '<button class="go" id="go" type="submit">Claim my offer</button>'
+      +       '<button class="go" id="go" type="submit">' + goLabel() + '</button>'
       +       '<button class="no" id="no" type="button">No thanks</button>'
       +       '<p class="fine">' + esc(CFG.disclaimer || "")
       +         ' By submitting, you are asking ' + (dealer || "the dealer") + ' to contact you about this offer. '
@@ -806,6 +913,7 @@
 
     removeTab();
     if (reopen) viaTab = true;
+    advanceStep(!!reopen);   // follow-up step for THIS showing (see header)
     shown = true;
     ssSet("lp_promo_shown_" + SKEY, "1");
     ssSet("lp_promo_shown_any", "1");
@@ -843,7 +951,7 @@
     if (reopen) {
       promoEvent("lp_promo_reopened", {
         item_id: VIN, page_type: evPage(), element_type: "popup",
-        event_action_result: "popup",
+        event_action_result: "popup", popup_step: STEP_REPORT ? STEP : null,
         offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
         page_location: window.location.href,
       });
@@ -854,7 +962,7 @@
     beat();
     promoEvent("lp_promo_view", {
       item_id: VIN, page_type: evPage(), element_type: "popup",
-      event_action_result: "popup", trigger_type: trigger,
+      event_action_result: "popup", trigger_type: trigger, popup_step: STEP_REPORT ? STEP : null,
       offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
       creative: (isScratch() ? "scratch_" : "") + (useImage ? "image" : "text"),
       page_location: window.location.href,
@@ -965,6 +1073,7 @@
     r.getElementById("tx").addEventListener("click", function () {
       ssSet("lp_promo_tab_closed_" + SKEY, "1");
       lsSet("lp_promo_tab_closed_" + SKEY, String(Date.now()));
+      endFollowup();   // a firm no: no more follow-up messages (Scott, Oct 29)
       removeTab();
       promoEvent("lp_promo_tab_dismissed", { item_id: VIN, page_type: evPage(), page_location: window.location.href });
     });
@@ -1256,6 +1365,8 @@
         // offerId = the offer this shopper was SHOWN; the server records the
         // lead against it (and re-checks it's still live for this car).
         vin: VIN, offerId: CFG.offerId, name: nm, email: em, phone: ph, trigger: trigger,
+        // Follow-up step this showing was (only when the rooftop has it on).
+        step: STEP_REPORT ? STEP : undefined, stepVia: STEP_REPORT ? STEP_VIA : undefined,
         page: PAGEKIND,
         demo: DEMO || undefined,   // demo: validated, voucher returned, NOT saved or sent
         pageUrl: window.location.href, company: root.getElementById("hp").value,
@@ -1269,7 +1380,7 @@
         vins: STORAGE_OK && ENG ? recentVins(10) : [],
       }).then(function (res) {
         if (!res.ok) {
-          go.disabled = false; go.textContent = "Claim my offer";
+          go.disabled = false; go.textContent = goLabel();
           if (res.status === 410) {
             // Offer was paused/ended while the popup was open. Say so plainly
             // and let them close it; don't pretend it worked.
@@ -1280,6 +1391,7 @@
           return fail((res.json && res.json.error) || "Something went wrong. Please try again.");
         }
         submitted = true;
+        endFollowup();
         if (!DEMO) {   // a demo submit must not hide the popup from this browser later
           lsSet("lp_promo_submitted", String(Date.now()));
           ssSet("lp_promo_submitted_s", "1");
@@ -1313,12 +1425,12 @@
         promoEvent("lp_promo_submitted", {
           item_id: VIN, page_type: evPage(), element_type: "form", form_type: "offer",
           event_action_result: "complete", trigger_type: trigger,
-          reopened_from_tab: viaTab ? "yes" : "no",
+          reopened_from_tab: viaTab ? "yes" : "no", popup_step: STEP_REPORT ? STEP : null,
           offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
           page_location: window.location.href,
         });
       }).catch(function () {
-        go.disabled = false; go.textContent = "Claim my offer";
+        go.disabled = false; go.textContent = goLabel();
         fail("Network error. Please try again.");
       });
     });
