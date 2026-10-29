@@ -117,7 +117,8 @@
 // hidden under a silver foil (a canvas over the offer). The shopper scratches
 // it off with a finger or mouse; at about half cleared the rest fades away and
 // the form appears. "Tap to reveal" does the same in one tap (and from the
-// keyboard). Revealed once, it stays revealed for that offer this session.
+// keyboard). Revealed once, it stays revealed for that offer this session —
+// except in demo / test mode, where each page load starts covered again.
 // dataLayer gets lp_promo_revealed with method scratch / tap.
 //
 // LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
@@ -1358,7 +1359,10 @@
       CFG = c;
       // Memory key: the car for its own offer, the offer for a site-wide one.
       SKEY = c.placement === "site" ? "o" + c.offerId : VIN;
-      REVEALED = c.reveal !== "scratch" || !!ssGet("lp_promo_rev_" + SKEY);
+      // Demo / test mode: every page load starts with a fresh foil, so a
+      // refresh shows the scratch card again (handy when showing a dealer).
+      // Within one page, reopening from the tab still remembers the reveal.
+      REVEALED = c.reveal !== "scratch" || (!TEST && !!ssGet("lp_promo_rev_" + SKEY));
       // Dashboard tab / color settings win over GTM. Applied before anything
       // is drawn, so the tab never shows in the wrong color or spot.
       applyLook(c.tab);
