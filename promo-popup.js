@@ -550,6 +550,7 @@
       + "filter:drop-shadow(0 22px 30px rgba(0,0,0,.30));transform:translate(-50%,-46%);opacity:0;"
       + "transition:transform .22s ease,opacity .22s ease}"
       + ".box.in{transform:translate(-50%,-50%);opacity:1}"
+      + ".box:focus{outline:none}"
       + "@media (max-width:560px){.box{left:0;right:0;top:auto;bottom:0;width:100%;max-height:92vh;"
       + "transform:translateY(24px)}.box.in{transform:translateY(0)}}"
       // Hang-tag top (Oct 2026, matches the VinPop logo): a pointed roof in the
@@ -724,7 +725,7 @@
     var dealer = esc(CFG.dealerName || "");
     return ""
       + '<div class="scrim" id="scrim"></div>'
-      + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl">'
+      + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl" tabindex="-1">'
       +   '<div class="roof" aria-hidden="true"><i></i></div>'
       +   (isScratch() ? scratchHeaderHtml() : headerHtml(useImage))
       +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
@@ -818,7 +819,11 @@
       // its size, and put focus on "Tap to reveal" (the keyboard's way in).
       if (isScratch() && !REVEALED) setupFoil();
       setTimeout(function () {
-        var f = isScratch() && !REVEALED ? root.getElementById("rv") : root.getElementById("n");
+        // Phones: focus the dialog itself. Focusing a button by script makes
+        // iOS Safari draw its blue keyboard-focus ring on it.
+        var f = isScratch() && !REVEALED
+          ? (isDesktopPointer() ? root.getElementById("rv") : root.getElementById("box"))
+          : root.getElementById("n");
         if (f) f.focus();
       }, 240);
     });
@@ -1166,7 +1171,7 @@
       // the offer they just uncovered.
       var n = root.getElementById("n");
       if (n && isDesktopPointer()) n.focus();
-      else { var x = root.getElementById("x"); if (x) x.focus(); }
+      else { var bx = root.getElementById("box"); if (bx) bx.focus({ preventScroll: true }); }
     }, method === "tap" ? 200 : 380);
     promoEvent("lp_promo_revealed", {
       item_id: VIN, page_type: evPage(), element_type: "popup",
