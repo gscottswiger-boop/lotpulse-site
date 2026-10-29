@@ -555,7 +555,14 @@
       // bottom sheet), so the dealer's page stays visible around it. Too tall
       // for the screen (long form, small phone): it scrolls inside the card.
       + "@media (max-width:560px){.box{width:calc(100vw - 32px);"
-      + "max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}}"
+      + "max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}"
+      // Too tall to float (the form is showing): keep the side margins but
+      // run the card down to the bottom edge of the screen, square bottom
+      // corners, scrolling inside. A short card (scratch, covered) floats.
+      + ".box.tall{top:auto;bottom:0;transform:translate(-50%,24px);"
+      + "max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px))}"
+      + ".box.tall.in{transform:translate(-50%,0)}"
+      + ".box.tall .body{border-radius:0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}"
       // Hang-tag top (Oct 2026, matches the VinPop logo): a pointed roof in the
       // accent color with a punched hole that shows the page behind it. The
       // ring is a lighter (or, on a light accent, darker) edge around the hole.
@@ -815,6 +822,8 @@
     lastFocus = document.activeElement;
     savedOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
+    fitBox();
+    window.addEventListener("resize", onResize);
     requestAnimationFrame(function () {
       root.getElementById("scrim").classList.add("in");
       root.getElementById("box").classList.add("in");
@@ -853,12 +862,32 @@
     log("shown (" + trigger + ", " + (useImage ? "image" : "text") + ")");
   }
 
+  // Phones: a card taller than the screen runs to the bottom edge instead of
+  // floating clipped in the middle (see .box.tall). Checked on open, after
+  // a scratch reveal and on resize / rotation.
+  function fitBox() {
+    if (!host) return;
+    var box = root.getElementById("box");
+    if (!box) return;
+    var phone = false;
+    try { phone = window.matchMedia("(max-width:560px)").matches; } catch (e) {}
+    if (!phone) { box.classList.remove("tall"); return; }
+    var was = box.classList.contains("tall");
+    box.classList.remove("tall");
+    var tall = box.scrollHeight > box.clientHeight + 1
+      || box.getBoundingClientRect().height > window.innerHeight - 40;
+    if (tall) box.classList.add("tall");
+    else if (was) box.classList.remove("tall");
+  }
+  function onResize() { fitBox(); }
+
   function hide(reason) {
     if (!host) return;
     var box = root.getElementById("box"), scrim = root.getElementById("scrim");
     box.classList.remove("in"); scrim.classList.remove("in");
     document.documentElement.style.overflow = savedOverflow || "";
     document.removeEventListener("keydown", onKey, true);
+    window.removeEventListener("resize", onResize);
     var h = host; host = null;
     setTimeout(function () { if (h && h.parentNode) h.parentNode.removeChild(h); }, 250);
     try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
@@ -1170,6 +1199,7 @@
       if (hint) hint.style.display = "none";
       if (no0) no0.style.display = "none";
       if (form) { form.style.display = "block"; form.className = "form-in"; }
+      fitBox();
       // Desktop: straight into the form. Phones: don't pop the keyboard over
       // the offer they just uncovered.
       var n = root.getElementById("n");
@@ -1263,6 +1293,7 @@
           ? "Demo only: nothing was saved or sent to " + (CFG.dealerName || "the dealer") + ". A real shopper sees: “" + (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.”"
           : (CFG.dealerName || "The dealer") + " has your request and will reach out about your offer.";
         root.getElementById("done").style.display = "block";
+        fitBox();   // the thank-you is short: float it again
         // Voucher: only the server's submit response carries it, so there is
         // nothing to print until the shopper has actually given their details.
         var voucher = res.json && res.json.voucher;
