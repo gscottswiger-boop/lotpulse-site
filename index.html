@@ -433,6 +433,25 @@
   .pv-sub{font-size:14.5px;font-weight:600;margin-top:7px;opacity:.95}
   .pv-img{display:block;width:100%;height:auto;max-height:240px;object-fit:contain;background:#1F2A44}
   .pv-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:7px 12px;border-radius:0 0 12px 12px}
+  /* Scratch-to-reveal preview: band asks them to scratch; the card below is half scratched. */
+  .pv-sch{font-size:22px;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+  .pv-body{background:#fff;padding:12px 16px 14px}
+  .pv-tk{position:relative;height:120px;border-radius:10px;overflow:hidden;border:2px dashed #C7CDD8;background:#F7F8FB;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .pv-tk .pa{font-weight:800;font-size:38px;line-height:1;letter-spacing:-.02em;color:#1F2A44}.pv-tk .pa small{font-size:19px;margin-left:5px}
+  .pv-tk .pl{font-size:13px;font-weight:600;color:#2A303C;margin-top:5px}
+  .pv-tk .foil{position:absolute;inset:0;background:linear-gradient(135deg,#B8BFCA,#EEF1F5 32%,#C2C8D2 52%,#E5E8EE 78%,#ADB4C0);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4A5266;font-weight:800;font-size:17px;letter-spacing:.02em;
+    -webkit-mask:radial-gradient(circle 30px at 16% 64%,transparent 97%,#000 100%);mask:radial-gradient(circle 30px at 16% 64%,transparent 97%,#000 100%)}
+  .pv-tk .foil small{font-weight:500;font-size:11.5px;color:#5E6678;margin-top:3px;letter-spacing:0}
+  .pv-hint{font-size:11.5px;color:var(--slate);margin-top:7px}
+  .pageopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+  @media (max-width:520px){.pageopts{grid-template-columns:1fr}}
+  .pageopt{display:flex;gap:9px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;background:#fff}
+  .pageopt input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--action);flex:none}
+  .pageopt.on{border-color:var(--action);background:var(--new-soft)}
+  .pageopt b{display:block;font-size:13.5px}.pageopt small{display:block;font-size:11.5px;color:var(--slate);font-weight:500;margin-top:1px}
+  .chipsite{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 6px;margin-left:4px;vertical-align:1px;background:var(--porcelain);color:var(--ink)}
   .setrow textarea{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--porcelain);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;outline:none;resize:vertical;min-height:62px}
   .setrow textarea:focus{border-color:var(--action)}
   .mkchips{display:flex;flex-wrap:wrap;gap:6px}
@@ -2155,7 +2174,9 @@
     var v=l.vehicle;
     var veh = v ? [v.year,v.make,v.model,v.trim].filter(Boolean).join(" ")
                   +(v.stockNumber?" · #"+v.stockNumber:"")+(v.stillOnLot===false?" · no longer on lot":"")
-                : "VIN "+l.vin+" · no longer in inventory";
+                : l.vin ? "VIN "+l.vin+" · no longer in inventory" : "";
+    // Site-wide offer: not for one car. A car here is just the page they claimed on.
+    if(l.siteWide||!l.vin) veh = "Site-wide offer"+(veh?" · claimed while viewing "+veh:" · no specific vehicle");
     var phoneDisp=l.phone?l.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/,"($1) $2-$3"):"";
     var crm = l.crm==="sent" ? '<span class="statpill ok">Sent to CRM</span>'
       : '<span class="statpill '+(l.crm==="failed"?'bad':'pending')+'" title="'+escapeHtml(l.crmError||"")+'">'
@@ -2340,19 +2361,22 @@
     var cards=offers.map(function(o,idx){
       var st=o.stats||{}, o7=st.last7||{};
       var warn="";
-      var area=!!o.targetArea;
-      if(o.status==="live" && !paused && s.enabled){
+      var area=!!o.targetArea, site=o.placement==="site";
+      if(o.status==="live" && !paused && s.enabled && !site){
         if(o.matchesOnLot===0) warn='<div class="owarn">No cars on the lot match this offer right now.</div>';
         else if(area && o.winsOnLot===0 && o.blockedBy) warn='<div class="owarn">Shoppers in this offer\'s area get “'+escapeHtml(o.blockedBy.name)+'” instead, because it\'s higher on the list and covers the same cars for everyone. Move this offer above it.</div>';
         else if(o.winsOnLot===0) warn='<div class="owarn">Every car it matches is taken by an offer above it. Move it up or narrow the one above.</div>';
       }
-      var cov = o.status==="live"
+      var cov = site
+        ? 'Shows on <strong>'+escapeHtml(o.showOnLabel||"")+'</strong>'+(o.showOn&&o.showOn.vehicles?' <span style="color:var(--slate)">(on vehicle pages only when the car has no offer of its own)</span>':'')
+        : o.status==="live"
         ? 'Showing on <strong>'+o.winsOnLot+'</strong> car'+(o.winsOnLot===1?'':'s')+(area?' to shoppers in its area':'')+(o.matchesOnLot>o.winsOnLot?' <span style="color:var(--slate)">('+(o.matchesOnLot-o.winsOnLot)+' more go to offers above)</span>':'')
         : 'Matches '+o.matchesOnLot+' car'+(o.matchesOnLot===1?'':'s')+' on the lot';
       return '<div class="ocard" data-oid="'+escapeHtml(o.id)+'">'
         +'<div class="ohead"><span class="opri">'+(idx+1)+'</span>'
           +'<div class="oname"><div class="on1">'+escapeHtml(o.name)+'</div>'
-            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+escapeHtml(o.targets)+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')+'</div></div>'
+            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+(site?'Site-wide':escapeHtml(o.targets))+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')
+              +(site?'<span class="chipsite">Site-wide</span>':'')+(o.reveal==="scratch"?'<span class="chipsite">Scratch-off</span>':'')+'</div></div>'
           +prStatusPill(o.status)+'</div>'
         +'<div class="ometa">'+cov+' · 7 days: '+(o7.impressions||0)+' views, '+(o7.submits||0)+' leads, '+prPct(o7.conversionRate)+'</div>'
         +warn
@@ -2373,7 +2397,7 @@
       +(flash?'<div class="pok">'+escapeHtml(flash)+'</div>':'')
       +(d.crmDestination?'':'<div class="pwarn">No CRM lead email is set for this rooftop, so VinPop leads won\'t reach the dealer\'s CRM. Set one in Dealer settings (gear icon).</div>')
       +(s.demoMode?'<div class="pdemo"><strong>Demo mode is on.</strong> Shoppers don\'t see VinPop. Live now still tracks every visitor. '
-        +'To show the popup, add <code>?vinpop=demo</code> to the end of any vehicle page URL (it stays on in that browser tab; <code>?vinpop=off</code> ends it). '
+        +'To show the popup, add <code>?vinpop=demo</code> to the end of any page URL where an offer shows (it stays on in that browser tab; <code>?vinpop=off</code> ends it). '
         +'Demo submissions are not saved or sent to the CRM.</div>':'')
       +(d.status==="idle"?'<div class="pwarn">The popup is on, but no offer is running right now, so shoppers won\'t see anything.</div>':'')
       +'<div class="mstats">'
@@ -2385,7 +2409,7 @@
       +'<div class="err" id="pr-err" style="display:none"></div>'
 
       +'<div class="psec">Offers</div>'
-      +'<p class="pnote" style="margin-top:-4px">If a car matches more than one offer, the one <strong>highest on this list</strong> wins. Use the arrows to reorder. Put offers for a city or ZIP area <strong>above</strong> your everywhere offers.'
+      +'<p class="pnote" style="margin-top:-4px">If a car matches more than one offer, the one <strong>highest on this list</strong> wins. Use the arrows to reorder. Put offers for a city or ZIP area <strong>above</strong> your everywhere offers. Site-wide offers follow the same order among themselves, and a car\'s own offer always comes first on its vehicle page.'
         +(d.inventoryCount?' '+d.uncoveredOnLot+' of '+d.inventoryCount+' cars on the lot have no offer right now.':'')+'</p>'
       +'<div id="pr-offers">'+cards+'</div>'
       +'<button class="mlink" id="pr-add" style="width:100%;border:0;cursor:pointer;margin-top:4px;background:#fff;color:var(--action);border:1.5px solid var(--action)">+ Add offer</button>'
@@ -2663,7 +2687,15 @@
   function prRenderEditor(o){
     var d=_pr.d, tz=d.dealer.timezone, isNew=!o;
     o=o||{ name:"", enabled:true, offerCents:d.defaults.offerCents, headline:"", disclaimer:"",
-           startAt:null, endAt:null, vehicleFilter:null, image:null };
+           startAt:null, endAt:null, vehicleFilter:null, image:null,
+           placement:"vehicle", reveal:"standard", showOn:null };
+    // Where it shows (vehicle pages vs site-wide) and how it reveals.
+    var placement=o.placement==="site"?"site":"vehicle", reveal=o.reveal==="scratch"?"scratch":"standard";
+    var showOn=o.showOn||{home:true,listings:false,vehicles:false,other:true,urls:[]};
+    var siteReady=d.siteReady!==false;
+    var kinds=d.pageKinds||[{key:"home",label:"Homepage"},{key:"listings",label:"Inventory listings"},{key:"vehicles",label:"Vehicle pages"},{key:"other",label:"All other pages"}];
+    var KIND_SUB={home:"Your website's front page",listings:"Search results and inventory lists",
+      vehicles:"Only on cars that have no offer of their own",other:"Specials, service, finance, about…"};
     var f=o.vehicleFilter||{}, image=o.image;
     var chosenMakes=(f.make||[]).map(function(m){return m.toLowerCase();});
     var chosenModels=(f.model||[]).map(function(m){return m.toLowerCase();});
@@ -2693,17 +2725,39 @@
       +'<div class="psec" style="border-top:0;padding-top:0;margin-top:6px">Preview</div>'
       +'<div class="pv" id="pr-preview"></div>'
 
+      +(siteReady
+        ? '<div class="psec">Where it shows <span class="newtag">New</span></div>'
+          +'<div class="wv-seg" id="pl-seg" role="group" aria-label="Where this offer shows">'
+            +'<button type="button" data-v="vehicle">On matching vehicle pages</button><button type="button" data-v="site">Site-wide</button></div>'
+          +'<p class="pnote" id="pl-note-vehicle" style="margin:6px 0 0">Shows on the vehicle page of each car it matches, and names that car.</p>'
+          +'<div id="pl-site" style="display:none">'
+            +'<p class="pnote" style="margin:6px 0 10px">Not tied to a car (for example, $500 off any pre-owned vehicle). Choose the pages it shows on.</p>'
+            +'<div class="pageopts" id="pl-kinds">'+kinds.map(function(k){
+                var on=!!showOn[k.key];
+                return '<label class="pageopt'+(on?' on':'')+'"><input type="checkbox" value="'+escapeHtml(k.key)+'"'+(on?' checked':'')+'>'
+                  +'<span><b>'+escapeHtml(k.label)+'</b><small>'+escapeHtml(KIND_SUB[k.key]||"")+'</small></span></label>';
+              }).join("")+'</div>'
+            +'<div class="setrow"><label>Also show on pages whose address contains <span style="font-weight:400;color:var(--slate)">(optional · one per line)</span></label>'
+              +'<textarea id="pl-urls" rows="2" placeholder="/specials&#10;/service" aria-label="URL rules">'+escapeHtml((showOn.urls||[]).join("\n"))+'</textarea></div>'
+            +'<p class="pnote">Use this to target one page, like <code>/specials</code>, with “All other pages” unticked. Sites name pages differently, so open the page on the dealer\'s site and copy a piece of its address.</p>'
+          +'</div>'
+          +'<div class="psec">How it appears</div>'
+          +'<div class="wv-seg" id="rv-seg" role="group" aria-label="How this offer appears">'
+            +'<button type="button" data-v="standard">Show the offer</button><button type="button" data-v="scratch">Scratch to reveal</button></div>'
+          +'<p class="pnote" id="rv-note" style="margin:6px 0 0"></p>'
+        : '<div class="pwarn" style="margin-top:6px">Site-wide and scratch-off offers turn on after a database update. Run <code>/admin/patch</code>, then reopen this screen.</div>')
+
       +'<div class="psec">Offer</div>'
       +'<div class="setrow"><label>Offer amount ($)</label><input id="pr-offer" type="number" min="1" step="1" inputmode="numeric" value="'+Math.round((o.offerCents||0)/100)+'"></div>'
       +'<div class="setrow"><label>Line under the offer amount <span style="font-weight:400;color:var(--slate)">(optional)</span></label>'
-        +'<input id="pr-headline" maxlength="120" value="'+escapeHtml(o.headline||"")+'" placeholder="this 2024 Toyota Tacoma  (automatic: names the vehicle)"></div>'
+        +'<input id="pr-headline" maxlength="120" value="'+escapeHtml(o.headline||"")+'" placeholder=""></div>'
       +'<div class="setrow"><label>Offer graphic <span style="font-weight:400;color:var(--slate)">(optional · replaces the colored header · about 1200×600 works best)</span></label>'
         +(isNew?'<div class="pnote" style="margin:0">Save the offer first, then add a graphic.</div>'
                :'<input type="file" id="pr-image" accept="image/jpeg,image/png,image/webp"><div class="imgrow" id="pr-imgrow"></div>')
       +'</div>'
       +'<p class="pnote">If you use a graphic, make sure it shows the same amount as <strong>Offer amount</strong> above. The CRM lead records that number, not whatever the picture says.</p>'
       +'<div class="setrow"><label>Fine print <span style="font-weight:400;color:var(--slate)">(optional · get the dealer\'s approved wording)</span></label>'
-        +'<textarea id="pr-disclaimer" maxlength="400" placeholder="Offer applies to this vehicle only. Cannot be combined with some offers. See dealer for details.">'+escapeHtml(o.disclaimer||"")+'</textarea></div>'
+        +'<textarea id="pr-disclaimer" maxlength="400" placeholder="">'+escapeHtml(o.disclaimer||"")+'</textarea></div>'
 
       +'<div class="psec">Schedule</div>'
       +'<div class="setrow2even">'
@@ -2712,7 +2766,7 @@
       +'</div>'
       +'<p class="pnote">Blank = no limit. Dates are in the dealer\'s time zone; the end date runs through 11:59 pm.</p>'
 
-      +'<div class="psec">Which vehicles</div>'
+      +'<div id="pr-vehwrap"><div class="psec">Which vehicles</div>'
       +'<div class="setrow"><label>Condition</label><select id="pr-cond">'
         +[["","Any"],["new","New only"],["used","Used (includes certified)"],["certified","Certified only"]]
           .map(function(x){ return '<option value="'+x[0]+'"'+((f.condition||"")===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join("")
@@ -2723,7 +2777,7 @@
       +'</div>'
       +'<div class="setrow"><label>Makes <span style="font-weight:400;color:var(--slate)">(none selected = all makes)</span></label><div class="mkchips" id="pr-makes">'+makeChips+'</div></div>'
       +'<div class="setrow"><label>Models <span style="font-weight:400;color:var(--slate)">(none selected = all models)</span></label><div class="mkchips" id="pr-models"></div></div>'
-      +'<div class="pmatch" id="pr-match">Checking inventory…</div>'
+      +'<div class="pmatch" id="pr-match">Checking inventory…</div></div>'
 
       +'<div class="psec">Which shoppers see this offer <span class="newtag">New</span></div>'
       +'<div class="wv-seg" id="ar-seg" role="group" aria-label="Which shoppers see this offer">'
@@ -2965,10 +3019,24 @@
 
     function renderPreview(){
       var dollars=parseInt(document.getElementById("pr-offer").value,10);
-      var sub=document.getElementById("pr-headline").value.trim()||"this 2024 Toyota Tacoma";
+      var sub=document.getElementById("pr-headline").value.trim()||(placement==="site"?"your next vehicle":"this 2024 Toyota Tacoma");
       var el=document.getElementById("pr-preview");
       var racc=((d.settings||{}).tab||{}).accent||"";
       var roof='<div class="pv-roof'+(racc&&rtTextOn(racc)===RT_INK?' lt':'')+'"'+(racc?' style="background:'+escapeHtml(racc)+'"':'')+' aria-hidden="true"><i></i></div>';
+      if(reveal==="scratch"){
+        // Scratch: band asks them to scratch; the card shows the offer with a
+        // corner scratched off so the agency can see both layers.
+        var acc2=((d.settings||{}).tab||{}).accent;
+        el.innerHTML=roof+'<div class="pv-band"'+(acc2?' style="background:'+escapeHtml(acc2)+';color:'+rtTextOn(acc2)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
+          +'<div class="pv-sch">Scratch to reveal your offer</div></div>'
+          +'<div class="pv-body"><div class="pv-tk">'
+            +(image?'<img src="'+escapeHtml(API+image.path)+'" alt="Offer graphic" style="max-width:100%;max-height:100%;object-fit:contain">'
+                   :'<div class="pa">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'<small>OFF</small></div><div class="pl">'+escapeHtml(sub)+'</div>')
+            +'<div class="foil">SCRATCH HERE<small>to see your offer</small></div></div>'
+          +'<div class="pv-hint">Shoppers scratch with a finger or mouse (or tap “Tap to reveal”), then the form appears.</div></div>'
+          +'<div class="pv-cap">'+(placement==="site"?'Site-wide: no car is named on the popup or the voucher.':'The car is named under the header on each vehicle page.')+'</div>';
+        return;
+      }
       if(image){
         el.innerHTML=roof+'<img class="pv-img" src="'+escapeHtml(API+image.path)+'" alt="Offer graphic">'
           +'<div class="pv-cap">Showing your graphic. If it fails to load on a dealer site, the text header is used instead.</div>';
@@ -2980,7 +3048,7 @@
           +'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>'
           +'<div class="pv-sub">'+escapeHtml(sub)+'</div></div>'
           +'<div class="pv-cap">'+(acc?'Header color is set under Reopen tab for this rooftop. '
-            :'Header color comes from the site\'s GTM tag (accentColor), or the color set under Reopen tab. ')+'Vehicle name fills in per car.</div>';
+            :'Header color comes from the site\'s GTM tag (accentColor), or the color set under Reopen tab. ')+(placement==="site"?'Site-wide: no car is named on the popup or the voucher.':'Vehicle name fills in per car.')+'</div>';
       }
     }
     function renderImageRow(){
@@ -2998,7 +3066,36 @@
       });
     }
     ["pr-offer","pr-headline"].forEach(function(id){ document.getElementById(id).addEventListener("input", renderPreview); });
-    renderPreview(); renderImageRow(); renderModels(); runMatch();
+
+    // Where it shows / how it appears.
+    function placeShow(){
+      document.querySelectorAll("#pl-seg button").forEach(function(b){ var on=b.getAttribute("data-v")===placement; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
+      document.querySelectorAll("#rv-seg button").forEach(function(b){ var on=b.getAttribute("data-v")===reveal; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
+      var site=placement==="site";
+      var pv=document.getElementById("pl-note-vehicle"); if(pv) pv.style.display=site?"none":"";
+      var ps=document.getElementById("pl-site"); if(ps) ps.style.display=site?"":"none";
+      document.getElementById("pr-vehwrap").style.display=site?"none":"";
+      var rn=document.getElementById("rv-note");
+      if(rn) rn.textContent=reveal==="scratch"
+        ? "The amount is hidden under a scratch-off foil. Shoppers scratch it with a finger or mouse (or tap to reveal), then the form appears."
+        : "The amount shows straight away, with the form under it (as today).";
+      document.getElementById("pr-headline").placeholder=site?"your next vehicle  (e.g. any pre-owned vehicle)":"this 2024 Toyota Tacoma  (automatic: names the vehicle)";
+      document.getElementById("pr-disclaimer").placeholder=site?"Cannot be combined with some offers. See dealer for details."
+        :"Offer applies to this vehicle only. Cannot be combined with some offers. See dealer for details.";
+      renderPreview();
+    }
+    document.querySelectorAll("#pl-seg button").forEach(function(b){ b.addEventListener("click", function(){ placement=b.getAttribute("data-v"); placeShow(); if(placement==="vehicle") scheduleMatch(); }); });
+    document.querySelectorAll("#rv-seg button").forEach(function(b){ b.addEventListener("click", function(){ reveal=b.getAttribute("data-v"); placeShow(); }); });
+    document.querySelectorAll("#pl-kinds input").forEach(function(cb){ cb.addEventListener("change", function(){ cb.closest(".pageopt").classList.toggle("on", cb.checked); }); });
+    function showOnBody(){
+      var so={}; kinds.forEach(function(k){ so[k.key]=false; });
+      document.querySelectorAll("#pl-kinds input").forEach(function(cb){ so[cb.value]=cb.checked; });
+      var u=document.getElementById("pl-urls");
+      so.urls=u?u.value.split(/[\n,]+/).map(function(x){ return x.trim(); }).filter(Boolean):[];
+      return so;
+    }
+    placeShow();
+    renderPreview(); renderImageRow(); renderModels(); if(placement==="vehicle") runMatch();
 
     var imgInput=document.getElementById("pr-image");
     if(imgInput) imgInput.addEventListener("change", function(){
@@ -3039,9 +3136,17 @@
         disclaimer: document.getElementById("pr-disclaimer").value.trim(),
         startAt: document.getElementById("pr-start").value,
         endAt: document.getElementById("pr-end").value,
-        vehicleFilter: fl,
+        vehicleFilter: placement==="site"?null:fl,
         targetArea: arBody(),
       };
+      if(siteReady){
+        body.placement=placement; body.reveal=reveal;
+        if(placement==="site"){
+          body.showOn=showOnBody();
+          var anyKind=kinds.some(function(k){ return body.showOn[k.key]; });
+          if(!anyKind && !body.showOn.urls.length) return showErr("Choose at least one place for this offer to show.");
+        }
+      }
       if(arMode==="cities" && !arCities.length) return showErr("Add at least one city, or choose Anywhere.");
       if(arMode==="zips" && !arZipList().length) return showErr("Add at least one ZIP code, or choose Anywhere.");
       btn.disabled=true; btn.textContent="Saving…";

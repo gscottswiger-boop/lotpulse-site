@@ -101,6 +101,25 @@
 // server shows the popup ONLY to demo tabs; every other shopper sees nothing,
 // while "Live now" keeps tracking everyone.
 //
+// SITE-WIDE OFFERS (Oct 2026): an offer can also be "site-wide": not tied to
+// a car ("$500 off any pre-owned vehicle"), shown on the page kinds the agency
+// ticks (homepage, inventory listings, vehicle pages, all other pages) and/or
+// pages whose path contains a URL rule. So on EVERY page the popup now asks
+// /v1/promo/config with page=home|listings|vehicles|other and the path (never
+// the query string). The server decides; on a vehicle page the car's own offer
+// wins and a site offer is only the fallback. A site-wide popup shows no car,
+// and its voucher names none. Its "don't show again" / reopen-tab memory is
+// kept per OFFER ("o<id>") instead of per VIN. Non-vehicle pages that get "no
+// site offer here" remember it for 10 minutes in sessionStorage, so browsing
+// doesn't call the API on every page.
+//
+// SCRATCH TO REVEAL: an offer set to reveal "scratch" opens with its amount
+// hidden under a silver foil (a canvas over the offer). The shopper scratches
+// it off with a finger or mouse; at about half cleared the rest fades away and
+// the form appears. "Tap to reveal" does the same in one tap (and from the
+// keyboard). Revealed once, it stays revealed for that offer this session.
+// dataLayer gets lp_promo_revealed with method scratch / tap.
+//
 // LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
 // visible, when the tab is hidden/shown, and on pagehide (sendBeacon). It
 // sends the path (query string masked), the page title, the VIN on a VDP, the
@@ -401,6 +420,20 @@
     } catch (e) { /* analytics must never break the popup */ }
   }
 
+  // ASC page_type for the page the popup is on, and the car (if any).
+  function evPage() {
+    return ({ home: "home", listings: "itemlist", vehicles: "item", other: "other" })[PAGEKIND] || "item";
+  }
+  function isSite() { return !!(CFG && CFG.placement === "site"); }
+  function isScratch() { return !!(CFG && CFG.reveal === "scratch"); }
+
+  // "/" and the usual index files are the homepage; everything else that
+  // isn't a vehicle or listing page is "other".
+  function homeOrOther() {
+    var p = String(window.location.pathname || "/").toLowerCase();
+    return /^\/(index\.(html?|php|aspx?))?$/.test(p) || p === "/home" || p === "/home/" ? "home" : "other";
+  }
+
   // ── VIN detection (mirrors lotpulse-widget.js) ─────────────────────────────
   function cleanVin(raw) {
     if (!raw) return null;
@@ -476,6 +509,10 @@
 
   // ── State ──────────────────────────────────────────────────────────────────
   var VIN = null, CFG = null, IMG = null, shown = false, host = null, root = null;
+  // PAGEKIND: home | listings | vehicles | other. SKEY: what "seen / shown /
+  // tab closed" is remembered against — the VIN for a car's offer, "o<id>"
+  // for a site-wide offer. REVEALED: scratch offer already uncovered.
+  var PAGEKIND = null, SKEY = null, REVEALED = true;
   var lastFocus = null, savedOverflow = null, sheetWaits = 0;
   var tabHost = null, lastTrigger = "timed", offerGone = false, viaTab = false;
 
@@ -483,11 +520,13 @@
     try { return window.matchMedia("(hover: hover) and (pointer: fine)").matches; } catch (e) { return false; }
   }
 
-  function clientSuppressed(vin, days) {
+  // key: VIN (a car's offer) or "o<id>" (site-wide offer). The "already
+  // watched" check is always about the car on this page, if there is one.
+  function clientSuppressed(key, days) {
     if (TEST) return false;
-    if (ssGet("lp_promo_shown_" + vin)) return "shown_this_session";
-    if (ssGet("lp_watched_" + vin)) return "already_watched";
-    if (days && withinDays(lsGet("lp_promo_seen_" + vin), days)) return "seen_recently";
+    if (ssGet("lp_promo_shown_" + key)) return "shown_this_session";
+    if (VIN && ssGet("lp_watched_" + VIN)) return "already_watched";
+    if (days && withinDays(lsGet("lp_promo_seen_" + key), days)) return "seen_recently";
     if (days && withinDays(lsGet("lp_promo_submitted"), days)) return "submitted_recently";
     return false;
   }
@@ -577,7 +616,34 @@
       + ".done{display:none;text-align:center;padding:8px 0 4px}"
       + ".check{width:52px;height:52px;border-radius:50%;background:#E7F6EE;color:#1E8E5A;display:flex;"
       + "align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px}"
-      + ".done h3{font-size:20px;margin:0 0 8px}.done p{font-size:15px;color:#3A4150;line-height:1.45;margin:0 0 16px}";
+      + ".done h3{font-size:20px;margin:0 0 8px}.done p{font-size:15px;color:#3A4150;line-height:1.45;margin:0 0 16px}"
+      // Scratch to reveal: the offer sits under a canvas "foil". touch-action
+      // none on the canvas so a finger scratches instead of scrolling.
+      + ".hl.sc{font-size:26px;font-weight:800;line-height:1.15;letter-spacing:-.01em}"
+      + "@media (max-width:560px){.hl.sc{font-size:23px}}"
+      + ".tk{position:relative;height:172px;border-radius:12px;overflow:hidden;margin:0 0 10px;"
+      + "border:2px dashed " + (ON_ACCENT === INK ? "#B9C0CC" : ACCENT) + ";background:#F7F8FB;"
+      + "-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}"
+      + ".prize{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"
+      + "text-align:center;padding:10px 14px}"
+      + ".prize .pa{display:flex;align-items:baseline;gap:8px;color:" + (ON_ACCENT === INK ? INK : ACCENT) + ";font-weight:800;line-height:1}"
+      + ".prize .pa .n{font-size:56px;letter-spacing:-.02em}.prize .pa .off{font-size:28px}"
+      + ".prize .pl{font-size:16px;font-weight:600;color:#2A303C;margin-top:8px;line-height:1.3}"
+      + ".prize img{max-width:100%;max-height:100%;object-fit:contain;display:block}"
+      + ".tk canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .45s ease}"
+      + ".tk canvas:active{cursor:grabbing}"
+      + ".tk canvas.gone{opacity:0;pointer-events:none}"
+      + ".hint{display:flex;align-items:center;gap:10px;font-size:13px;color:#5A6272;margin:0 0 6px}"
+      + ".meter{flex:1;height:5px;border-radius:5px;background:#E3E7EE;overflow:hidden;min-width:40px}"
+      + ".meter b{display:block;height:100%;width:0;background:" + ACCENT + ";transition:width .15s}"
+      + ".rv{background:none;border:0;padding:6px 0;font-size:13px;font-weight:700;cursor:pointer;"
+      + "color:" + (ON_ACCENT === INK ? INK : ACCENT) + ";text-decoration:underline;text-underline-offset:2px;white-space:nowrap}"
+      + ".rv:focus-visible{outline:3px solid #7AA7FF;outline-offset:2px}"
+      + ".bit{position:absolute;left:50%;top:45%;width:7px;height:11px;border-radius:2px;pointer-events:none;"
+      + "animation:lpburst .9s ease-out forwards}"
+      + "@keyframes lpburst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}"
+      + ".form-in{animation:lpfade .3s ease}@keyframes lpfade{from{opacity:0;transform:translateY(6px)}}"
+      + "@media (prefers-reduced-motion:reduce){.bit{display:none}.form-in{animation:none}.tk canvas{transition:none}}";
   }
 
   function amountLabel() {
@@ -591,6 +657,28 @@
     var sub = CFG.subhead || CFG.headline || "";
     if (CFG.vehicleLabel && sub === "this " + CFG.vehicleLabel) return "on this vehicle";
     return sub;
+  }
+
+  // Scratch header: the band never gives the amount away — the prize does.
+  function scratchHeaderHtml() {
+    var dealer = esc(CFG.dealerName || "");
+    return '<div class="band">'
+      + (dealer ? '<p class="dealer">' + dealer + '</p>' : "")
+      + '<h2 class="hl sc" id="hl">' + (REVEALED ? "You uncovered " + esc(amountLabel()) + " off" : "Scratch to reveal your offer") + '</h2>'
+      + '<button class="x" id="x" type="button" aria-label="Close">&times;</button></div>';
+  }
+  // What's under the foil: the dealer's graphic if it loaded, else the amount
+  // and the line under it.
+  function prizeHtml(useImage) {
+    var inner = useImage
+      ? '<img src="' + esc(API + CFG.imagePath) + '" alt="' + esc(CFG.headline) + '">'
+      : '<div class="pa"><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></div>'
+        + (subheadText() ? '<div class="pl">' + esc(subheadText()) + '</div>' : "");
+    return '<div class="tk" id="tk"><div class="prize" id="prize">' + inner + '</div>'
+      + (REVEALED ? "" : '<canvas id="foil" aria-hidden="true"></canvas>') + '</div>'
+      + (REVEALED ? "" : '<div class="hint" id="hint"><span>' + (isDesktopPointer() ? "Scratch with your mouse" : "Scratch with your finger")
+        + '</span><span class="meter" aria-hidden="true"><b id="meter"></b></span>'
+        + '<button class="rv" id="rv" type="button">' + (isDesktopPointer() ? "Click to reveal" : "Tap to reveal") + '</button></div>');
   }
 
   // Header: either the dealer's uploaded graphic (image mode) or the text band
@@ -637,13 +725,15 @@
       + '<div class="scrim" id="scrim"></div>'
       + '<div class="box" id="box" role="dialog" aria-modal="true" aria-labelledby="hl">'
       +   '<div class="roof" aria-hidden="true"><i></i></div>'
-      +   headerHtml(useImage)
+      +   (isScratch() ? scratchHeaderHtml() : headerHtml(useImage))
       +   (DEMO ? '<div class="demo">Demo · nothing you enter is sent</div>' : "")
-      +   vehicleHtml()
+      +   (isSite() ? "" : vehicleHtml())
       +   '<div class="body">'
-      +     '<form id="form" novalidate>'
-      +       '<p class="sub">Enter your info and ' + (dealer || "our team") + ' will reach out with your offer'
-      +         ' on this vehicle.</p>'
+      +     (isScratch() ? prizeHtml(useImage) : "")
+      +     (isScratch() && !REVEALED ? '<button class="no" id="no0" type="button">No thanks</button>' : "")
+      +     '<form id="form" novalidate' + (isScratch() && !REVEALED ? ' style="display:none"' : "") + '>'
+      +       '<p class="sub">Enter your info and ' + (dealer || "our team") + ' will reach out '
+      +         (isSite() ? 'about your offer.' : 'with your offer on this vehicle.') + '</p>'
       +       '<div class="err" id="err" role="alert"></div>'
       +       '<label for="n">Name</label>'
       +       '<input id="n" name="name" type="text" autocomplete="name" required maxlength="120">'
@@ -682,7 +772,7 @@
     if (!reopen) {
     // Re-check the watch signals at the moment of showing — the shopper may
     // have watched the car (or opened the watch sheet) during the delay.
-    if (!TEST && ssGet("lp_watched_" + VIN)) { log("skip: watched this VIN during delay"); return; }
+    if (!TEST && VIN && ssGet("lp_watched_" + VIN)) { log("skip: watched this VIN during delay"); return; }
     if (window.__lotpulseSheetOpen) {
       if (trigger === "timed" && sheetWaits++ < 6) {
         log("watch sheet open — retrying in 10s");
@@ -705,9 +795,9 @@
     removeTab();
     if (reopen) viaTab = true;
     shown = true;
-    ssSet("lp_promo_shown_" + VIN, "1");
+    ssSet("lp_promo_shown_" + SKEY, "1");
     ssSet("lp_promo_shown_any", "1");
-    lsSet("lp_promo_seen_" + VIN, String(Date.now()));
+    lsSet("lp_promo_seen_" + SKEY, String(Date.now()));
 
     host = document.createElement("div");
     host.id = "lp-promo-host";
@@ -723,12 +813,18 @@
     requestAnimationFrame(function () {
       root.getElementById("scrim").classList.add("in");
       root.getElementById("box").classList.add("in");
-      setTimeout(function () { var n = root.getElementById("n"); if (n) n.focus(); }, 240);
+      // Scratch card not uncovered yet: paint the foil now that the card has
+      // its size, and put focus on "Tap to reveal" (the keyboard's way in).
+      if (isScratch() && !REVEALED) setupFoil();
+      setTimeout(function () {
+        var f = isScratch() && !REVEALED ? root.getElementById("rv") : root.getElementById("n");
+        if (f) f.focus();
+      }, 240);
     });
 
     if (reopen) {
       promoEvent("lp_promo_reopened", {
-        item_id: VIN, page_type: "item", element_type: "popup",
+        item_id: VIN, page_type: evPage(), element_type: "popup",
         event_action_result: "popup",
         offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
         page_location: window.location.href,
@@ -739,10 +835,10 @@
     if (!DEMO) apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
     beat();
     promoEvent("lp_promo_view", {
-      item_id: VIN, page_type: "item", element_type: "popup",
+      item_id: VIN, page_type: evPage(), element_type: "popup",
       event_action_result: "popup", trigger_type: trigger,
       offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
-      creative: useImage ? "image" : "text",
+      creative: (isScratch() ? "scratch_" : "") + (useImage ? "image" : "text"),
       page_location: window.location.href,
     });
     log("shown (" + trigger + ", " + (useImage ? "image" : "text") + ")");
@@ -759,7 +855,7 @@
     try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
     if (reason) {
       promoEvent("lp_promo_dismissed", {
-        item_id: VIN, page_type: "item", element_type: "popup",
+        item_id: VIN, page_type: evPage(), element_type: "popup",
         event_action_result: "close", close_method: reason, page_location: window.location.href,
       });
       // Closed without submitting: leave the reopen tab on the page edge.
@@ -773,8 +869,8 @@
   // animation loop, no badge, and the shopper can close it.
   function tabClosed() {
     if (TEST) return false;
-    if (ssGet("lp_promo_tab_closed_" + VIN)) return true;
-    return withinDays(lsGet("lp_promo_tab_closed_" + VIN), (CFG && CFG.suppressDays) || 7);
+    if (ssGet("lp_promo_tab_closed_" + SKEY)) return true;
+    return withinDays(lsGet("lp_promo_tab_closed_" + SKEY), (CFG && CFG.suppressDays) || 7);
   }
   function removeTab() {
     if (tabHost && tabHost.parentNode) tabHost.parentNode.removeChild(tabHost);
@@ -786,10 +882,12 @@
     // the shopper is already watching, never once they've closed the tab.
     if (!TEST && (ssGet("lp_promo_submitted_s")
         || withinDays(lsGet("lp_promo_submitted"), CFG.suppressDays || 7)
-        || ssGet("lp_watched_" + VIN))) return;
+        || (VIN && ssGet("lp_watched_" + VIN)))) return;
     if (tabClosed()) return;
 
-    var amount = amountLabel();
+    // A scratch offer that hasn't been uncovered keeps its secret on the tab.
+    var hidden = isScratch() && !REVEALED;
+    var amount = hidden ? "Scratch" : amountLabel();
     tabHost = document.createElement("div");
     tabHost.id = "lp-promo-tab-host";
     var r = tabHost.attachShadow ? tabHost.attachShadow({ mode: "open" }) : tabHost;
@@ -808,7 +906,7 @@
       + "mask:radial-gradient(circle at 17px 50%,transparent 4.5px,#000 5px);transition:padding .15s}"
       + ".tab:hover{padding-right:21px}"
       + ".tab:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
-      + ".n{font-size:21px;font-weight:800;letter-spacing:-.01em}"
+      + ".n{font-size:21px;font-weight:800;letter-spacing:-.01em}.n.w{font-size:16px;letter-spacing:0}"
       + ".tx{position:absolute;top:-9px;left:16px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;"
       + "background:#2A303C;color:#fff;font-size:14px;line-height:17px;padding:0;cursor:pointer;text-align:center}"
       + ".tx:hover{background:#000}"
@@ -818,8 +916,8 @@
       + "@media print{.wrap{display:none}}"
       + "</style>"
       + '<div class="wrap" id="w">'
-      +   '<button class="tab" id="t" type="button" aria-label="Reopen offer: ' + esc(amount) + ' off">'
-      +     '<span class="n">' + esc(amount) + '</span></button>'
+      +   '<button class="tab" id="t" type="button" aria-label="' + (hidden ? "Reopen your scratch-off offer" : "Reopen offer: " + esc(amount) + " off") + '">'
+      +     '<span class="n' + (hidden ? " w" : "") + '">' + esc(amount) + '</span></button>'
       +   '<button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button>'
       + '</div>';
     document.body.appendChild(tabHost);
@@ -827,10 +925,10 @@
 
     r.getElementById("t").addEventListener("click", function () { show(lastTrigger, true); });
     r.getElementById("tx").addEventListener("click", function () {
-      ssSet("lp_promo_tab_closed_" + VIN, "1");
-      lsSet("lp_promo_tab_closed_" + VIN, String(Date.now()));
+      ssSet("lp_promo_tab_closed_" + SKEY, "1");
+      lsSet("lp_promo_tab_closed_" + SKEY, String(Date.now()));
       removeTab();
-      promoEvent("lp_promo_tab_dismissed", { item_id: VIN, page_type: "item", page_location: window.location.href });
+      promoEvent("lp_promo_tab_dismissed", { item_id: VIN, page_type: evPage(), page_location: window.location.href });
     });
     log("reopen tab shown");
   }
@@ -892,7 +990,7 @@
       + '<div class="v">'
       + '<div class="d">' + esc(v.dealerName || "") + '</div>'
       + '<div class="a">' + esc(amount) + '<small>OFF</small></div>'
-      + (title ? '<div class="c">' + esc(title) + '</div>' : "")
+      + (title ? '<div class="c">' + esc(title) + '</div>' : (v.offerLine ? '<div class="c">' + esc(v.offerLine) + '</div>' : ""))
       + '<table>'
       + (veh.stockNumber ? '<tr><th>Stock #</th><td class="mono">' + esc(veh.stockNumber) + '</td></tr>' : "")
       + (veh.vin ? '<tr><th>VIN</th><td class="mono">' + esc(veh.vin) + '</td></tr>' : "")
@@ -908,7 +1006,7 @@
 
   function printVoucher(v) {
     promoEvent("lp_promo_voucher_opened", {
-      item_id: VIN, page_type: "item", element_type: "form",
+      item_id: VIN, page_type: evPage(), element_type: "form",
       offer_amount: v.offerCents ? Math.round(v.offerCents / 100) : null,
       page_location: window.location.href,
     });
@@ -944,6 +1042,140 @@
     } catch (e) { log("print failed:", e && e.message); }
   }
 
+  // ── Scratch to reveal ──────────────────────────────────────────────────────
+  // The foil is a canvas over the prize. Scratching erases it (destination-
+  // out strokes); every few strokes we sample how much is see-through, and at
+  // REVEAL_AT the rest fades away. The bitmap is sized for the screen's pixel
+  // ratio (capped at 2) so it stays crisp without a huge canvas on phones.
+  var REVEAL_AT = 0.5, BRUSH = 20;
+  function setupFoil() {
+    var c = root.getElementById("foil"), tk = root.getElementById("tk");
+    if (!c || !tk || !c.getContext) { reveal("tap"); return; }   // no canvas: just show it
+    var ctx = c.getContext("2d"), meter = root.getElementById("meter");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = 0, h = 0, last = null, strokes = 0, down = false;
+
+    function paint() {
+      w = tk.clientWidth; h = tk.clientHeight;
+      if (!w || !h) return false;
+      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      var g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, "#B8BFCA"); g.addColorStop(0.32, "#EEF1F5"); g.addColorStop(0.52, "#C2C8D2");
+      g.addColorStop(0.78, "#E5E8EE"); g.addColorStop(1, "#ADB4C0");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      // Fine grain, so it reads as foil rather than a flat grey box.
+      for (var i = 0, n = Math.round(w * h / 26); i < n; i++) {
+        ctx.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,.35)" : "rgba(70,80,100,.10)";
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+      }
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "700 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      ctx.fillStyle = "rgba(20,33,61,.09)";
+      for (var y = 14; y < h; y += 30) for (var x = (Math.round(y / 30) % 2 ? 18 : 2); x < w; x += 34) ctx.fillText("$", x, y);
+      ctx.fillStyle = "#4A5266";
+      ctx.font = "800 22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      ctx.fillText("SCRATCH HERE", w / 2, h / 2 - 8);
+      ctx.font = "500 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      ctx.fillStyle = "#5E6678";
+      ctx.fillText("to see your offer", w / 2, h / 2 + 16);
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = BRUSH * 2;
+      return true;
+    }
+    if (!paint()) { reveal("tap"); return; }
+
+    function pt(e) { var r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * (w / (r.width || w)), y: (e.clientY - r.top) * (h / (r.height || h)) }; }
+    function scratchTo(p) {
+      ctx.beginPath();
+      if (last) { ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+      else { ctx.arc(p.x, p.y, BRUSH, 0, Math.PI * 2); ctx.fill(); }
+      last = p;
+      if (++strokes % 6 === 0) check();
+    }
+    // Share of the foil that's see-through, sampling every 8th pixel.
+    function check() {
+      if (REVEALED) return;
+      var clear = 0, total = 0;
+      try {
+        var d = ctx.getImageData(0, 0, c.width, c.height).data;
+        for (var i = 3; i < d.length; i += 32) { total++; if (d[i] < 40) clear++; }
+      } catch (e) { return; }
+      var pct = total ? clear / total : 0;
+      if (meter) meter.style.width = Math.min(100, Math.round(pct / REVEAL_AT * 100)) + "%";
+      if (pct >= REVEAL_AT) reveal("scratch");
+    }
+    c.addEventListener("pointerdown", function (e) {
+      if (REVEALED) return;
+      down = true; last = null;
+      try { c.setPointerCapture(e.pointerId); } catch (_) {}
+      scratchTo(pt(e)); e.preventDefault();
+    });
+    c.addEventListener("pointermove", function (e) {
+      if (!down || REVEALED) return;
+      var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      if (!evs || !evs.length) evs = [e];
+      for (var i = 0; i < evs.length; i++) scratchTo(pt(evs[i]));
+      e.preventDefault();
+    });
+    function up() { if (down) { down = false; last = null; check(); } }
+    c.addEventListener("pointerup", up);
+    c.addEventListener("pointercancel", up);
+    // Older iOS without pointer events: stop the page scrolling under a finger.
+    c.addEventListener("touchmove", function (e) { if (!REVEALED) e.preventDefault(); }, { passive: false });
+  }
+
+  function confetti(host) {
+    var colors = [ACCENT, "#FFB020", "#0D9488", "#14213D", "#8EA6FF"];
+    for (var i = 0; i < 22; i++) {
+      var b = document.createElement("i");
+      b.className = "bit";
+      var a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 80;
+      b.style.background = colors[i % colors.length];
+      b.style.setProperty("--dx", Math.round(Math.cos(a) * d) + "px");
+      b.style.setProperty("--dy", Math.round(Math.sin(a) * d * 0.7) + "px");
+      b.style.setProperty("--r", Math.round(Math.random() * 540 - 270) + "deg");
+      host.appendChild(b);
+    }
+    setTimeout(function () {
+      var bits = host.querySelectorAll(".bit");
+      for (var j = 0; j < bits.length; j++) if (bits[j].parentNode) bits[j].parentNode.removeChild(bits[j]);
+    }, 1200);
+  }
+
+  // Uncover the offer: fade the foil, show the form. method: scratch | tap.
+  function reveal(method) {
+    if (REVEALED || !host) return;
+    REVEALED = true;
+    ssSet("lp_promo_rev_" + SKEY, "1");
+    var c = root.getElementById("foil"), tk = root.getElementById("tk");
+    var meter = root.getElementById("meter");
+    if (meter) meter.style.width = "100%";
+    if (c) c.classList.add("gone");
+    if (tk) confetti(tk);
+    var hl = root.getElementById("hl");
+    if (hl) hl.textContent = "You uncovered " + amountLabel() + " off";
+    setTimeout(function () {
+      if (!host) return;
+      var hint = root.getElementById("hint"), no0 = root.getElementById("no0"), form = root.getElementById("form");
+      if (hint) hint.style.display = "none";
+      if (no0) no0.style.display = "none";
+      if (form) { form.style.display = "block"; form.className = "form-in"; }
+      // Desktop: straight into the form. Phones: don't pop the keyboard over
+      // the offer they just uncovered.
+      var n = root.getElementById("n");
+      if (n && isDesktopPointer()) n.focus();
+      else { var x = root.getElementById("x"); if (x) x.focus(); }
+    }, method === "tap" ? 200 : 380);
+    promoEvent("lp_promo_revealed", {
+      item_id: VIN, page_type: evPage(), element_type: "popup",
+      event_action_result: "reveal", reveal_method: method,
+      offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
+      page_location: window.location.href,
+    });
+    log("revealed (" + method + ")");
+  }
+
   function wire(trigger) {
     var form = root.getElementById("form"), err = root.getElementById("err"), go = root.getElementById("go");
     var name = root.getElementById("n"), email = root.getElementById("e"), phone = root.getElementById("p");
@@ -952,6 +1184,9 @@
     root.getElementById("no").addEventListener("click", function () { hide("no_thanks"); });
     root.getElementById("scrim").addEventListener("click", function () { hide(submitted ? null : "backdrop"); });
     root.getElementById("ok").addEventListener("click", function () { hide(null); });
+    var no0 = root.getElementById("no0"), rv = root.getElementById("rv");
+    if (no0) no0.addEventListener("click", function () { hide("no_thanks"); });
+    if (rv) rv.addEventListener("click", function () { reveal("tap"); });
     document.addEventListener("keydown", onKey, true);
 
     phone.addEventListener("input", function (e) {
@@ -982,6 +1217,7 @@
         // offerId = the offer this shopper was SHOWN; the server records the
         // lead against it (and re-checks it's still live for this car).
         vin: VIN, offerId: CFG.offerId, name: nm, email: em, phone: ph, trigger: trigger,
+        page: PAGEKIND,
         demo: DEMO || undefined,   // demo: validated, voucher returned, NOT saved or sent
         pageUrl: window.location.href, company: root.getElementById("hp").value,
         // Anonymous visitor id: links this lead to the "Live now" viewer row.
@@ -1035,7 +1271,7 @@
           } else { okBtn.focus(); }
         } else { okBtn.focus(); }
         promoEvent("lp_promo_submitted", {
-          item_id: VIN, page_type: "item", element_type: "form", form_type: "offer",
+          item_id: VIN, page_type: evPage(), element_type: "form", form_type: "offer",
           event_action_result: "complete", trigger_type: trigger,
           reopened_from_tab: viaTab ? "yes" : "no",
           offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
@@ -1051,7 +1287,11 @@
   // ── Triggers ───────────────────────────────────────────────────────────────
   function armTriggers() {
     var delay = TEST ? 3 : Math.max(5, parseInt(CFG.delaySeconds, 10) || 35);
-    setTimeout(function () { show("timed"); }, delay * 1000);
+    // Time spent working out what kind of page this is (up to ~6s on a page
+    // with no VIN, waiting for a late one) counts toward the delay, so a
+    // homepage shopper isn't kept waiting longer than a VDP shopper.
+    var wait = TEST ? delay * 1000 : Math.max(1000, delay * 1000 - DETECT_MS);
+    setTimeout(function () { show("timed"); }, wait);
 
     // Exit intent: desktop only. Armed after a short dwell so a shopper who
     // lands and immediately reaches for another tab isn't ambushed.
@@ -1067,8 +1307,26 @@
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
+  // Rooftop-level "nothing for non-vehicle pages" answers. Remembered for 10
+  // minutes per tab so browsing a site with no site-wide offer doesn't call
+  // the API on every page.
+  var NO_SITE_REASONS = ["disabled", "paused", "demo_only", "no_live_offer", "no_site_offer"];
+  var NO_SITE_KEY = "lp_promo_nosite";
+
+  // Any page that isn't a single vehicle page: only a site-wide offer can
+  // show here, and the server decides which (by page kind and path).
+  function startSite(kind) {
+    VIN = null; PAGEKIND = kind;
+    if (!TEST && ssGet("lp_promo_submitted_s")) { log("suppressed: submitted this visit"); return; }
+    var nos = parseInt(ssGet(NO_SITE_KEY) || "", 10);
+    if (!TEST && !DEMO && Number.isFinite(nos) && Date.now() - nos < 10 * 60000) {
+      log("no site-wide offer (remembered for this tab)"); return;
+    }
+    fetchConfig("/v1/promo/config?page=" + kind + "&path=" + encodeURIComponent(window.location.pathname || "/"));
+  }
+
   function start(found) {
-    VIN = found.vin;
+    VIN = found.vin; PAGEKIND = "vehicles";
     // Session-level checks first: they need no config, and skipping the API
     // call on repeat pageviews keeps load off the server.
     var pre = clientSuppressed(VIN, 0);
@@ -1085,13 +1343,22 @@
       && !ssGet("lp_promo_submitted_s") && !ssGet("lp_promo_tab_closed_" + VIN);
     if (pre && !tabOnly) { log("suppressed: " + pre); return; }
 
-    apiGet("/v1/promo/config?vin=" + encodeURIComponent(VIN) + (DEMO ? "&demo=1" : "")).then(function (c) {
+    fetchConfig("/v1/promo/config?vin=" + encodeURIComponent(VIN) + "&page=vehicles&path="
+      + encodeURIComponent(window.location.pathname || "/"));
+  }
+
+  function fetchConfig(url) {
+    apiGet(url + (DEMO ? "&demo=1" : "")).then(function (c) {
       if (!c || !c.eligible) {
         log("not eligible" + (c && c.reason ? ": " + c.reason : "")
           + (c && c.reason === "demo_only" ? " (Demo mode is on: add ?vinpop=demo to the URL)" : ""));
+        if (!VIN && !DEMO && c && NO_SITE_REASONS.indexOf(c.reason) !== -1) ssSet(NO_SITE_KEY, String(Date.now()));
         return;
       }
       CFG = c;
+      // Memory key: the car for its own offer, the offer for a site-wide one.
+      SKEY = c.placement === "site" ? "o" + c.offerId : VIN;
+      REVEALED = c.reveal !== "scratch" || !!ssGet("lp_promo_rev_" + SKEY);
       // Dashboard tab / color settings win over GTM. Applied before anything
       // is drawn, so the tab never shows in the wrong color or spot.
       applyLook(c.tab);
@@ -1101,7 +1368,7 @@
       // opens (35s later by default). show() checks it actually loaded.
       if (c.imagePath) { IMG = new Image(); IMG.src = API + c.imagePath; }
       RULES = c.engagement || RULES;
-      var why = clientSuppressed(VIN, c.suppressDays);
+      var why = clientSuppressed(SKEY, c.suppressDays);
       if (why) {
         log("suppressed: " + why);
         // Popup held back because they've already seen it on this car: show
@@ -1120,18 +1387,20 @@
     }).catch(function (e) { log("config fetch failed (no popup):", e && e.message); });
   }
 
+  var DETECT_MS = 0;
   function boot() {
     engUpdate();        // count the visit (every page, vehicle page or not)
     startClock();
-    var tries = 0;
+    var tries = 0, bootAt = Date.now();
     (function attempt() {
+      DETECT_MS = Date.now() - bootAt;
       var found = findVdpVin();
-      if (found && found.srp) { classify("other"); log("listing page — promo not shown"); return; }
+      if (found && found.srp) { classify("other"); startSite("listings"); return; }
       if (found && found.vin) { classify("vdp", found.vin); start(found); return; }
       // VDPs on some platforms render the VIN late; retry for ~6s like the
       // watch widget's anchor wait, then treat it as a non-vehicle page.
       if (tries++ < 12) setTimeout(attempt, 500);
-      else classify("other");
+      else { classify("other"); startSite(homeOrOther()); }
     })();
   }
 
