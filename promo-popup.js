@@ -551,8 +551,11 @@
       + "transition:transform .22s ease,opacity .22s ease}"
       + ".box.in{transform:translate(-50%,-50%);opacity:1}"
       + ".box:focus{outline:none}"
-      + "@media (max-width:560px){.box{left:0;right:0;top:auto;bottom:0;width:100%;max-height:92vh;"
-      + "transform:translateY(24px)}.box.in{transform:translateY(0)}}"
+      // Phones: a centered card 16px in from each edge (not a full-width
+      // bottom sheet), so the dealer's page stays visible around it. Too tall
+      // for the screen (long form, small phone): it scrolls inside the card.
+      + "@media (max-width:560px){.box{width:calc(100vw - 32px);"
+      + "max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}}"
       // Hang-tag top (Oct 2026, matches the VinPop logo): a pointed roof in the
       // accent color with a punched hole that shows the page behind it. The
       // ring is a lighter (or, on a light accent, darker) edge around the hole.
@@ -574,7 +577,7 @@
       + ".amt .n{font-size:68px;letter-spacing:-.02em;line-height:.95}"
       + ".amt .off{font-size:34px;letter-spacing:.02em}"
       + ".subhl{display:block;font-size:19px;font-weight:600;line-height:1.3;margin-top:10px;opacity:.95}"
-      + "@media (max-width:560px){.amt .n{font-size:58px}.amt .off{font-size:28px}.subhl{font-size:17px}}"
+      + "@media (max-width:560px){.amt .n{font-size:52px}.amt .off{font-size:26px}.subhl{font-size:16px;margin-top:8px}}"
       // Image mode: the dealer's own graphic replaces the colored band. Shown
       // uncropped (contain), since offer art usually has text near the edges.
       + ".art{position:relative;background:" + ACCENT + ";overflow:hidden;line-height:0}"
@@ -589,7 +592,7 @@
       + ".x:hover{background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.18)" : "rgba(255,255,255,.28)") + "}"
       + ".x:focus-visible,.go:focus-visible,.no:focus-visible,input:focus-visible{outline:3px solid #7AA7FF;outline-offset:2px}"
       + ".body{padding:20px 24px 22px;background:#fff;border-radius:0 0 16px 16px}"
-      + "@media (max-width:560px){.body{border-radius:0}}"
+      + "@media (max-width:560px){.body{padding:16px 18px 18px}.band{padding:12px 18px 16px}.veh{padding:10px 18px 11px}}"
       + ".sub{font-size:15px;line-height:1.45;color:#3A4150;margin:0 0 16px}"
       + "label{display:block;font-size:13px;font-weight:600;color:#2A303C;margin:0 0 6px}"
       + "input{display:block;width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #CDD2DB;"
@@ -622,7 +625,7 @@
       // Scratch to reveal: the offer sits under a canvas "foil". touch-action
       // none on the canvas so a finger scratches instead of scrolling.
       + ".hl.sc{font-size:26px;font-weight:800;line-height:1.15;letter-spacing:-.01em}"
-      + "@media (max-width:560px){.hl.sc{font-size:23px}}"
+      + "@media (max-width:560px){.hl.sc{font-size:22px}.tk{height:150px}.prize .pa .n{font-size:48px}.prize .pa .off{font-size:24px}}"
       + ".tk{position:relative;height:172px;border-radius:12px;overflow:hidden;margin:0 0 10px;"
       + "border:2px dashed " + (ON_ACCENT === INK ? "#B9C0CC" : ACCENT) + ";background:#F7F8FB;"
       + "-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}"
