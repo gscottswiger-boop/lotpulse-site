@@ -687,6 +687,103 @@
   @media (max-width:520px){ .gx-map{height:300px} .gx-seg{display:flex} .gx-seg button{flex:1} }
 
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+  /* ══ Overview / section views (Nov 2026 revamp) ══ */
+  .toolrow{display:flex;gap:2px 10px;align-items:center;justify-content:flex-end;margin-top:5px;flex-wrap:wrap}
+  .toolrow button{align-items:center;gap:4px;padding:6px 3px!important;font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;letter-spacing:.02em;border-radius:6px}
+  .toolrow button:hover{background:var(--line-soft)!important}
+  .toolrow button:focus-visible{outline:2px solid var(--amber)}
+  .toolrow .tl{white-space:nowrap}
+  .vnav{display:flex;gap:4px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:5px;margin-bottom:16px}
+  .vnav a{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 18px;border-radius:10px;text-decoration:none;color:var(--slate);
+    font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase}
+  .vnav a.vp{color:var(--vp)} .vnav a.vw{color:var(--vw)}
+  .vnav a:hover{background:var(--porcelain)}
+  .vnav a.on{background:var(--ink);color:#fff}
+  .vnav a.on .pmark{filter:brightness(0) invert(1)}
+  .vnav a:focus-visible{outline:3px solid var(--amber);outline-offset:1px}
+  .ov-row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+  .ov-hero{flex:1 1 280px;background:var(--ink);color:#fff;border-radius:var(--radius);padding:18px 20px;cursor:pointer;box-shadow:var(--shadow)}
+  .ov-hero:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+  .ov-hero .hl{font-family:'Barlow Condensed';font-weight:600;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:#C6CBD0}
+  .ov-hero .hn{font-family:'Barlow Condensed';font-weight:700;font-size:56px;line-height:1;color:#6EE7A8;margin-top:6px}
+  .ov-hero .hof{font-size:14px;color:#C6CBD0;margin-left:10px;font-weight:500}
+  .ov-hero .hb{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:8px}
+  .ov-hero .hb .b-vp{color:#A9BCFF} .ov-hero .hb .b-vw{color:#6FD9CC} .ov-hero .hb .b-go{color:#C6CBD0}
+  .ov-hero .hnote{font-size:11px;color:#AEB5BC;margin-top:8px;line-height:1.35}
+  .ov-att{flex:2 1 380px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+  .ov-h{font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  .att-list{display:flex;flex-direction:column;gap:7px}
+  .att{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:42px;padding:6px 13px;border-radius:10px;border:0;width:100%;text-align:left;
+    font-family:'Barlow',sans-serif;font-size:14px;color:var(--ink);cursor:pointer;background:var(--porcelain)}
+  .att strong{font-weight:700}
+  .att .go{font-weight:700;white-space:nowrap;font-size:13px}
+  .att.red{background:var(--red-soft)} .att.red strong,.att.red .go{color:#B42318}
+  .att.vp{background:var(--vp-soft)} .att.vp strong,.att.vp .go{color:var(--vp)}
+  .att.act{background:var(--new-soft)} .att.act strong,.att.act .go{color:var(--action-deep)}
+  .att.quiet{cursor:default;color:var(--slate)} .att.quiet .go{color:var(--win)}
+  .att:not(.quiet):focus-visible{outline:3px solid var(--amber)}
+  .band{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+  .band-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;padding:9px 18px}
+  .band.vp .band-head{background:var(--vp-soft)} .band.vw .band-head{background:var(--vw-soft)}
+  .band-head .bt{display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:.09em;text-transform:uppercase}
+  .band.vp .bt{color:var(--vp-deep)} .band.vw .bt{color:#085C55}
+  .band-head .bs{font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;color:#3F474F}
+  .band-head a{font-size:13px;font-weight:700;text-decoration:none;padding:8px 0}
+  .band.vp .band-head a{color:var(--vp)} .band.vw .band-head a{color:var(--vw)}
+  .band-tiles{display:grid;gap:10px;padding:14px 16px 16px}
+  .band.vp .band-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .band.vw .band-tiles{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .kt{border:1px solid var(--line);border-radius:11px;padding:12px 13px;min-height:108px;display:flex;flex-direction:column;gap:2px;background:var(--card);min-width:0}
+  .kt-click{cursor:pointer;transition:background .12s,border-color .12s}
+  .kt-click:hover{background:var(--porcelain);border-color:#CDD2CD}
+  .kt-click:focus-visible{outline:3px solid var(--amber);outline-offset:-1px}
+  .kt .kl{font-family:'Barlow Condensed';font-weight:600;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);line-height:1.25}
+  .kt .kn{font-family:'Barlow Condensed';font-weight:700;font-size:40px;line-height:1.1}
+  .kt .kn.vp{color:var(--vp)} .kt .kn.vw{color:var(--vw)}
+  .kt .kn small{font-size:18px;color:var(--slate);font-weight:600}
+  .kt .ks{font-size:12px;color:var(--slate);margin-top:auto;line-height:1.3}
+  .kt .ks.good{color:var(--win);font-weight:700} .kt .ks.bad{color:#B42318;font-weight:700}
+  .kt .substat{font-size:13.5px;margin-top:0}
+  .vp-off{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;margin:14px 16px 16px;padding:18px;border:1px dashed #B9C6F5;border-radius:11px}
+  .vp-off .t{font-family:'Barlow Condensed';font-weight:700;font-size:23px;line-height:1.15}
+  .vp-off .d{font-size:14px;color:#3F474F;margin-top:3px;max-width:560px}
+  .vp-off a{display:inline-flex;align-items:center;min-height:42px;padding:0 18px;border-radius:10px;background:var(--vp);color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+  .ov-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;min-width:0}
+  .ov-panel.wide{flex:3 1 420px} .ov-panel.narrow{flex:2 1 300px}
+  .ov-panel .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:4px}
+  .ov-panel .ph .m{font-size:12px;color:var(--slate)}
+  .ov-panel .more{display:inline-block;font-size:13px;font-weight:700;text-decoration:none;padding:10px 0 2px}
+  .tw-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line-soft);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font-family:'Barlow',sans-serif;font-size:14px;color:var(--ink)}
+  .tw-row:hover{background:var(--porcelain)}
+  .tw-row .tv{min-width:0} .tw-row .tv b{font-weight:600} .tw-row .tv span{color:var(--slate);font-size:13px}
+  .tw-row .tn{font-family:'Barlow Condensed';font-weight:700;font-size:18px;color:var(--vw);white-space:nowrap}
+  .gbar{display:flex;align-items:center;gap:10px;margin-top:9px;font-weight:700;font-size:14px}
+  .gbar .gk{width:16px} .gbar .gv{width:24px;text-align:right}
+  .gbar .gt{flex:1;height:13px;background:var(--line-soft);border-radius:7px;overflow:hidden;display:flex}
+  .gbar .gt i{display:block;height:100%}
+  .board-more{display:block;width:100%;margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:11px;background:none;cursor:pointer;
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:13.5px;color:var(--vw)}
+  .board-more:hover{background:var(--card)}
+  .sig-btn.shop{border-color:var(--vw);color:var(--vw)} .sig-btn.shop:hover{background:var(--vw);color:#fff}
+  .sig-btn.shop .sc{background:var(--vw)} .sig-btn.shop:hover .sc{background:rgba(255,255,255,.25)}
+  .vpv-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);margin-bottom:14px;flex-wrap:wrap}
+  .vpv-seg button{border:0;background:none;cursor:pointer;padding:10px 14px;font-family:'Barlow',sans-serif;font-weight:700;font-size:13px;color:var(--slate)}
+  .vpv-seg button.on{background:var(--vp);color:#fff}
+  .vpv-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .ortable{width:100%;border-collapse:collapse;font-size:14px}
+  .ortable th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--slate);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+  .ortable th:first-child,.ortable td:first-child{text-align:left}
+  .ortable td{padding:10px 4px;border-bottom:1px solid var(--line-soft);text-align:right}
+  .vppill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 7px;background:var(--vp-soft);color:var(--vp);margin-left:6px}
+  @media (max-width:760px){
+    .band.vp .band-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .band.vw .band-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .kt .kn{font-size:34px}
+    .vnav a{padding:0 13px;flex:1 1 auto;justify-content:center}
+    .ov-hero .hn{font-size:48px}
+    .tabs{max-width:100%;overflow-x:auto}
+  }
 </style>
 </head>
 <body>
@@ -716,40 +813,103 @@
       <select id="dealerSwitch" style="display:none"></select>
       <div id="agencyTag" style="display:none"></div>
       <div class="r2"><span class="live-dot"></span><span id="updated">connecting</span></div>
-      <div style="display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:3px">
+      <div class="toolrow">
         <button id="settingsGear" title="Dealer settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="tl">Settings</span>
         </button>
         <button id="accessLogBtn" title="Access log" aria-label="Access log" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg><span class="tl">Access log</span>
         </button>
         <button id="matchbackBtn" title="Matchback report" aria-label="Matchback report" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="tl">Matchback</span>
         </button>
         <button id="agencyOverviewBtn" title="All rooftops" aria-label="All rooftops" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="tl">All rooftops</span>
         </button>
         <button id="liveBtn" title="Live now: who's on the website" aria-label="Live now" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--win)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/></svg><span class="tl">Live now</span>
         </button>
         <button id="geoBtn" title="Where shoppers come from" aria-label="Where shoppers come from" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:#0E7C66">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="tl">Shopper map</span>
         </button>
         <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
-          <span data-pmark="vp"></span>
+          <span data-pmark="vp"></span><span class="tl">VinPop settings</span>
         </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat"><div class="n" id="s-watchers">—</div><div class="l">Active<br>watchers</div><div class="substat blue" id="ss-watchers"></div></div>
-    <div class="stat stat-clickable" id="shoppersCard" role="button" tabindex="0"><div class="n red" id="s-leads">—</div><div class="l">Unique<br>shoppers</div><div class="substat red" id="ss-shoppers"></div><div class="seehint">See who →</div></div>
-    <div class="stat stat-clickable" id="textsCard" role="button" tabindex="0"><div class="n" id="s-texts">—</div><div class="l">Texts sent<br>7 days</div><div class="seehint">See texts →</div></div>
-    <div class="stat stat-clickable" id="soldCard" role="button" tabindex="0"><div class="n green" id="s-sold">—</div><div class="l">Sold<br>30 days</div><div class="substat green" id="ss-sold"></div><div class="seehint">See which →</div></div>
+  <nav class="vnav" id="vnav" aria-label="Dashboard sections">
+    <a href="#overview" data-v="overview" class="on">Overview</a>
+    <a href="#vinpop" data-v="vinpop" class="vp"><span data-pmark="vp" data-pmark-size="sm"></span>VinPop</a>
+    <a href="#vinwatch" data-v="vinwatch" class="vw"><span data-pmark="vw" data-pmark-size="sm"></span>VinWatch</a>
+  </nav>
+
+  <div id="view-overview">
+    <div class="ov-row">
+      <div class="ov-hero" id="touchCard" role="button" tabindex="0" aria-label="Sold with a LotPulse touch, last 30 days. See which vehicles.">
+        <div class="hl">Sold with a LotPulse touch · last 30 days</div>
+        <div><span class="hn" id="o-touch">—</span><span class="hof" id="o-touch-of"></span></div>
+        <div class="hb"><span class="b-vp" id="o-touch-vp"></span><span class="b-vw" id="o-touch-vw"></span><span class="b-go">See which ›</span></div>
+        <div class="hnote">Sold vehicles that had a watcher or a VinPop lead on them. Run Matchback for confirmed buyers.</div>
+      </div>
+      <div class="ov-att">
+        <div class="ov-h">Needs attention</div>
+        <div class="att-list" id="ovAttList"><div class="att quiet"><span>Loading…</span></div></div>
+      </div>
+    </div>
+
+    <section class="band vp" id="vpBand" aria-label="VinPop">
+      <div class="band-head">
+        <div class="bt"><span data-pmark="vp"></span>VinPop <span class="bs">Website offer leads</span></div>
+        <a href="#vinpop" id="vpBandLink">Open VinPop ›</a>
+      </div>
+      <div class="band-tiles" id="vpTiles">
+        <div class="kt kt-click" id="vp7Card" role="button" tabindex="0"><div class="kl">Leads · last 7 days</div><div class="kn vp" id="o-vp7">—</div><div class="ks">View leads ›</div></div>
+        <div class="kt kt-click" id="vpMtdCard" role="button" tabindex="0"><div class="kl">Leads · month to date</div><div class="kn vp" id="o-vpm">—</div><div class="ks" id="o-vpm-s">View leads ›</div></div>
+        <div class="kt kt-click" id="vpRateCard" role="button" tabindex="0"><div class="kl">Claim rate · last 7 days</div><div class="kn" id="o-vprate">—</div><div class="ks" id="o-vprate-s">Popup views to leads ›</div></div>
+        <div class="kt kt-click" id="vpCrmCard" role="button" tabindex="0"><div class="kl">Sent to CRM · month to date</div><div class="kn" id="o-vpcrm">—</div><div class="ks" id="o-vpcrm-s"></div></div>
+      </div>
+      <div class="vp-off" id="vpOff" style="display:none">
+        <div><div class="t">VinPop isn't on at this store</div>
+          <div class="d">VinPop shows website shoppers a timed or exit-intent offer and sends each claim to your CRM as a graded lead. <span id="vpOffWho">Ask your LotPulse contact to switch it on.</span></div></div>
+        <a href="https://vinpop.io" target="_blank" rel="noopener">See how VinPop works</a>
+      </div>
+    </section>
+
+    <section class="band vw" aria-label="VinWatch">
+      <div class="band-head">
+        <div class="bt"><span data-pmark="vw"></span>VinWatch <span class="bs">Shoppers watching vehicles by text</span></div>
+        <a href="#vinwatch">Open VinWatch ›</a>
+      </div>
+      <div class="band-tiles">
+        <div class="kt kt-click" id="vw7Card" role="button" tabindex="0"><div class="kl">Leads · last 7 days</div><div class="kn vw" id="o-vw7">—</div><div class="ks">New unique shoppers ›</div></div>
+        <div class="kt kt-click" id="vwMtdCard" role="button" tabindex="0"><div class="kl">Leads · month to date</div><div class="kn vw" id="o-vwm">—</div><div class="ks" id="o-vwm-s">New unique shoppers ›</div></div>
+        <div class="kt"><div class="kl">Active watchers</div><div class="kn" id="s-watchers">—</div><div class="substat blue" id="ss-watchers"></div></div>
+        <div class="kt kt-click" id="textsCard" role="button" tabindex="0"><div class="kl">Texts sent · last 7 days</div><div class="kn" id="s-texts">—</div><div class="ks">See texts ›</div></div>
+        <div class="kt kt-click" id="soldCard" role="button" tabindex="0"><div class="kl">Sold · last 30 days</div><div class="kn" id="s-sold">—</div><div class="substat green" id="ss-sold"></div><div class="ks">See which ›</div></div>
+      </div>
+    </section>
+
+    <div class="ov-row">
+      <div class="ov-panel wide">
+        <div class="ph"><div class="ov-h" style="margin:0;color:#085C55">Most watched vehicles</div><div class="m" id="twMeta"></div></div>
+        <div id="twList"><div class="state" style="padding:18px 0">Loading…</div></div>
+        <a class="more" href="#vinwatch" style="color:var(--vw)">See the full Demand Board in VinWatch ›</a>
+      </div>
+      <div class="ov-panel narrow" id="vpGradePanel" style="display:none">
+        <div class="ph"><div class="ov-h" style="margin:0;color:var(--vp-deep)">VinPop leads by grade</div><div class="m" id="vgMeta"></div></div>
+        <div id="vgBars"></div>
+        <div class="m" id="vgSrc" style="font-size:12px;color:var(--slate);margin-top:10px"></div>
+        <a class="more" href="#vinpop" style="color:var(--vp)">See all leads and voucher codes in VinPop ›</a>
+      </div>
+    </div>
   </div>
 
+  <div id="view-vinpop" style="display:none"><div id="vpView"></div></div>
+
+  <div id="view-vinwatch" style="display:none">
   <div class="controls">
     <div class="tabs" id="tabs">
       <button class="tab active" data-cond="all">All <span class="ct" id="ct-all">0</span></button>
@@ -774,14 +934,15 @@
 
   <div class="sec-head">
     <h2>Demand Board <span class="prod-tag vw"><span data-pmark="vw" data-pmark-size="sm"></span>VinWatch</span></h2>
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="sig-btn promo" id="promoLeadsBtn" title="Leads from VinPop offers"><span data-pmark="vp" data-pmark-size="sm"></span> VinPop leads <span class="sc" id="promo-count">0</span></button>
+    <div style="display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="sig-btn shop" id="shoppersCard" style="display:inline-flex" title="Everyone watching a vehicle">Shoppers <span class="sc" id="s-leads">0</span></button>
       <button class="sig-btn" id="signalsBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Signals <span class="sc" id="sig-count">0</span></button>
       <div class="meta" id="boardMeta">Loading…</div>
     </div>
   </div>
 
   <div id="boardWrap"><div class="board"><div class="state">Loading inventory…</div></div></div>
+  </div>
 
   <div class="audit">
     Demand updates as shoppers watch vehicles on your site.<br>
@@ -833,7 +994,7 @@
       }catch(err){}
       location.reload();
     };
-    if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); }
+    if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); setInterval(loadOverview,60000); }
   }
 
   // Agency scope: swap the static dealer name for a rooftop switcher.
@@ -861,7 +1022,7 @@
     var _prb=document.getElementById("promoBtn"); if(_prb) _prb.style.display="inline-flex";
     sel.onchange=function(){
       SLUG=sel.value;
-      try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
+      try{ history.replaceState(null,"","?dealer="+SLUG+location.hash); }catch(e){}
       refresh();
     };
   }
@@ -921,7 +1082,7 @@
     setTimeout(function(){ input.focus(); },200);
   })();
 
-  var state = { board: [], cond: "all", sort: "watchers", view: "list", signals: null };
+  var state = { board: [], cond: "all", sort: "watchers", view: "list", signals: null, showAll: false, sum: null, ov: null };
 
   function dollars(c){ return c==null ? "—" : "$"+(c/100).toLocaleString("en-US",{maximumFractionDigits:0}); }
   function vehLabel(v){ return [v.year,v.make,v.model,v.trim].filter(Boolean).join(" "); }
@@ -987,9 +1148,9 @@
         el.textContent = v + " " + suffix;
         el.style.display="";   // back to the stylesheet default (block)
       }
-      setSub("ss-watchers", d.stats.newWatchers, "new this week");
-      setSub("ss-shoppers", d.stats.hotShoppers, "hot");
-      setSub("ss-sold", d.stats.soldWithWatchers, "w/ watchers");
+      setSub("ss-watchers", d.stats.newWatchers, "new in last 7 days");
+      setSub("ss-sold", d.stats.soldWithWatchers, "with watchers");
+      state.sum = d.stats; renderAttention();
     });
   }
 
@@ -999,6 +1160,7 @@
       state.board = d.board || [];
       updateCounts();
       render();
+      renderTopWatched();
     });
   }
 
@@ -1013,6 +1175,7 @@
       var btn=document.getElementById("signalsBtn"), cnt=document.getElementById("sig-count");
       if(cnt) cnt.textContent = total;
       if(btn) btn.style.display = total > 0 ? "inline-flex" : "none";
+      renderAttention();
     }).catch(function(){
       // Signals are a nice-to-have; never let a signals hiccup break the board.
       var btn=document.getElementById("signalsBtn"); if(btn) btn.style.display="none";
@@ -1044,12 +1207,22 @@
   function tachSegs(w, n){ var s=""; for(var i=0;i<n;i++){ var c=i<w?(i>=5?"on hi":"on"):""; s+='<i class="'+c+'"></i>'; } return s; }
 
   function render(){
-    var rows = visibleRows();
+    // Shorter board: by default only vehicles somebody is watching. One tap
+    // shows the whole lot. If nothing is being watched yet, show everything.
+    var all = visibleRows();
+    var watched = all.filter(function(v){ return v.watchers>0; });
+    var canCollapse = watched.length>0 && watched.length<all.length;
+    var rows = (canCollapse && !state.showAll) ? watched : all;
     document.getElementById("boardMeta").textContent =
-      rows.length+" vehicles"+(state.cond!=="all"?" · "+condLabel(state.cond):"");
+      (rows.length<all.length ? rows.length+" of "+all.length+" vehicles · with watchers" : rows.length+" vehicles")
+      +(state.cond!=="all"?" · "+condLabel(state.cond):"");
     var wrap = document.getElementById("boardWrap");
     if(!rows.length){ wrap.innerHTML='<div class="board"><div class="state">No vehicles in this view.</div></div>'; return; }
-    wrap.innerHTML = state.view==="list" ? renderList(rows) : renderGrid(rows);
+    wrap.innerHTML = (state.view==="list" ? renderList(rows) : renderGrid(rows))
+      +(canCollapse ? '<button type="button" class="board-more" id="boardMore">'
+          +(state.showAll ? "Show only vehicles with watchers ("+watched.length+")" : "Show all "+all.length+" vehicles")+'</button>' : '');
+    var bm=document.getElementById("boardMore");
+    if(bm) bm.addEventListener("click", function(){ state.showAll=!state.showAll; render(); });
     wrap.querySelectorAll("[data-vin]").forEach(function(el){
       el.addEventListener("click", function(){ openDetail(el.getAttribute("data-vin")); });
     });
@@ -1220,6 +1393,8 @@
   }
 
   // ── Sold list ──
+  var _soldTouchOnly=false;
+  function openSoldTouch(){ _soldTouchOnly=true; openSold(); }
   function openSold(){
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
     modal.innerHTML='<div class="state">Loading…</div>';
@@ -1227,11 +1402,13 @@
     fetch(API+"/dash/"+SLUG+"/sold?days=30").then(function(r){return r.json();}).then(function(d){
       if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
       var sold=d.sold||[];
+      var touchOnly=_soldTouchOnly; _soldTouchOnly=false;
+      if(touchOnly) sold=sold.filter(function(v){ return v.totalWatchers>0 || v.vinpopLeads>0; });
       // Sort by peak watcher count desc; sold date desc as tiebreaker
       sold.sort(function(a,b){ return b.totalWatchers-a.totalWatchers || new Date(b.soldAt)-new Date(a.soldAt); });
       var rows="";
       if(!sold.length){
-        rows='<div class="state">No vehicles sold in the last 30 days yet.</div>';
+        rows='<div class="state">'+(touchOnly?"No sold vehicles had a watcher or a VinPop lead in the last 30 days yet.":"No vehicles sold in the last 30 days yet.")+'</div>';
       } else {
         sold.forEach(function(v){
           var dt=new Date(v.soldAt).toLocaleDateString("en-US",{month:"short",day:"numeric"});
@@ -1239,7 +1416,8 @@
           rows+='<div class="soldrow" data-soldvin="'+v.vin+'">'
             +'<div>'+photoTag(v.photoUrl,"thumb")+'</div>'
             +'<div class="soldinfo"><div class="vm">'+vehLabel(v)+'</div>'
-              +'<div class="vs"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span> sold '+dt+'</div></div>'
+              +'<div class="vs"><span class="badge '+condClass(v.condition)+'">'+condLabel(v.condition)+'</span> sold '+dt
+                +(v.vinpopLeads>0?'<span class="vppill">VinPop lead</span>':'')+'</div></div>'
             +'<div class="soldwatch"><span class="n '+(w>=1?"hot":"cold")+'">'+w+'</span>'
               +'<span class="wl">'+(w===1?"watcher":"watchers")+'</span></div>'
             +'</div>';
@@ -1248,8 +1426,10 @@
       modal.innerHTML=
         '<div class="mbody">'
           +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
-          +'<div class="mph-title" style="margin-top:0">Sold · last 30 days</div>'
-          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Each car\'s peak watcher count — demand that preceded the sale.</p>'
+          +'<div class="mph-title" style="margin-top:0">'+(touchOnly?"Sold with a LotPulse touch · last 30 days":"Sold · last 30 days")+'</div>'
+          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">'+(touchOnly
+            ?"Sold vehicles that had a watcher or a VinPop lead on that vehicle. This shows demand on the car, not a confirmed buyer match."
+            :"Each car\'s peak watcher count — demand that preceded the sale.")+'</p>'
           +'<div class="soldlist">'+rows+'</div>'
         +'</div>';
       // Wire up click-to-drill on each sold row
@@ -1360,18 +1540,29 @@
   function shopName(n){
     return n ? '<span class="shopname">'+escapeHtml(n)+'</span>' : '';
   }
+  var _shopWin=null;
+  function openNewShoppers(win){ _shopWin=win; openShoppers(); }
   function openShoppers(){
+    var shopWin=_shopWin; _shopWin=null;
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
     modal.innerHTML='<div class="state">Loading…</div>';
     modal.classList.add("open"); scrim.classList.add("open");
     fetch(API+"/dash/"+SLUG+"/shoppers").then(function(r){return r.json();}).then(function(d){
       if(d.error){ modal.innerHTML='<div class="mbody"><div class="state">'+d.error+'</div></div>'; return; }
       var shoppers=d.shoppers||[];
+      // Overview "Leads" tiles: only shoppers who are NEW in the window.
+      var winNote="";
+      if(shopWin){
+        var ov=state.ov, cut = shopWin==="mtd" ? (ov&&ov.mtdStart?new Date(ov.mtdStart).getTime():0) : Date.now()-7*86400000;
+        shoppers=shoppers.filter(function(s){ return s.firstSeen && new Date(s.firstSeen).getTime()>=cut; });
+        var want = ov&&ov.vinwatch ? (shopWin==="mtd"?ov.vinwatch.leadsMtd:ov.vinwatch.leads7d) : shoppers.length;
+        if(want>shoppers.length) winNote=(want-shoppers.length)+" more signed up in this window but no longer have an active watch (the vehicle sold or they stopped watching). ";
+      }
       var tz=(d.dealer && d.dealer.timezone) || null; // render watch times in the dealer's local zone
       _mbTz=tz;
       var list="";
       if(!shoppers.length){
-        list='<div class="state">No shoppers watching yet.</div>';
+        list='<div class="state">'+(shopWin?"No new shoppers in this window.":"No shoppers watching yet.")+'</div>';
       } else {
         shoppers.forEach(function(s){
           var cars="";
@@ -1402,8 +1593,9 @@
       modal.innerHTML=
         '<div class="mbody">'
           +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
-          +'<div class="mph-title" style="margin-top:0">'+pmark("vw")+'VinWatch shoppers watching your lot</div>'
-          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">Tap a number to call. Hot = watching multiple cars or clicking alerts.</p>'
+          +'<div class="mph-title" style="margin-top:0">'+pmark("vw")+(shopWin?"New VinWatch shoppers · "+(shopWin==="mtd"?"month to date":"last 7 days"):"VinWatch shoppers watching your lot")+'</div>'
+          +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">'+(shopWin?"Each new phone number counts once, however many cars they watch. "+escapeHtml(winNote):"")+'Tap a number to call. Hot = watching multiple cars or clicking alerts.'
+            +(shopWin?' <a href="#" id="shopAll" style="color:var(--vw);font-weight:700">See all shoppers</a>':'')+'</p>'
           +'<div class="stopbox">'
             +'<div class="sbt">Stop messaging a number</div>'
             +'<div class="sbs">Someone reply that they bought a car? Look them up and we\'ll stop all texts. Works even if the vehicle they were watching has already sold.</div>'
@@ -1419,6 +1611,8 @@
       // Two steps on purpose: look up, SEE who it is, then choose a reason.
       // Acting straight off a pasted number risks silently killing a
       // stranger's alerts on a mistyped digit.
+      var _sa=document.getElementById("shopAll");
+      if(_sa) _sa.addEventListener("click", function(e){ e.preventDefault(); openShoppers(); });
       var sbPhone = document.getElementById("sb-phone");
       var sbFind = document.getElementById("sb-find");
       var sbResult = document.getElementById("sb-result");
@@ -1962,7 +2156,7 @@
     SLUG=slug;
     var sel=document.getElementById("dealerSwitch");
     if(sel && sel.style.display!=="none"){ sel.value=slug; }
-    try{ history.replaceState(null,"","?dealer="+SLUG); }catch(e){}
+    try{ history.replaceState(null,"","?dealer="+SLUG+location.hash); }catch(e){}
     closeDetail();
     refresh();
   }
@@ -2238,52 +2432,119 @@
     });
   }
 
-  function openPromoLeads(){
+  // One renderer for the VinPop lead list, used by the detail window (opened
+  // from the overview tiles) and by the VinPop section. win: "7d" | "mtd" | "90d".
+  function promoLeadsUrl(win){ return API+"/dash/"+SLUG+"/promo-leads"+(win==="7d"?"?days=7":win==="mtd"?"?window=mtd":""); }
+  function promoWinLabel(win, d){ return win==="7d"?"last 7 days":win==="mtd"?"month to date":"last "+((d&&d.windowDays)||90)+" days"; }
+  function promoLeadsBody(d, win){
+    var tz=(d.dealer&&d.dealer.timezone)||null, leads=d.leads||[];
+    var sent=leads.filter(function(l){return l.crm==="sent";}).length;
+    var notSent=leads.length-sent;
+    var byTrig={timed:0,exit_intent:0}; leads.forEach(function(l){ byTrig[l.trigger]=(byTrig[l.trigger]||0)+1; });
+    var rows = leads.length ? leads.map(function(l){ return promoLeadRow(l,tz); }).join("")
+      : '<div class="state" style="padding:28px 0">No VinPop leads '+(win==="90d"?"yet":"in this window")+'.</div>';
+    var first = win==="90d"
+      ? '<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">Last<br>7 days</div></div>'
+      : '<div class="mstat"><div class="n vp">'+leads.length+'</div><div class="l">Leads<br>'+(win==="mtd"?"this month":"7 days")+'</div></div>';
+    return '<div class="mstats">'+first
+        +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
+        +'<div class="mstat"><div class="n">'+(byTrig.exit_intent||0)+'</div><div class="l">Exit<br>intent</div></div>'
+      +'</div>'
+      +'<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 12px">Shoppers who claimed the website offer. '
+        +'These are separate from watchers and aren\'t scored. If a shopper brings in a printed voucher, match its code to the one shown here. '+leads.length+' total · '+sent+' sent to CRM'
+        +(notSent?' · <span style="color:var(--redline);font-weight:600">'+notSent+' not yet delivered</span>':'')+'</p>'
+      +(leads.length?gradeFilterHtml(d.gradeCounts||{}, leads.length):'')
+      +'<div class="msglist">'+rows+'<div class="state gempty" style="display:none;padding:22px 0">No leads with this grade.</div></div>';
+  }
+  function wirePromoLeads(root){
+    wireGrades(root);
+    root.querySelectorAll(".plresend").forEach(function(b){
+      b.addEventListener("click", function(){
+        b.disabled=true; b.textContent="Sending…";
+        fetch(API+"/dash/"+SLUG+"/promo-leads/"+b.getAttribute("data-plid")+"/resend",{
+          method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"
+        }).then(function(r){return r.json();}).then(function(res){
+          if(res.sent||res.skipped==="already_sent"){
+            var pill=b.previousElementSibling; if(pill){ pill.className="statpill ok"; pill.textContent="Sent to CRM"; }
+            b.remove();
+            loadOverview();
+          } else {
+            b.disabled=false;
+            b.textContent = res.skipped==="no_destination" ? "No CRM email set" : "Retry";
+            b.title=res.error||res.skipped||"Send failed";
+          }
+        }).catch(function(){ b.disabled=false; b.textContent="Retry"; });
+      });
+    });
+  }
+  function openPromoLeads(win){
+    if(win!=="7d" && win!=="mtd") win="90d";   // also covers a click event being passed in
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
     modal.innerHTML='<div class="state">Loading…</div>';
     modal.classList.add("open"); scrim.classList.add("open");
     var closeBtn='<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>';
-    fetch(API+"/dash/"+SLUG+"/promo-leads").then(function(r){return r.json();}).then(function(d){
+    fetch(promoLeadsUrl(win)).then(function(r){return r.json();}).then(function(d){
       if(d.error||!d.visible){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">'+escapeHtml(d.error||"VinPop isn't set up for this rooftop.")+'</div></div>'; return; }
-      var tz=(d.dealer&&d.dealer.timezone)||null, leads=d.leads||[];
-      var sent=leads.filter(function(l){return l.crm==="sent";}).length;
-      var notSent=leads.length-sent;
-      var byTrig={timed:0,exit_intent:0}; leads.forEach(function(l){ byTrig[l.trigger]=(byTrig[l.trigger]||0)+1; });
-      var rows = leads.length ? leads.map(function(l){ return promoLeadRow(l,tz); }).join("")
-        : '<div class="state" style="padding:28px 0">No VinPop leads yet.</div>';
       modal.innerHTML='<div class="mbody">'+closeBtn
-        +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop leads · last '+(d.windowDays||90)+' days</div>'
-        +'<div class="mstats">'
-          +'<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">This<br>week</div></div>'
-          +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
-          +'<div class="mstat"><div class="n">'+(byTrig.exit_intent||0)+'</div><div class="l">Exit<br>intent</div></div>'
-        +'</div>'
-        +'<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 12px">Shoppers who claimed the website offer. '
-          +'These are separate from watchers and aren\'t scored. If a shopper brings in a printed voucher, match its code to the one shown here. '+leads.length+' total · '+sent+' sent to CRM'
-          +(notSent?' · <span style="color:var(--redline);font-weight:600">'+notSent+' not yet delivered</span>':'')+'</p>'
-        +(leads.length?gradeFilterHtml(d.gradeCounts||{}, leads.length):'')
-        +'<div class="msglist">'+rows+'<div class="state gempty" style="display:none;padding:22px 0">No leads with this grade.</div></div>'
+        +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop leads · '+promoWinLabel(win,d)+'</div>'
+        +promoLeadsBody(d, win)
       +'</div>';
-      wireGrades(modal);
-      modal.querySelectorAll(".plresend").forEach(function(b){
-        b.addEventListener("click", function(){
-          b.disabled=true; b.textContent="Sending…";
-          fetch(API+"/dash/"+SLUG+"/promo-leads/"+b.getAttribute("data-plid")+"/resend",{
-            method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"
-          }).then(function(r){return r.json();}).then(function(res){
-            if(res.sent||res.skipped==="already_sent"){
-              var pill=b.previousElementSibling; if(pill){ pill.className="statpill ok"; pill.textContent="Sent to CRM"; }
-              b.remove();
-            } else {
-              b.disabled=false;
-              b.textContent = res.skipped==="no_destination" ? "No CRM email set" : "Retry";
-              b.title=res.error||res.skipped||"Send failed";
-            }
-          }).catch(function(){ b.disabled=false; b.textContent="Retry"; });
-        });
-      });
+      wirePromoLeads(modal);
     }).catch(function(e){ modal.innerHTML='<div class="mbody">'+closeBtn+'<div class="state">Could not load: '+escapeHtml(e.message)+'</div></div>'; });
   }
+
+  // ── VinPop section (its own view; deep link #vinpop) ─────────────────────────
+  var _vpvWin="mtd";
+  function vpOffHtml(){
+    return '<section class="band vp"><div class="band-head"><div class="bt">'+pmark("vp")+'VinPop <span class="bs">Website offer leads</span></div></div>'
+      +'<div class="vp-off"><div><div class="t">VinPop isn\'t on at this store</div>'
+      +'<div class="d">VinPop shows website shoppers a timed or exit-intent offer and sends each claim to your CRM as a graded lead. '+escapeHtml(vpOffWho())+'</div></div>'
+      +'<a href="https://vinpop.io" target="_blank" rel="noopener">See how VinPop works</a></div></section>';
+  }
+  function renderVpView(){
+    var host=document.getElementById("vpView"); if(!host) return;
+    var forSlug=SLUG, win=_vpvWin;
+    if(!host.getAttribute("data-loaded")) host.innerHTML='<div class="vpv-card"><div class="state">Loading…</div></div>';
+    fetch(promoLeadsUrl(win)).then(function(r){return r.json();}).then(function(d){
+      if(forSlug!==SLUG || win!==_vpvWin) return;
+      host.setAttribute("data-loaded","1");
+      if(d.error){ host.innerHTML='<div class="vpv-card"><div class="state">'+escapeHtml(d.error)+'</div></div>'; return; }
+      if(!d.visible){ host.innerHTML=vpOffHtml(); return; }
+      var seg=function(k,label){ return '<button type="button" data-vpw="'+k+'" class="'+(k===win?"on":"")+'" aria-pressed="'+(k===win?"true":"false")+'">'+label+'</button>'; };
+      host.innerHTML='<div class="sec-head"><h2>VinPop leads <span class="prod-tag vp">'+pmark("vp","sm")+'VinPop</span></h2>'
+          +'<div class="meta">'+escapeHtml(PROMO_STATUS_LABEL[d.status]||"")+'</div></div>'
+        +'<div class="vpv-seg" role="group" aria-label="Time window">'+seg("7d","Last 7 days")+seg("mtd","Month to date")+seg("90d","Last 90 days")+'</div>'
+        +'<div class="vpv-card">'+promoLeadsBody(d, win)+'</div>';
+      wirePromoLeads(host);
+      host.querySelectorAll("[data-vpw]").forEach(function(b){
+        b.addEventListener("click", function(){ _vpvWin=b.getAttribute("data-vpw"); renderVpView(); });
+      });
+    }).catch(function(e){ if(forSlug===SLUG) host.innerHTML='<div class="vpv-card"><div class="state">Could not load: '+escapeHtml(e.message)+'</div></div>'; });
+  }
+
+  // ── Claim rate by offer (overview tile detail) ───────────────────────────────
+  function openClaimRate(){
+    var v=state.ov&&state.ov.vinpop; if(!v) return;
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    var rows=(v.offers7d||[]).map(function(o){
+      return '<tr><td>'+escapeHtml(o.name||"Offer")+(o.amountCents?' <span style="color:var(--slate)">· '+escapeHtml(promoDollars(o.amountCents))+'</span>':'')+'</td>'
+        +'<td>'+(o.views||0).toLocaleString("en-US")+'</td><td>'+(o.leads||0)+'</td>'
+        +'<td><strong>'+(o.claimRate==null?"—":o.claimRate.toFixed(1)+"%")+'</strong></td></tr>';
+    }).join("");
+    modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
+      +'<div class="mph-title" style="margin-top:0">'+pmark("vp")+'VinPop claim rate · last 7 days</div>'
+      +'<div class="mstats">'
+        +'<div class="mstat"><div class="n">'+(v.views7d||0).toLocaleString("en-US")+'</div><div class="l">Popup<br>views</div></div>'
+        +'<div class="mstat"><div class="n vp">'+(v.leads7d||0)+'</div><div class="l">Leads<br>claimed</div></div>'
+        +'<div class="mstat"><div class="n">'+(v.claimRate7d==null?"—":v.claimRate7d.toFixed(1)+"%")+'</div><div class="l">Claim<br>rate</div></div>'
+      +'</div>'
+      +'<p style="font-size:12.5px;color:var(--slate);margin:-4px 0 12px">Claim rate = leads ÷ times the popup was shown. Views are counted per day, so this window covers the last 7 calendar days.</p>'
+      +(rows?'<table class="ortable"><thead><tr><th>Offer</th><th>Views</th><th>Leads</th><th>Claim rate</th></tr></thead><tbody>'+rows+'</tbody></table>'
+            :'<div class="state" style="padding:22px 0">No popup views or leads in the last 7 days.</div>')
+      +'</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+  }
+
   var _promoLeadsBtn=document.getElementById("promoLeadsBtn");
   if(_promoLeadsBtn) _promoLeadsBtn.addEventListener("click", openPromoLeads);
 
@@ -3623,7 +3884,144 @@
     _gxResize=setTimeout(function(){ if(_gx && _gx.map && _gx.fit) _gx.fit(); }, 200);
   });
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // OVERVIEW + SECTION VIEWS (Nov 2026 revamp)
+  // ══════════════════════════════════════════════════════════════════════════
+  // One page, three views: Overview (default), VinPop (#vinpop), VinWatch
+  // (#vinwatch). The hash is the deep link, so the weekly digest can link
+  // straight to a section. Everything here fails soft: if /overview is not
+  // deployed yet the new tiles show "—" and the rest of the page works.
+  var VIEWS=["overview","vinpop","vinwatch"];
+  function viewFromHash(){ var h=(location.hash||"").replace("#","").toLowerCase(); return VIEWS.indexOf(h)>-1?h:"overview"; }
+  function showView(v){
+    VIEWS.forEach(function(k){ var el=document.getElementById("view-"+k); if(el) el.style.display = k===v ? "" : "none"; });
+    document.querySelectorAll("#vnav a").forEach(function(a){
+      var on=a.getAttribute("data-v")===v; a.classList.toggle("on",on);
+      if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+    });
+    if(v==="vinpop") renderVpView();
+  }
+  window.addEventListener("hashchange", function(){ showView(viewFromHash()); window.scrollTo(0,0); });
+
+  function tileClick(id, fn){
+    var el=document.getElementById(id); if(!el) return;
+    el.addEventListener("click", function(){ fn(); });
+    el.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fn(); } });
+  }
+  tileClick("touchCard", openSoldTouch);
+  tileClick("vp7Card", function(){ openPromoLeads("7d"); });
+  tileClick("vpMtdCard", function(){ openPromoLeads("mtd"); });
+  tileClick("vpRateCard", openClaimRate);
+  tileClick("vpCrmCard", function(){ openPromoLeads("mtd"); });
+  tileClick("vw7Card", function(){ openNewShoppers("7d"); });
+  tileClick("vwMtdCard", function(){ openNewShoppers("mtd"); });
+
+  function setText(id, t){ var el=document.getElementById(id); if(el) el.textContent=t; }
+  function plural(n, one, many){ return n+" "+(n===1?one:(many||one+"s")); }
+  function vpOffWho(){
+    var tag=document.getElementById("agencyTag");
+    return tag && tag.style.display!=="none" ? "Switch it on under VinPop settings." : "Ask your LotPulse contact to switch it on.";
+  }
+
+  function loadOverview(){
+    var forSlug=SLUG;
+    return fetch(API+"/dash/"+SLUG+"/overview").then(function(r){return r.json();}).then(function(d){
+      if(forSlug!==SLUG) return;
+      if(d.error) throw new Error(d.error);
+      state.ov=d;
+      var monthName=""; try{ monthName=new Date(d.mtdStart).toLocaleString("en-US",{month:"short",timeZone:(d.dealer&&d.dealer.timezone)||undefined}); }catch(e){}
+      // VinWatch band
+      setText("o-vw7", d.vinwatch.leads7d);
+      setText("o-vwm", d.vinwatch.leadsMtd);
+      setText("o-vwm-s", (monthName?monthName+" 1 to today · ":"")+"New unique shoppers ›");
+      // Sold with a touch
+      var t=d.soldTouch30d||{};
+      setText("o-touch", t.total==null?"—":t.total);
+      setText("o-touch-of", t.sold!=null ? "of "+t.sold+" sold" : "");
+      setText("o-touch-vw", plural(t.withWatchers||0,"with a watcher","with watchers"));
+      setText("o-touch-vp", d.vinpop ? (t.withVinpop||0)+" with a VinPop lead" : "");
+      // VinPop band
+      var v=d.vinpop, tiles=document.getElementById("vpTiles"), off=document.getElementById("vpOff"), link=document.getElementById("vpBandLink"), gp=document.getElementById("vpGradePanel");
+      if(!v){
+        if(tiles) tiles.style.display="none";
+        if(off) off.style.display="";
+        if(link) link.style.display="none";
+        if(gp) gp.style.display="none";
+        setText("vpOffWho", vpOffWho());
+      } else {
+        if(tiles) tiles.style.display="";
+        if(off) off.style.display="none";
+        if(link) link.style.display="";
+        setText("o-vp7", v.leads7d);
+        setText("o-vpm", v.leadsMtd);
+        setText("o-vpm-s", (monthName?monthName+" 1 to today · ":"")+"View leads ›");
+        setText("o-vprate", v.claimRate7d==null ? "—" : v.claimRate7d.toFixed(1)+"%");
+        setText("o-vprate-s", v.views7d ? v.views7d.toLocaleString("en-US")+" popup views · By offer ›" : "No popup views yet ›");
+        var crm=document.getElementById("o-vpcrm");
+        if(crm) crm.innerHTML = v.crmMtd.sent+' <small>of '+v.crmMtd.total+'</small>';
+        var cs=document.getElementById("o-vpcrm-s");
+        if(cs){
+          cs.textContent = v.crmMtd.undelivered ? v.crmMtd.undelivered+" not delivered ›" : (v.crmMtd.total ? "0 undelivered" : "No leads yet this month");
+          cs.className = "ks "+(v.crmMtd.undelivered ? "bad" : (v.crmMtd.total ? "good" : ""));
+        }
+        // Grade panel
+        var g=v.gradesMtd||{}, max=Math.max(g.A||0,g.B||0,g.C||0,g.D||0);
+        var graded=(g.A||0)+(g.B||0)+(g.C||0)+(g.D||0);
+        if(gp){
+          gp.style.display="";
+          setText("vgMeta", "Month to date · "+plural(v.leadsMtd,"lead"));
+          var col={A:"#15803D",B:"var(--vp)",C:"#D08A1C",D:"#8A9099"};
+          document.getElementById("vgBars").innerHTML = graded
+            ? ["A","B","C","D"].map(function(k){ var n=g[k]||0; return '<div class="gbar"><span class="gk">'+k+'</span><span class="gt"><i style="width:'+(max?Math.round(n/max*100):0)+'%;background:'+col[k]+'"></i></span><span class="gv">'+n+'</span></div>'; }).join("")
+            : '<div class="state" style="padding:16px 0">'+(v.leadsMtd?"These leads don't have engagement grades.":"No VinPop leads yet this month.")+'</div>';
+          setText("vgSrc", v.leadsMtd ? "Source: "+v.sourceMtd.timed+" timed popup · "+v.sourceMtd.exitIntent+" exit intent" : "");
+        }
+      }
+      renderAttention();
+    }).catch(function(){
+      if(forSlug!==SLUG) return;
+      state.ov=null;
+      ["o-vw7","o-vwm","o-touch","o-vp7","o-vpm","o-vprate","o-vpcrm"].forEach(function(id){ setText(id,"—"); });
+      renderAttention();
+    });
+  }
+
+  // "Needs attention": what to DO, drawn from the summary, signals and overview.
+  function renderAttention(){
+    var host=document.getElementById("ovAttList"); if(!host) return;
+    var items=[], sum=state.sum, ov=state.ov, v=ov&&ov.vinpop;
+    if(v && v.undeliveredOpen>0) items.push({cls:"red", html:'<strong>'+plural(v.undeliveredOpen,"VinPop lead")+'</strong> not delivered to your CRM', go:"Fix ›", fn:function(){ openPromoLeads("90d"); }});
+    if(sum && sum.hotShoppers>0) items.push({cls:"red", html:'<strong>'+plural(sum.hotShoppers,"hot shopper")+'</strong> watching 3+ cars or clicking alerts', go:"Review ›", fn:openShoppers});
+    if(v && v.aGrade7d>0) items.push({cls:"vp", html:'<strong>'+plural(v.aGrade7d,"A-grade VinPop lead")+'</strong> in the last 7 days', go:"Open ›", fn:function(){ openPromoLeads("7d"); }});
+    var sig=state.signals&&state.signals.counts ? (state.signals.counts.hold+state.signals.counts.reprice)||0 : 0;
+    if(sig>0) items.push({cls:"act", html:'<strong>'+plural(sig,"pricing signal")+'</strong> on your inventory', go:"See signals ›", fn:openSignals});
+    var h=items.map(function(it,i){ return '<button type="button" class="att '+it.cls+'" data-att="'+i+'"><span>'+it.html+'</span><span class="go">'+it.go+'</span></button>'; }).join("");
+    if(v && !v.undeliveredOpen && v.crmMtd && v.crmMtd.total>0)
+      h+='<div class="att quiet"><span>CRM delivery: all '+plural(v.crmMtd.total,"VinPop lead")+' this month delivered</span><span class="go">All clear</span></div>';
+    if(!h) h='<div class="att quiet"><span>'+((sum||ov)?"Nothing needs attention right now.":"Loading…")+'</span></div>';
+    host.innerHTML=h;
+    host.querySelectorAll("[data-att]").forEach(function(b){ b.addEventListener("click", function(){ items[+b.getAttribute("data-att")].fn(); }); });
+  }
+
+  // Overview: the five most watched vehicles (from the board already loaded).
+  function renderTopWatched(){
+    var host=document.getElementById("twList"); if(!host) return;
+    var rows=state.board.filter(function(v){ return v.watchers>0; })
+      .sort(function(a,b){ return b.watchers-a.watchers || b.daysOnLot-a.daysOnLot; }).slice(0,5);
+    setText("twMeta", rows.length ? "Top "+rows.length+" of "+state.board.length : "");
+    if(!rows.length){ host.innerHTML='<div class="state" style="padding:18px 0">No vehicles are being watched yet.</div>'; return; }
+    host.innerHTML=rows.map(function(v){
+      return '<button type="button" class="tw-row" data-twvin="'+escapeHtml(v.vin)+'"><span class="tv"><b>'+escapeHtml(vehLabel(v))+'</b> <span>· '+condLabel(v.condition)+' · '+dollars(v.priceCents)+' · '+v.daysOnLot+' days</span></span>'
+        +'<span class="tn">'+v.watchers+' watching</span></button>';
+    }).join("");
+    host.querySelectorAll("[data-twvin]").forEach(function(b){ b.addEventListener("click", function(){ openDetail(b.getAttribute("data-twvin")); }); });
+  }
+
   function refresh(){
+    state.showAll=false; state.ov=null; state.sum=null;
+    var _vh=document.getElementById("vpView"); if(_vh){ _vh.removeAttribute("data-loaded"); _vh.innerHTML=""; }
+    showView(viewFromHash());
+    loadOverview();   // independent: its own failure never blocks the board
     Promise.all([loadSummary(), loadBoard()]).catch(function(e){
       document.getElementById("boardWrap").innerHTML='<div class="board"><div class="state">Could not load data: '+e.message+'</div></div>';
       document.getElementById("updated").textContent="offline";
