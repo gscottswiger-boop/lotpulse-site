@@ -445,6 +445,14 @@
     -webkit-mask:radial-gradient(circle 30px at 16% 64%,transparent 97%,#000 100%);mask:radial-gradient(circle 30px at 16% 64%,transparent 97%,#000 100%)}
   .pv-tk .foil small{font-weight:500;font-size:11.5px;color:#5E6678;margin-top:3px;letter-spacing:0}
   .pv-hint{font-size:11.5px;color:var(--slate);margin-top:7px}
+  /* Scratch themes: swatch picker + themed preview pieces */
+  .thpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin:2px 0 10px}
+  .thopt{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;cursor:pointer;font:600 13px inherit;text-align:left;color:var(--ink)}
+  .thopt i{width:30px;height:20px;border-radius:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+  .thopt.on{border-color:var(--action);background:var(--new-soft)}
+  .pv-strip{display:flex;align-items:center;justify-content:center;gap:6px;min-height:24px;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;text-align:center}
+  .pv-tkw{position:relative}
+  .pv-bow{position:absolute;left:50%;top:-13px;width:48px;height:30px;margin-left:-24px;z-index:2;pointer-events:none}
   .pageopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
   @media (max-width:520px){.pageopts{grid-template-columns:1fr}}
   .pageopt{display:flex;gap:9px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;background:#fff}
@@ -2376,7 +2384,7 @@
         +'<div class="ohead"><span class="opri">'+(idx+1)+'</span>'
           +'<div class="oname"><div class="on1">'+escapeHtml(o.name)+'</div>'
             +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+(site?'Site-wide':escapeHtml(o.targets))+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')
-              +(site?'<span class="chipsite">Site-wide</span>':'')+(o.reveal==="scratch"?'<span class="chipsite">Scratch-off</span>':'')+'</div></div>'
+              +(site?'<span class="chipsite">Site-wide</span>':'')+(o.reveal==="scratch"?'<span class="chipsite">Scratch-off'+(o.theme&&o.theme!=="classic"?' · '+escapeHtml(((d.themes||[]).filter(function(t){return t.key===o.theme;})[0]||{label:o.theme}).label):'')+'</span>':'')+'</div></div>'
           +prStatusPill(o.status)+'</div>'
         +'<div class="ometa">'+cov+' · 7 days: '+(o7.impressions||0)+' views, '+(o7.submits||0)+' leads, '+prPct(o7.conversionRate)+'</div>'
         +warn
@@ -2688,11 +2696,27 @@
     var d=_pr.d, tz=d.dealer.timezone, isNew=!o;
     o=o||{ name:"", enabled:true, offerCents:d.defaults.offerCents, headline:"", disclaimer:"",
            startAt:null, endAt:null, vehicleFilter:null, image:null,
-           placement:"vehicle", reveal:"standard", showOn:null };
+           placement:"vehicle", reveal:"standard", showOn:null, theme:"classic", banner:null };
     // Where it shows (vehicle pages vs site-wide) and how it reveals.
     var placement=o.placement==="site"?"site":"vehicle", reveal=o.reveal==="scratch"?"scratch":"standard";
     var showOn=o.showOn||{home:true,listings:false,vehicles:false,other:true,urls:[]};
-    var siteReady=d.siteReady!==false;
+    var siteReady=d.siteReady!==false, themeReady=d.themeReady!==false;
+    // Scratch-off theme + event banner (only used with Scratch to reveal).
+    var theme=o.theme||"classic", bannerOwn=o.banner||"";
+    var THEME_LIST=d.themes||[{key:"classic",label:"Classic",banner:null}];
+    var TH={
+      classic:{sw:"linear-gradient(135deg,#B8BFCA,#EEF1F5 45%,#ADB4C0)",cover:"Scratch to reveal your offer",foil:"linear-gradient(135deg,#B8BFCA,#EEF1F5 32%,#C2C8D2 52%,#E5E8EE 78%,#ADB4C0)",
+        fc:"#4A5266",ft:"SCRATCH HERE",fs:"to see your offer",strip:["#14213D","#FFFFFF"]},
+      blackfriday:{sw:"linear-gradient(135deg,#141418,#4A4636 50%,#121216)",cover:"Scratch to reveal your Black Friday deal",foil:"linear-gradient(135deg,#141418,#3A3A44 32%,#1C1C22 52%,#4A4636 78%,#121216)",
+        fc:"#F2D27A",ft:"SCRATCH HERE",fs:"to see your deal",strip:["#0E0E10","#F2D27A"],bg:"#121214",frame:"linear-gradient(135deg,#B38A2E,#F5DE8C 35%,#C9A24A 60%,#F2D27A 85%,#A67C24)",amt:"#F2D27A",line:"#FFFFFF"},
+      holiday:{sw:"linear-gradient(135deg,#A87A22,#F3D98B 45%,#9C6F1C)",cover:"Scratch to unwrap your holiday offer",foil:"linear-gradient(135deg,#A87A22,#F3D98B 32%,#C99A3A 52%,#F6E3A6 78%,#9C6F1C)",
+        fc:"#5A3A06",ft:"SCRATCH TO UNWRAP",fs:"your holiday offer",strip:["#1E6B3A","#FFFFFF"],bg:"#FFF9EE",frame:"repeating-linear-gradient(45deg,#C8102E 0 8px,#FFFFFF 8px 16px,#1E6B3A 16px 24px,#FFFFFF 24px 32px)",amt:"#B3122A",line:"#1E3A2A",bow:true},
+      newyear:{sw:"linear-gradient(135deg,#0D1531,#2B3B70 50%,#0B1229)",cover:"Scratch to start the new year with savings",foil:"linear-gradient(135deg,#0D1531,#2B3B70 32%,#121C40 52%,#3A3360 78%,#0B1229)",
+        fc:"#F2D27A",ft:"SCRATCH HERE",fs:"to ring in your offer",strip:["#0B1229","#F2D27A"],bg:"#0E1733",frame:"linear-gradient(135deg,#B38A2E,#F5DE8C 35%,#C9A24A 60%,#F2D27A 85%,#A67C24)",amt:"#F2D27A",line:"#E8ECF8"},
+      july4:{sw:"linear-gradient(135deg,#B22234 0 33%,#FFFFFF 33% 66%,#1D3A8A 66%)",cover:"Scratch to reveal your 4th of July offer",foil:"linear-gradient(135deg,#AEBBD3,#EEF2F9 32%,#B9C5DB 52%,#E6ECF6 78%,#A3B1CC)",
+        fc:"#1D2B57",ft:"SCRATCH HERE",fs:"to see your offer",strip:["#1D3A8A","#FFFFFF"],bg:"#FFFFFF",frame:"repeating-linear-gradient(45deg,#B22234 0 8px,#FFFFFF 8px 16px,#1D3A8A 16px 24px,#FFFFFF 24px 32px)",amt:"#1D3A8A",line:"#1D2B57"}
+    };
+    function themeDefaultBanner(k){ var t=THEME_LIST.filter(function(x){return x.key===k;})[0]; return t&&t.banner||""; }
     var kinds=d.pageKinds||[{key:"home",label:"Homepage"},{key:"listings",label:"Inventory listings"},{key:"vehicles",label:"Vehicle pages"},{key:"other",label:"All other pages"}];
     var KIND_SUB={home:"Your website's front page",listings:"Search results and inventory lists",
       vehicles:"Only on cars that have no offer of their own",other:"Specials, service, finance, about…"};
@@ -2745,6 +2769,17 @@
           +'<div class="wv-seg" id="rv-seg" role="group" aria-label="How this offer appears">'
             +'<button type="button" data-v="standard">Show the offer</button><button type="button" data-v="scratch">Scratch to reveal</button></div>'
           +'<p class="pnote" id="rv-note" style="margin:6px 0 0"></p>'
+          +'<div id="th-wrap" style="display:none;margin-top:12px">'
+            +(themeReady
+              ? '<div class="setrow" style="margin-bottom:4px"><label>Theme <span class="newtag">New</span></label></div>'
+                +'<div class="thpick" id="th-pick" role="group" aria-label="Scratch-off theme">'+THEME_LIST.map(function(t){
+                    return '<button type="button" class="thopt" data-k="'+escapeHtml(t.key)+'"><i style="background:'+(TH[t.key]||TH.classic).sw+'"></i>'+escapeHtml(t.label)+'</button>';
+                  }).join("")+'</div>'
+                +'<div class="setrow"><label for="th-banner">Event banner <span style="font-weight:400;color:var(--slate)">(optional · up to '+(d.bannerMax||40)+' characters)</span></label>'
+                  +'<input id="th-banner" maxlength="'+(d.bannerMax||40)+'" value="'+escapeHtml(bannerOwn)+'"></div>'
+                +'<p class="pnote" id="th-note" style="margin-top:-2px"></p>'
+              : '<div class="pwarn">Seasonal scratch-off themes turn on after a database update. Run <code>/admin/patch</code>, then reopen this screen.</div>')
+          +'</div>'
         : '<div class="pwarn" style="margin-top:6px">Site-wide and scratch-off offers turn on after a database update. Run <code>/admin/patch</code>, then reopen this screen.</div>')
 
       +'<div class="psec">Offer</div>'
@@ -3027,12 +3062,17 @@
         // Scratch: band asks them to scratch; the card shows the offer with a
         // corner scratched off so the agency can see both layers.
         var acc2=((d.settings||{}).tab||{}).accent;
+        var T=TH[theme]||TH.classic, bnEl=document.getElementById("th-banner");
+        var bn=themeReady?((bnEl&&bnEl.value.trim())||themeDefaultBanner(theme)):"";
+        var tkStyle=T.frame?' style="border:3px solid transparent;background:linear-gradient('+T.bg+','+T.bg+') padding-box,'+T.frame+' border-box"':'';
         el.innerHTML=roof+'<div class="pv-band"'+(acc2?' style="background:'+escapeHtml(acc2)+';color:'+rtTextOn(acc2)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
-          +'<div class="pv-sch">Scratch to reveal your offer</div></div>'
-          +'<div class="pv-body"><div class="pv-tk">'
+          +'<div class="pv-sch">'+escapeHtml(themeReady?T.cover:TH.classic.cover)+'</div></div>'
+          +(bn?'<div class="pv-strip" style="background:'+T.strip[0]+';color:'+T.strip[1]+'">'+escapeHtml(bn)+'</div>':'')
+          +'<div class="pv-body"><div class="pv-tkw">'+(T.bow&&themeReady?'<svg class="pv-bow" viewBox="0 0 64 40" aria-hidden="true"><path d="M32 20 C22 2,4 4,6 14 C8 24,24 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/><path d="M32 20 C42 2,60 4,58 14 C56 24,40 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/><circle cx="32" cy="19" r="5.5" fill="#E0213F" stroke="#8E0B20" stroke-width="1.5"/></svg>':'')
+          +'<div class="pv-tk"'+(themeReady?tkStyle:'')+'>'
             +(image?'<img src="'+escapeHtml(API+image.path)+'" alt="Offer graphic" style="max-width:100%;max-height:100%;object-fit:contain">'
-                   :'<div class="pa">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'<small>OFF</small></div><div class="pl">'+escapeHtml(sub)+'</div>')
-            +'<div class="foil">SCRATCH HERE<small>to see your offer</small></div></div>'
+                   :'<div class="pa"'+(themeReady&&T.amt?' style="color:'+T.amt+'"':'')+'>'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'<small>OFF</small></div><div class="pl"'+(themeReady&&T.line?' style="color:'+T.line+'"':'')+'>'+escapeHtml(sub)+'</div>')
+            +'<div class="foil"'+(themeReady?' style="background:'+T.foil+';color:'+T.fc+'"':'')+'>'+escapeHtml(themeReady?T.ft:"SCRATCH HERE")+'<small'+(themeReady&&T.frame?' style="color:'+T.fc+';opacity:.85"':'')+'>'+escapeHtml(themeReady?T.fs:"to see your offer")+'</small></div></div></div>'
           +'<div class="pv-hint">Shoppers scratch with a finger or mouse (or tap “Tap to reveal”), then the form appears.</div></div>'
           +'<div class="pv-cap">'+(placement==="site"?'Site-wide: no car is named on the popup or the voucher.':'The car is named under the header on each vehicle page.')+'</div>';
         return;
@@ -3079,6 +3119,14 @@
       if(rn) rn.textContent=reveal==="scratch"
         ? "The amount is hidden under a scratch-off foil. Shoppers scratch it with a finger or mouse (or tap to reveal), then the form appears."
         : "The amount shows straight away, with the form under it (as today).";
+      var tw=document.getElementById("th-wrap"); if(tw) tw.style.display=reveal==="scratch"?"":"none";
+      document.querySelectorAll("#th-pick .thopt").forEach(function(b){ var on=b.getAttribute("data-k")===theme; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
+      var bi=document.getElementById("th-banner");
+      if(bi) bi.placeholder=themeDefaultBanner(theme)||"None (e.g. Spring Sales Event)";
+      var tn=document.getElementById("th-note");
+      if(tn) tn.textContent=themeDefaultBanner(theme)
+        ? "Leave blank to use “"+themeDefaultBanner(theme)+"”. The header keeps the dealer's color. Use the offer's start and end dates to run it for the season."
+        : "Classic has no banner unless you write one. The header keeps the dealer's color.";
       document.getElementById("pr-headline").placeholder=site?"your next vehicle  (e.g. any pre-owned vehicle)":"this 2024 Toyota Tacoma  (automatic: names the vehicle)";
       document.getElementById("pr-disclaimer").placeholder=site?"Cannot be combined with some offers. See dealer for details."
         :"Offer applies to this vehicle only. Cannot be combined with some offers. See dealer for details.";
@@ -3086,6 +3134,8 @@
     }
     document.querySelectorAll("#pl-seg button").forEach(function(b){ b.addEventListener("click", function(){ placement=b.getAttribute("data-v"); placeShow(); if(placement==="vehicle") scheduleMatch(); }); });
     document.querySelectorAll("#rv-seg button").forEach(function(b){ b.addEventListener("click", function(){ reveal=b.getAttribute("data-v"); placeShow(); }); });
+    document.querySelectorAll("#th-pick .thopt").forEach(function(b){ b.addEventListener("click", function(){ theme=b.getAttribute("data-k"); placeShow(); }); });
+    var thb=document.getElementById("th-banner"); if(thb) thb.addEventListener("input", renderPreview);
     document.querySelectorAll("#pl-kinds input").forEach(function(cb){ cb.addEventListener("change", function(){ cb.closest(".pageopt").classList.toggle("on", cb.checked); }); });
     function showOnBody(){
       var so={}; kinds.forEach(function(k){ so[k.key]=false; });
@@ -3139,6 +3189,9 @@
         vehicleFilter: placement==="site"?null:fl,
         targetArea: arBody(),
       };
+      if(siteReady && themeReady && reveal==="scratch"){
+        body.theme=theme; body.banner=(document.getElementById("th-banner").value||"").trim();
+      }
       if(siteReady){
         body.placement=placement; body.reveal=reveal;
         if(placement==="site"){

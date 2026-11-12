@@ -121,6 +121,14 @@
 // except in demo / test mode, where each page load starts covered again.
 // dataLayer gets lp_promo_revealed with method scratch / tap.
 //
+// SCRATCH THEMES (Nov 2026): a scratch offer carries `theme` (classic |
+// blackfriday | holiday | newyear | july4) and `banner` (the event-banner
+// line, or null). A theme changes the foil, the card frame, the header
+// wording, the event banner under the header and the reveal effect (snow,
+// fireworks, stars, gold confetti on a canvas over the page). The header
+// always keeps the dealer's accent color. Unknown / missing theme = Classic,
+// exactly as before (the classic DOM confetti is kept as is).
+//
 // LIVE NOW: POST /v1/promo/presence on page load, every 30s while the tab is
 // visible, when the tab is hidden/shown, and on pagehide (sendBeacon). It
 // sends the path (query string masked), the page title, the VIN on a VDP, the
@@ -655,7 +663,16 @@
       + "animation:lpburst .9s ease-out forwards}"
       + "@keyframes lpburst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}"
       + ".form-in{animation:lpfade .3s ease}@keyframes lpfade{from{opacity:0;transform:translateY(6px)}}"
-      + "@media (prefers-reduced-motion:reduce){.bit{display:none}.form-in{animation:none}.tk canvas{transition:none}}";
+      + "@media (prefers-reduced-motion:reduce){.bit{display:none}.form-in{animation:none}.tk canvas{transition:none}}"
+      // Scratch themes: event banner under the header, the bow on the card,
+      // and the effects canvas over the whole page.
+      + ".strip{display:flex;align-items:center;justify-content:center;gap:8px;min-height:30px;padding:6px 12px;text-align:center;"
+      + "font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;line-height:1.3}"
+      + ".strip svg{width:12px;height:12px;flex:none}"
+      + ".tkw{position:relative}"
+      + ".tkw .bow{position:absolute;left:50%;top:-17px;width:64px;height:40px;margin-left:-32px;pointer-events:none;z-index:2;"
+      + "filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}"
+      + ".fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647}";
   }
 
   function amountLabel() {
@@ -671,23 +688,85 @@
     return sub;
   }
 
+  // ── Scratch themes ─────────────────────────────────────────────────────────
+  var GOLD = "linear-gradient(135deg,#B38A2E,#F5DE8C 35%,#C9A24A 60%,#F2D27A 85%,#A67C24)";
+  var THEMES = {
+    classic: { cover: "Scratch to reveal your offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#14213D", color: "#FFFFFF", icon: "spark" },
+      foil: ["#B8BFCA", "#EEF1F5", "#C2C8D2", "#E5E8EE", "#ADB4C0"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#4A5266", subColor: "#5E6678", pattern: "dollar", effect: "classic" },
+    blackfriday: { cover: "Scratch to reveal your Black Friday deal", revealed: "Your Black Friday deal: {a} off",
+      strip: { bg: "#0E0E10", color: "#F2D27A", icon: "tag" },
+      foil: ["#141418", "#3A3A44", "#1C1C22", "#4A4636", "#121216"], foilTitle: "SCRATCH HERE", foilSub: "to see your deal",
+      titleColor: "#F2D27A", subColor: "#CFC4A0", pattern: "percent", dark: true,
+      ticketBg: "#121214", frame: GOLD, amount: "#F2D27A", line: "#FFFFFF",
+      effect: "confetti", fx: ["#F2D27A", "#C9A24A", "#FFFFFF", "#2A2A2E"] },
+    holiday: { cover: "Scratch to unwrap your holiday offer", revealed: "You unwrapped {a} off",
+      strip: { bg: "#1E6B3A", color: "#FFFFFF", icon: "flake" },
+      foil: ["#A87A22", "#F3D98B", "#C99A3A", "#F6E3A6", "#9C6F1C"], foilTitle: "SCRATCH TO UNWRAP", foilSub: "your holiday offer",
+      titleColor: "#5A3A06", subColor: "#6E4E14", pattern: "snow",
+      ticketBg: "#FFF9EE", frame: "repeating-linear-gradient(45deg,#C8102E 0 9px,#FFFFFF 9px 18px,#1E6B3A 18px 27px,#FFFFFF 27px 36px)",
+      amount: "#B3122A", line: "#1E3A2A", bow: true, effect: "snow" },
+    newyear: { cover: "Scratch to start the new year with savings", revealed: "Happy New Year! {a} off",
+      strip: { bg: "#0B1229", color: "#F2D27A", icon: "spark" },
+      foil: ["#0D1531", "#2B3B70", "#121C40", "#3A3360", "#0B1229"], foilTitle: "SCRATCH HERE", foilSub: "to ring in your offer",
+      titleColor: "#F2D27A", subColor: "#C9D2EE", pattern: "stars", dark: true,
+      ticketBg: "#0E1733", frame: GOLD, amount: "#F2D27A", line: "#E8ECF8",
+      effect: "fireworks", fx: ["#F2D27A", "#FFFFFF", "#C9D2EE", "#F5B942"] },
+    july4: { cover: "Scratch to reveal your 4th of July offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#1D3A8A", color: "#FFFFFF", icon: "star", border: "#B22234" },
+      foil: ["#AEBBD3", "#EEF2F9", "#B9C5DB", "#E6ECF6", "#A3B1CC"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#1D2B57", subColor: "#3B4A75", pattern: "flagstars",
+      ticketBg: "#FFFFFF", frame: "repeating-linear-gradient(45deg,#B22234 0 9px,#FFFFFF 9px 18px,#1D3A8A 18px 27px,#FFFFFF 27px 36px)",
+      amount: "#1D3A8A", line: "#1D2B57", effect: "stars", fx: ["#B22234", "#FFFFFF", "#1D3A8A"] }
+  };
+  function th() { return THEMES[CFG && CFG.theme] || THEMES.classic; }
+  function themeId() { return CFG && THEMES[CFG.theme] ? CFG.theme : "classic"; }
+  function revealedLine() { return th().revealed.replace("{a}", amountLabel()); }
+  var STRIP_ICONS = {
+    flake: '<svg viewBox="-10 -10 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5"/></svg>',
+    star: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0-9.5 2.6-3.1 9.5-3 4.1 1.3 5.9 8 0 4.2-5.9 8-4.1 1.3-9.5-3-2.6-3.1Z"/></svg>',
+    spark: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0-10 2.2-2.2 10 0 2.2 2.2 0 10-2.2 2.2-10 0-2.2-2.2Z"/></svg>',
+    tag: '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h6.1c.4 0 .8.2 1.1.4l7 7a1.5 1.5 0 0 1 0 2.1l-6.1 6.1a1.5 1.5 0 0 1-2.1 0l-7-7A1.5 1.5 0 0 1 2 9.6ZM6.5 8a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>'
+  };
+  var BOW_SVG = '<svg class="bow" viewBox="0 0 64 40" aria-hidden="true">'
+    + '<path d="M32 20 C22 2,4 4,6 14 C8 24,24 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/>'
+    + '<path d="M32 20 C42 2,60 4,58 14 C56 24,40 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/>'
+    + '<path d="M30 22 L22 38 L27 36 L29 40 L32 24Z" fill="#B00D27"/><path d="M34 22 L42 38 L37 36 L35 40 L32 24Z" fill="#B00D27"/>'
+    + '<path d="M13 12 C17 9,23 11,27 16" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round"/>'
+    + '<circle cx="32" cy="19" r="5.5" fill="#E0213F" stroke="#8E0B20" stroke-width="1.5"/></svg>';
+  // The event banner under the header ("Holiday Sales Event"), if any.
+  function stripHtml() {
+    var line = CFG && typeof CFG.banner === "string" ? CFG.banner.trim() : "";
+    if (!line) return "";
+    var st = th().strip, ic = STRIP_ICONS[st.icon] || "";
+    return '<div class="strip" style="background:' + st.bg + ';color:' + st.color
+      + (st.border ? ';border-bottom:4px solid ' + st.border : '') + '">' + ic + '<span>' + esc(line) + '</span>' + ic + '</div>';
+  }
+
   // Scratch header: the band never gives the amount away — the prize does.
   function scratchHeaderHtml() {
     var dealer = esc(CFG.dealerName || "");
     return '<div class="band">'
       + (dealer ? '<p class="dealer">' + dealer + '</p>' : "")
-      + '<h2 class="hl sc" id="hl">' + (REVEALED ? "You uncovered " + esc(amountLabel()) + " off" : "Scratch to reveal your offer") + '</h2>'
-      + '<button class="x" id="x" type="button" aria-label="Close">&times;</button></div>';
+      + '<h2 class="hl sc" id="hl">' + esc(REVEALED ? revealedLine() : th().cover) + '</h2>'
+      + '<button class="x" id="x" type="button" aria-label="Close">&times;</button></div>'
+      + stripHtml();
   }
   // What's under the foil: the dealer's graphic if it loaded, else the amount
   // and the line under it.
   function prizeHtml(useImage) {
+    var t = th(), themed = !!t.frame;
     var inner = useImage
       ? '<img src="' + esc(API + CFG.imagePath) + '" alt="' + esc(CFG.headline) + '">'
-      : '<div class="pa"><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></div>'
-        + (subheadText() ? '<div class="pl">' + esc(subheadText()) + '</div>' : "");
-    return '<div class="tk" id="tk"><div class="prize" id="prize">' + inner + '</div>'
-      + (REVEALED ? "" : '<canvas id="foil" aria-hidden="true"></canvas>') + '</div>'
+      : '<div class="pa"' + (themed ? ' style="color:' + t.amount + '"' : "") + '><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></div>'
+        + (subheadText() ? '<div class="pl"' + (themed ? ' style="color:' + t.line + '"' : "") + '>' + esc(subheadText()) + '</div>' : "");
+    // Themed card: the frame is a gradient border (padding-box / border-box).
+    var tkStyle = themed ? ' style="border:3px solid transparent;background:linear-gradient(' + t.ticketBg + ',' + t.ticketBg
+      + ') padding-box,' + t.frame + ' border-box"' : "";
+    return '<div class="tkw">' + (t.bow ? BOW_SVG : "")
+      + '<div class="tk" id="tk"' + tkStyle + '><div class="prize" id="prize">' + inner + '</div>'
+      + (REVEALED ? "" : '<canvas id="foil" aria-hidden="true"></canvas>') + '</div></div>'
       + (REVEALED ? "" : '<div class="hint" id="hint"><span>' + (isDesktopPointer() ? "Scratch with your mouse" : "Scratch with your finger")
         + '</span><span class="meter" aria-hidden="true"><b id="meter"></b></span>'
         + '<button class="rv" id="rv" type="button">' + (isDesktopPointer() ? "Click to reveal" : "Tap to reveal") + '</button></div>');
@@ -883,6 +962,7 @@
 
   function hide(reason) {
     if (!host) return;
+    fxStop();
     var box = root.getElementById("box"), scrim = root.getElementById("scrim");
     box.classList.remove("in"); scrim.classList.remove("in");
     document.documentElement.style.overflow = savedOverflow || "";
@@ -1098,25 +1178,46 @@
       c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalCompositeOperation = "source-over";
-      var g = ctx.createLinearGradient(0, 0, w, h);
-      g.addColorStop(0, "#B8BFCA"); g.addColorStop(0.32, "#EEF1F5"); g.addColorStop(0.52, "#C2C8D2");
-      g.addColorStop(0.78, "#E5E8EE"); g.addColorStop(1, "#ADB4C0");
+      var t = th(), SF = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      var g = ctx.createLinearGradient(0, 0, w, h), stops = [0, 0.32, 0.52, 0.78, 1];
+      for (var k = 0; k < 5; k++) g.addColorStop(stops[k], t.foil[k]);
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-      // Fine grain, so it reads as foil rather than a flat grey box.
+      // Fine grain, so it reads as foil rather than a flat box.
       for (var i = 0, n = Math.round(w * h / 26); i < n; i++) {
-        ctx.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,.35)" : "rgba(70,80,100,.10)";
+        ctx.fillStyle = Math.random() < 0.5 ? (t.dark ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.35)") : (t.dark ? "rgba(0,0,0,.25)" : "rgba(70,80,100,.10)");
         ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
       }
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = "700 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
-      ctx.fillStyle = "rgba(20,33,61,.09)";
-      for (var y = 14; y < h; y += 30) for (var x = (Math.round(y / 30) % 2 ? 18 : 2); x < w; x += 34) ctx.fillText("$", x, y);
-      ctx.fillStyle = "#4A5266";
-      ctx.font = "800 22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
-      ctx.fillText("SCRATCH HERE", w / 2, h / 2 - 8);
-      ctx.font = "500 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
-      ctx.fillStyle = "#5E6678";
-      ctx.fillText("to see your offer", w / 2, h / 2 + 16);
+      if (t.pattern === "dollar") {
+        ctx.font = "700 17px " + SF; ctx.fillStyle = "rgba(20,33,61,.09)";
+        for (var y = 14; y < h; y += 30) for (var x = (Math.round(y / 30) % 2 ? 18 : 2); x < w; x += 34) ctx.fillText("$", x, y);
+      } else {
+        for (var y2 = 14, row = 0; y2 < h + 10; y2 += 30, row++) {
+          for (var x2 = (row % 2 ? 19 : 2), col = 0; x2 < w + 10; x2 += 34, col++) {
+            var alt = (row + col) % 2;
+            if (t.pattern === "percent") { ctx.font = "800 16px " + SF; ctx.fillStyle = "rgba(242,210,122,.16)"; ctx.fillText("%", x2, y2); }
+            else if (t.pattern === "snow") { ctx.strokeStyle = "rgba(255,255,255,.62)"; ctx.lineWidth = 1.3; drawFlake(ctx, x2, y2, alt ? 6 : 4.5); }
+            else if (t.pattern === "stars") {
+              if (alt) { ctx.fillStyle = "rgba(242,210,122,.38)"; starPath(ctx, x2, y2, 5.5); ctx.fill(); }
+              else { ctx.fillStyle = "rgba(255,255,255,.30)"; starPath(ctx, x2, y2, 5, 0.22, 4); ctx.fill(); }
+            }
+            else if (t.pattern === "flagstars") { ctx.fillStyle = alt ? "rgba(178,34,52,.30)" : "rgba(29,58,138,.28)"; starPath(ctx, x2, y2, 5.5); ctx.fill(); }
+          }
+        }
+      }
+      if (t !== THEMES.classic) {
+        // A soft plate behind the words so they read over the pattern.
+        ctx.font = "800 21px " + SF;
+        var tw = Math.max(ctx.measureText(t.foilTitle).width, 150) + 36;
+        ctx.fillStyle = t.dark ? "rgba(0,0,0,.28)" : "rgba(255,255,255,.28)";
+        roundRectPath(ctx, w / 2 - tw / 2, h / 2 - 31, tw, 60, 12); ctx.fill();
+      }
+      ctx.fillStyle = t.titleColor;
+      ctx.font = (t === THEMES.classic ? "800 22px " : "800 21px ") + SF;
+      ctx.fillText(t.foilTitle, w / 2, h / 2 - 8);
+      ctx.font = "500 13px " + SF;
+      ctx.fillStyle = t.subColor;
+      ctx.fillText(t.foilSub, w / 2, h / 2 + 16);
       ctx.globalCompositeOperation = "destination-out";
       ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = BRUSH * 2;
       return true;
@@ -1163,6 +1264,117 @@
     c.addEventListener("touchmove", function (e) { if (!REVEALED) e.preventDefault(); }, { passive: false });
   }
 
+  function drawFlake(c, x, y, r) {
+    c.save(); c.translate(x, y); c.lineCap = "round";
+    for (var i = 0; i < 6; i++) {
+      c.rotate(Math.PI / 3);
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -r);
+      c.moveTo(0, -r * 0.55); c.lineTo(-r * 0.28, -r * 0.82);
+      c.moveTo(0, -r * 0.55); c.lineTo(r * 0.28, -r * 0.82); c.stroke();
+    }
+    c.restore();
+  }
+  function starPath(c, x, y, r, inner, pts) {
+    inner = inner || 0.45; pts = pts || 5;
+    c.beginPath();
+    for (var i = 0; i < pts * 2; i++) {
+      var rr = i % 2 ? r * inner : r, a = -Math.PI / 2 + i * Math.PI / pts;
+      if (i) c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); else c.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    c.closePath();
+  }
+  function roundRectPath(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+
+  // Themed reveal effects on a canvas over the whole page (inside our shadow
+  // root). Snow drifts down; fireworks burst in turn; stars and gold confetti
+  // fly out of the card. It stops itself, and on close. Reduced motion: none.
+  var FX = { cv: null, parts: [], raf: 0, timers: [] };
+  function fxStop() {
+    FX.parts = []; FX.timers.forEach(clearTimeout); FX.timers = [];
+    if (FX.raf) cancelAnimationFrame(FX.raf); FX.raf = 0;
+    if (FX.cv && FX.cv.parentNode) FX.cv.parentNode.removeChild(FX.cv);
+    FX.cv = null;
+  }
+  function themedEffect() {
+    var t = th();
+    try { if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (e) {}
+    fxStop();
+    var cv = document.createElement("canvas"); cv.className = "fx"; cv.setAttribute("aria-hidden", "true");
+    root.appendChild(cv); FX.cv = cv;
+    var W = window.innerWidth, H = window.innerHeight, d = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+    var c = cv.getContext("2d"); c.setTransform(d, 0, 0, d, 0, 0);
+    var tk = root.getElementById("tk"), ctr = { x: W / 2, y: H / 2 };
+    if (tk) { var r = tk.getBoundingClientRect(); ctr = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+    var i;
+    if (t.effect === "confetti" || t.effect === "stars") {
+      for (i = 0; i < (t.effect === "stars" ? 34 : 46); i++) {
+        var a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 5;
+        FX.parts.push({ x: ctr.x, y: ctr.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3, g: 0.16, life: 0, max: 70 + Math.random() * 30,
+          s: t.effect === "stars" ? 5 + Math.random() * 4 : 4 + Math.random() * 3, col: t.fx[i % t.fx.length],
+          shape: t.effect === "stars" ? "star" : "rect", rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
+      }
+    } else if (t.effect === "snow") {
+      for (i = 0; i < 90; i++) {
+        FX.parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.9, vy: 0.9 + Math.random() * 1.6, life: 0, max: 600,
+          s: 2.5 + Math.random() * 4, shape: Math.random() < 0.55 ? "flake" : "dot", rot: Math.random() * 6,
+          vr: (Math.random() - 0.5) * 0.04, sway: Math.random() * 6, amp: 0.4 + Math.random() * 0.8 });
+      }
+    } else if (t.effect === "fireworks") {
+      [[0.3, 0.2], [0.72, 0.14], [0.5, 0.32], [0.22, 0.44], [0.78, 0.4]].forEach(function (p, k) {
+        FX.timers.push(setTimeout(function () {
+          var col = t.fx[k % t.fx.length], bx = W * p[0], by = H * p[1];
+          for (var j = 0; j < 46; j++) {
+            var a2 = j / 46 * Math.PI * 2 + Math.random() * 0.1, sp2 = 1.6 + Math.random() * 2.8;
+            FX.parts.push({ x: bx, y: by, px: bx, py: by, vx: Math.cos(a2) * sp2, vy: Math.sin(a2) * sp2, g: 0.035, drag: 0.975,
+              life: 0, max: 60 + Math.random() * 25, s: 2.2, col: Math.random() < 0.25 ? "#FFFFFF" : col, shape: "spark" });
+          }
+          if (!FX.raf) FX.raf = requestAnimationFrame(step);
+        }, k * 320));
+      });
+    }
+    function step() {
+      if (!FX.cv) return;
+      c.clearRect(0, 0, W, H);
+      FX.parts = FX.parts.filter(function (p) { return p.life < p.max && p.y < H + 20; });
+      FX.parts.forEach(function (p) {
+        p.life++;
+        if (p.shape === "flake" || p.shape === "dot") { p.sway += 0.03; p.x += Math.sin(p.sway) * p.amp; p.y += p.vy; }
+        else { p.px = p.x; p.py = p.y; if (p.drag) { p.vx *= p.drag; p.vy *= p.drag; } p.vy += p.g; p.x += p.vx; p.y += p.vy; }
+        p.rot += p.vr || 0;
+        c.globalAlpha = p.shape === "flake" || p.shape === "dot" ? 1 : Math.max(0, 1 - p.life / p.max);
+        c.save();
+        if (p.shape === "spark") {
+          c.strokeStyle = p.col; c.lineWidth = p.s; c.lineCap = "round";
+          c.beginPath(); c.moveTo(p.px, p.py); c.lineTo(p.x, p.y); c.stroke();
+        } else {
+          c.translate(p.x, p.y); c.rotate(p.rot || 0);
+          if (p.shape === "rect") { c.fillStyle = p.col; c.fillRect(-p.s / 2, -p.s * 0.8, p.s, p.s * 1.6); }
+          else if (p.shape === "star") {
+            c.fillStyle = p.col; starPath(c, 0, 0, p.s); c.fill();
+            if (p.col === "#FFFFFF") { c.strokeStyle = "#1D3A8A"; c.lineWidth = 1; c.stroke(); }
+          } else if (p.shape === "flake") {
+            c.shadowColor = "rgba(40,60,90,.55)"; c.shadowBlur = 2;
+            c.strokeStyle = "#FFFFFF"; c.lineWidth = 1.4; drawFlake(c, 0, 0, p.s + 1.5);
+          } else {
+            c.shadowColor = "rgba(40,60,90,.5)"; c.shadowBlur = 2;
+            c.fillStyle = "#FFFFFF"; c.beginPath(); c.arc(0, 0, p.s * 0.6, 0, Math.PI * 2); c.fill();
+          }
+        }
+        c.restore();
+      });
+      c.globalAlpha = 1;
+      if (FX.parts.length) FX.raf = requestAnimationFrame(step);
+      else { FX.raf = 0; c.clearRect(0, 0, W, H); }   // a later firework burst restarts it
+    }
+    FX.raf = requestAnimationFrame(step);
+    // Clean up the canvas once the effect has run its course.
+    FX.timers.push(setTimeout(fxStop, t.effect === "snow" ? 11000 : 6000));
+  }
+
   function confetti(host) {
     var colors = [ACCENT, "#FFB020", "#0D9488", "#14213D", "#8EA6FF"];
     for (var i = 0; i < 22; i++) {
@@ -1190,9 +1402,10 @@
     var meter = root.getElementById("meter");
     if (meter) meter.style.width = "100%";
     if (c) c.classList.add("gone");
-    if (tk) confetti(tk);
+    if (th() === THEMES.classic) { if (tk) confetti(tk); }
+    else themedEffect();
     var hl = root.getElementById("hl");
-    if (hl) hl.textContent = "You uncovered " + amountLabel() + " off";
+    if (hl) hl.textContent = revealedLine();
     setTimeout(function () {
       if (!host) return;
       var hint = root.getElementById("hint"), no0 = root.getElementById("no0"), form = root.getElementById("form");
@@ -1208,7 +1421,7 @@
     }, method === "tap" ? 200 : 380);
     promoEvent("lp_promo_revealed", {
       item_id: VIN, page_type: evPage(), element_type: "popup",
-      event_action_result: "reveal", reveal_method: method,
+      event_action_result: "reveal", reveal_method: method, scratch_theme: themeId(),
       offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
       page_location: window.location.href,
     });
