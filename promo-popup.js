@@ -571,18 +571,22 @@
       + "max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px))}"
       + ".box.tall.in{transform:translate(-50%,0)}"
       + ".box.tall .body{border-radius:0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}"
-      // Hang-tag top (Oct 2026, matches the VinPop logo): a pointed roof in the
-      // accent color with a punched hole that shows the page behind it. The
-      // ring is a lighter (or, on a light accent, darker) edge around the hole.
-      + ".roof{position:relative;height:84px;margin-bottom:-1px;background:" + ACCENT + ";"
-      + "clip-path:polygon(0 100%,0 calc(100% - 4px),calc(50% - 17px) 8px,calc(50% - 10px) 3px,calc(50% - 4px) .5px,50% 0,"
-      + "calc(50% + 4px) .5px,calc(50% + 10px) 3px,calc(50% + 17px) 8px,100% calc(100% - 4px),100% 100%);"
-      + "-webkit-mask:radial-gradient(circle at 50% 44px,transparent 10px,#000 10.6px);"
-      + "mask:radial-gradient(circle at 50% 44px,transparent 10px,#000 10.6px)}"
-      + ".roof i{position:absolute;left:50%;top:44px;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;"
-      + "border:3px solid " + (ON_ACCENT === INK ? "rgba(20,24,29,.22)" : "rgba(255,255,255,.5)") + "}"
-      + "@media (max-width:560px){.roof{height:68px;-webkit-mask:radial-gradient(circle at 50% 37px,transparent 9px,#000 9.6px);"
-      + "mask:radial-gradient(circle at 50% 37px,transparent 9px,#000 9.6px)}.roof i{top:37px;width:28px;height:28px;margin:-14px 0 0 -14px}}"
+      // Hang-tag top (Nov 2026, matches the VinPop logo): a wide flat top with
+      // clipped corners in the accent color, and a punched hole that shows the
+      // page behind it. The ring is a lighter (or, on a light accent, darker)
+      // reinforcement patch around the hole.
+      + ".roof{position:relative;height:64px;margin-bottom:-1px;background:" + ACCENT + ";"
+      + "clip-path:polygon(0 100%,0 57px,1.5px 52px,55px 2.5px,59px .6px,64px 0,"
+      + "calc(100% - 64px) 0,calc(100% - 59px) .6px,calc(100% - 55px) 2.5px,calc(100% - 1.5px) 52px,100% 57px,100% 100%);"
+      + "-webkit-mask:radial-gradient(circle at 50% 30px,transparent 10px,#000 10.6px);"
+      + "mask:radial-gradient(circle at 50% 30px,transparent 10px,#000 10.6px)}"
+      + ".roof i{position:absolute;left:50%;top:30px;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;"
+      + "background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.16)" : "rgba(255,255,255,.32)") + "}"
+      + "@media (max-width:560px){.roof{height:54px;"
+      + "clip-path:polygon(0 100%,0 48px,1.5px 43px,46px 2.5px,50px .6px,55px 0,"
+      + "calc(100% - 55px) 0,calc(100% - 50px) .6px,calc(100% - 46px) 2.5px,calc(100% - 1.5px) 43px,100% 48px,100% 100%);"
+      + "-webkit-mask:radial-gradient(circle at 50% 26px,transparent 9px,#000 9.6px);"
+      + "mask:radial-gradient(circle at 50% 26px,transparent 9px,#000 9.6px)}.roof i{top:26px;width:26px;height:26px;margin:-13px 0 0 -13px}}"
       + ".band{background:" + ACCENT + ";color:" + ON_ACCENT + ";padding:14px 24px 20px;position:relative}"
       + ".dealer{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin:0 32px 8px 0}"
       // The offer amount is the whole pitch, so it's the biggest thing on the
@@ -1015,13 +1019,14 @@
       + ".wrap{position:fixed;right:0;top:" + TAB_TOP + ";z-index:2147483000;transform:translate(110%,-50%);"
       + "transition:transform .35s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.28))}"
       + ".wrap.in{transform:translate(0,-50%)}"
-      // Compact price tag (Oct 2026, matches the VinPop logo): flat on the page
-      // edge, pointed end facing in with a punched hole, the amount on it.
+      // Compact price tag (Nov 2026, matches the VinPop logo): flat on the page
+      // edge, clipped-corner end facing in with a punched hole and a small
+      // reinforcement ring, the amount on it.
       + ".tab{display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;"
-      + "background:" + ACCENT + ";color:" + ON_ACCENT + ";height:50px;padding:0 15px 0 33px;min-width:98px;line-height:1;"
-      + "clip-path:polygon(1px calc(50% - 3px),19px 2px,23px 0,100% 0,100% 100%,23px 100%,19px calc(100% - 2px),1px calc(50% + 3px));"
-      + "-webkit-mask:radial-gradient(circle at 17px 50%,transparent 4.5px,#000 5px);"
-      + "mask:radial-gradient(circle at 17px 50%,transparent 4.5px,#000 5px);transition:padding .15s}"
+      + "background:radial-gradient(circle at 15px 50%," + (ON_ACCENT === INK ? "rgba(20,24,29,.16)" : "rgba(255,255,255,.32)") + " 7px,transparent 7.6px)," + ACCENT + ";color:" + ON_ACCENT + ";height:50px;padding:0 15px 0 30px;min-width:95px;line-height:1;"
+      + "clip-path:polygon(0 11px,1px 8px,9px 1.5px,13px 0,100% 0,100% 100%,13px 100%,9px calc(100% - 1.5px),1px calc(100% - 8px),0 calc(100% - 11px));"
+      + "-webkit-mask:radial-gradient(circle at 15px 50%,transparent 4.5px,#000 5px);"
+      + "mask:radial-gradient(circle at 15px 50%,transparent 4.5px,#000 5px);transition:padding .15s}"
       + ".tab:hover{padding-right:21px}"
       + ".tab:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
       + ".n{font-size:21px;font-weight:800;letter-spacing:-.01em}.n.w{font-size:16px;letter-spacing:0}"
@@ -1029,7 +1034,10 @@
       + "background:#2A303C;color:#fff;font-size:14px;line-height:17px;padding:0;cursor:pointer;text-align:center}"
       + ".tx:hover{background:#000}"
       + ".tx:focus-visible{outline:3px solid #7AA7FF}"
-      + "@media (max-width:560px){.tab{height:44px;min-width:86px;padding:0 12px 0 29px;-webkit-mask:radial-gradient(circle at 15px 50%,transparent 4px,#000 4.5px);mask:radial-gradient(circle at 15px 50%,transparent 4px,#000 4.5px)}.n{font-size:18px}}"
+      + "@media (max-width:560px){.tab{height:44px;min-width:84px;padding:0 12px 0 27px;"
+      + "background:radial-gradient(circle at 14px 50%," + (ON_ACCENT === INK ? "rgba(20,24,29,.16)" : "rgba(255,255,255,.32)") + " 6.4px,transparent 7px)," + ACCENT + ";"
+      + "clip-path:polygon(0 10px,1px 7px,8px 1.5px,12px 0,100% 0,100% 100%,12px 100%,8px calc(100% - 1.5px),1px calc(100% - 7px),0 calc(100% - 10px));"
+      + "-webkit-mask:radial-gradient(circle at 14px 50%,transparent 4px,#000 4.5px);mask:radial-gradient(circle at 14px 50%,transparent 4px,#000 4.5px)}.n{font-size:18px}}"
       + "@media (prefers-reduced-motion:reduce){.wrap{transition:none}}"
       + "@media print{.wrap{display:none}}"
       + "</style>"
