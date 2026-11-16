@@ -889,9 +889,9 @@
       </div>
       <div class="band-tiles" id="vpTiles">
         <div class="kt kt-click" id="vp7Card" role="button" tabindex="0"><div class="kl">Leads · last 7 days</div><div class="kn vp" id="o-vp7">—</div><div class="ks">View leads ›</div></div>
-        <div class="kt kt-click" id="vpMtdCard" role="button" tabindex="0"><div class="kl">Leads · month to date</div><div class="kn vp" id="o-vpm">—</div><div class="ks" id="o-vpm-s">View leads ›</div></div>
+        <div class="kt kt-click" id="vp30Card" role="button" tabindex="0"><div class="kl">Leads · last 30 days</div><div class="kn vp" id="o-vpm">—</div><div class="ks" id="o-vpm-s">View leads ›</div></div>
         <div class="kt kt-click" id="vpRateCard" role="button" tabindex="0"><div class="kl">Claim rate · last 7 days</div><div class="kn" id="o-vprate">—</div><div class="ks" id="o-vprate-s">Popup views to leads ›</div></div>
-        <div class="kt kt-click" id="vpCrmCard" role="button" tabindex="0"><div class="kl">Sent to CRM · month to date</div><div class="kn" id="o-vpcrm">—</div><div class="ks" id="o-vpcrm-s"></div></div>
+        <div class="kt kt-click" id="vpCrmCard" role="button" tabindex="0"><div class="kl">Sent to CRM · last 30 days</div><div class="kn" id="o-vpcrm">—</div><div class="ks" id="o-vpcrm-s"></div></div>
       </div>
       <div class="vp-off" id="vpOff" style="display:none">
         <div><div class="t">VinPop isn't on at this store</div>
@@ -907,7 +907,7 @@
       </div>
       <div class="band-tiles">
         <div class="kt kt-click" id="vw7Card" role="button" tabindex="0"><div class="kl">Leads · last 7 days</div><div class="kn vw" id="o-vw7">—</div><div class="ks">New unique shoppers ›</div></div>
-        <div class="kt kt-click" id="vwMtdCard" role="button" tabindex="0"><div class="kl">Leads · month to date</div><div class="kn vw" id="o-vwm">—</div><div class="ks" id="o-vwm-s">New unique shoppers ›</div></div>
+        <div class="kt kt-click" id="vw30Card" role="button" tabindex="0"><div class="kl">Leads · last 30 days</div><div class="kn vw" id="o-vwm">—</div><div class="ks" id="o-vwm-s">New unique shoppers ›</div></div>
         <div class="kt"><div class="kl">Active watchers</div><div class="kn" id="s-watchers">—</div><div class="substat blue" id="ss-watchers"></div></div>
         <div class="kt kt-click" id="textsCard" role="button" tabindex="0"><div class="kl">Texts sent · last 7 days</div><div class="kn" id="s-texts">—</div><div class="ks">See texts ›</div></div>
         <div class="kt kt-click" id="soldCard" role="button" tabindex="0"><div class="kl">Sold · last 30 days</div><div class="kn" id="s-sold">—</div><div class="substat green" id="ss-sold"></div><div class="ks">See which ›</div></div>
@@ -1575,9 +1575,9 @@
       // Overview "Leads" tiles: only shoppers who are NEW in the window.
       var winNote="";
       if(shopWin){
-        var ov=state.ov, cut = shopWin==="mtd" ? (ov&&ov.mtdStart?new Date(ov.mtdStart).getTime():0) : Date.now()-7*86400000;
+        var ov=state.ov, cut = Date.now()-(shopWin==="30d"?30:7)*86400000;
         shoppers=shoppers.filter(function(s){ return s.firstSeen && new Date(s.firstSeen).getTime()>=cut; });
-        var want = ov&&ov.vinwatch ? (shopWin==="mtd"?ov.vinwatch.leadsMtd:ov.vinwatch.leads7d) : shoppers.length;
+        var want = ov&&ov.vinwatch ? (shopWin==="30d"?ov.vinwatch.leads30d:ov.vinwatch.leads7d) : shoppers.length;
         if(want>shoppers.length) winNote=(want-shoppers.length)+" more signed up in this window but no longer have an active watch (the vehicle sold or they stopped watching). ";
       }
       var tz=(d.dealer && d.dealer.timezone) || null; // render watch times in the dealer's local zone
@@ -1615,7 +1615,7 @@
       modal.innerHTML=
         '<div class="mbody">'
           +'<button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'
-          +'<div class="mph-title" style="margin-top:0">'+pmark("vw")+(shopWin?"New VinWatch shoppers · "+(shopWin==="mtd"?"month to date":"last 7 days"):"VinWatch shoppers watching your lot")+'</div>'
+          +'<div class="mph-title" style="margin-top:0">'+pmark("vw")+(shopWin?"New VinWatch shoppers · "+(shopWin==="30d"?"last 30 days":"last 7 days"):"VinWatch shoppers watching your lot")+'</div>'
           +'<p style="font-size:13px;color:var(--slate);margin:-4px 0 16px">'+(shopWin?"Each new phone number counts once, however many cars they watch. "+escapeHtml(winNote):"")+'Tap a number to call. Hot = watching multiple cars or clicking alerts.'
             +(shopWin?' <a href="#" id="shopAll" style="color:var(--vw);font-weight:700">See all shoppers</a>':'')+'</p>'
           +'<div class="stopbox">'
@@ -2455,9 +2455,9 @@
   }
 
   // One renderer for the VinPop lead list, used by the detail window (opened
-  // from the overview tiles) and by the VinPop section. win: "7d" | "mtd" | "90d".
-  function promoLeadsUrl(win){ return API+"/dash/"+SLUG+"/promo-leads"+(win==="7d"?"?days=7":win==="mtd"?"?window=mtd":""); }
-  function promoWinLabel(win, d){ return win==="7d"?"last 7 days":win==="mtd"?"month to date":"last "+((d&&d.windowDays)||90)+" days"; }
+  // from the overview tiles) and by the VinPop section. win: "7d" | "30d" | "90d".
+  function promoLeadsUrl(win){ return API+"/dash/"+SLUG+"/promo-leads"+(win==="7d"?"?days=7":win==="30d"?"?days=30":""); }
+  function promoWinLabel(win, d){ return win==="7d"?"last 7 days":win==="30d"?"last 30 days":"last "+((d&&d.windowDays)||90)+" days"; }
   function promoLeadsBody(d, win){
     var tz=(d.dealer&&d.dealer.timezone)||null, leads=d.leads||[];
     var sent=leads.filter(function(l){return l.crm==="sent";}).length;
@@ -2467,7 +2467,7 @@
       : '<div class="state" style="padding:28px 0">No VinPop leads '+(win==="90d"?"yet":"in this window")+'.</div>';
     var first = win==="90d"
       ? '<div class="mstat"><div class="n">'+(d.leadsThisWeek||0)+'</div><div class="l">Last<br>7 days</div></div>'
-      : '<div class="mstat"><div class="n vp">'+leads.length+'</div><div class="l">Leads<br>'+(win==="mtd"?"this month":"7 days")+'</div></div>';
+      : '<div class="mstat"><div class="n vp">'+leads.length+'</div><div class="l">Leads<br>'+(win==="30d"?"30 days":"7 days")+'</div></div>';
     return '<div class="mstats">'+first
         +'<div class="mstat"><div class="n">'+(byTrig.timed||0)+'</div><div class="l">Timed<br>popup</div></div>'
         +'<div class="mstat"><div class="n">'+(byTrig.exit_intent||0)+'</div><div class="l">Exit<br>intent</div></div>'
@@ -2500,7 +2500,7 @@
     });
   }
   function openPromoLeads(win){
-    if(win!=="7d" && win!=="mtd") win="90d";   // also covers a click event being passed in
+    if(win!=="7d" && win!=="30d") win="90d";   // also covers a click event being passed in
     var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
     modal.innerHTML='<div class="state">Loading…</div>';
     modal.classList.add("open"); scrim.classList.add("open");
@@ -2516,7 +2516,7 @@
   }
 
   // ── VinPop section (its own view; deep link #vinpop) ─────────────────────────
-  var _vpvWin="mtd";
+  var _vpvWin="30d";
   function vpOffHtml(){
     return '<section class="band vp"><div class="band-head"><div class="bt">'+pmark("vp")+'VinPop <span class="bs">Website offer leads</span></div></div>'
       +'<div class="vp-off"><div><div class="t">VinPop isn\'t on at this store</div>'
@@ -2535,7 +2535,7 @@
       var seg=function(k,label){ return '<button type="button" data-vpw="'+k+'" class="'+(k===win?"on":"")+'" aria-pressed="'+(k===win?"true":"false")+'">'+label+'</button>'; };
       host.innerHTML='<div class="sec-head"><h2>VinPop leads <span class="prod-tag vp">'+pmark("vp","sm")+'VinPop</span></h2>'
           +'<div class="meta">'+escapeHtml(PROMO_STATUS_LABEL[d.status]||"")+'</div></div>'
-        +'<div class="vpv-seg" role="group" aria-label="Time window">'+seg("7d","Last 7 days")+seg("mtd","Month to date")+seg("90d","Last 90 days")+'</div>'
+        +'<div class="vpv-seg" role="group" aria-label="Time window">'+seg("7d","Last 7 days")+seg("30d","Last 30 days")+seg("90d","Last 90 days")+'</div>'
         +'<div class="vpv-card">'+promoLeadsBody(d, win)+'</div>';
       wirePromoLeads(host);
       host.querySelectorAll("[data-vpw]").forEach(function(b){
@@ -3947,11 +3947,11 @@
   }
   tileClick("touchCard", openSoldTouch);
   tileClick("vp7Card", function(){ openPromoLeads("7d"); });
-  tileClick("vpMtdCard", function(){ openPromoLeads("mtd"); });
+  tileClick("vp30Card", function(){ openPromoLeads("30d"); });
   tileClick("vpRateCard", openClaimRate);
-  tileClick("vpCrmCard", function(){ openPromoLeads("mtd"); });
+  tileClick("vpCrmCard", function(){ openPromoLeads("30d"); });
   tileClick("vw7Card", function(){ openNewShoppers("7d"); });
-  tileClick("vwMtdCard", function(){ openNewShoppers("mtd"); });
+  tileClick("vw30Card", function(){ openNewShoppers("30d"); });
 
   function setText(id, t){ var el=document.getElementById(id); if(el) el.textContent=t; }
   function plural(n, one, many){ return n+" "+(n===1?one:(many||one+"s")); }
@@ -3966,11 +3966,9 @@
       if(forSlug!==SLUG) return;
       if(d.error) throw new Error(d.error);
       state.ov=d;
-      var monthName=""; try{ monthName=new Date(d.mtdStart).toLocaleString("en-US",{month:"short",timeZone:(d.dealer&&d.dealer.timezone)||undefined}); }catch(e){}
       // VinWatch band
       setText("o-vw7", d.vinwatch.leads7d);
-      setText("o-vwm", d.vinwatch.leadsMtd);
-      setText("o-vwm-s", (monthName?monthName+" 1 to today · ":"")+"New unique shoppers ›");
+      setText("o-vwm", d.vinwatch.leads30d);
       // Sold with a touch
       var t=d.soldTouch30d||{};
       setText("o-touch", t.total==null?"—":t.total);
@@ -3990,28 +3988,27 @@
         if(off) off.style.display="none";
         if(link) link.style.display="";
         setText("o-vp7", v.leads7d);
-        setText("o-vpm", v.leadsMtd);
-        setText("o-vpm-s", (monthName?monthName+" 1 to today · ":"")+"View leads ›");
+        setText("o-vpm", v.leads30d);
         setText("o-vprate", v.claimRate7d==null ? "—" : v.claimRate7d.toFixed(1)+"%");
         setText("o-vprate-s", v.views7d ? v.views7d.toLocaleString("en-US")+" popup views · By offer ›" : "No popup views yet ›");
         var crm=document.getElementById("o-vpcrm");
-        if(crm) crm.innerHTML = v.crmMtd.sent+' <small>of '+v.crmMtd.total+'</small>';
+        if(crm) crm.innerHTML = v.crm30d.sent+' <small>of '+v.crm30d.total+'</small>';
         var cs=document.getElementById("o-vpcrm-s");
         if(cs){
-          cs.textContent = v.crmMtd.undelivered ? v.crmMtd.undelivered+" not delivered ›" : (v.crmMtd.total ? "0 undelivered" : "No leads yet this month");
-          cs.className = "ks "+(v.crmMtd.undelivered ? "bad" : (v.crmMtd.total ? "good" : ""));
+          cs.textContent = v.crm30d.undelivered ? v.crm30d.undelivered+" not delivered ›" : (v.crm30d.total ? "0 undelivered" : "No leads in the last 30 days");
+          cs.className = "ks "+(v.crm30d.undelivered ? "bad" : (v.crm30d.total ? "good" : ""));
         }
         // Grade panel
-        var g=v.gradesMtd||{}, max=Math.max(g.A||0,g.B||0,g.C||0,g.D||0);
+        var g=v.grades30d||{}, max=Math.max(g.A||0,g.B||0,g.C||0,g.D||0);
         var graded=(g.A||0)+(g.B||0)+(g.C||0)+(g.D||0);
         if(gp){
           gp.style.display="";
-          setText("vgMeta", "Month to date · "+plural(v.leadsMtd,"lead"));
+          setText("vgMeta", "Last 30 days · "+plural(v.leads30d,"lead"));
           var col={A:"#15803D",B:"var(--vp)",C:"#D08A1C",D:"#8A9099"};
           document.getElementById("vgBars").innerHTML = graded
             ? ["A","B","C","D"].map(function(k){ var n=g[k]||0; return '<div class="gbar"><span class="gk">'+k+'</span><span class="gt"><i style="width:'+(max?Math.round(n/max*100):0)+'%;background:'+col[k]+'"></i></span><span class="gv">'+n+'</span></div>'; }).join("")
-            : '<div class="state" style="padding:16px 0">'+(v.leadsMtd?"These leads don't have engagement grades.":"No VinPop leads yet this month.")+'</div>';
-          setText("vgSrc", v.leadsMtd ? "Source: "+v.sourceMtd.timed+" timed popup · "+v.sourceMtd.exitIntent+" exit intent" : "");
+            : '<div class="state" style="padding:16px 0">'+(v.leads30d?"These leads don't have engagement grades.":"No VinPop leads in the last 30 days.")+'</div>';
+          setText("vgSrc", v.leads30d ? "Source: "+v.source30d.timed+" timed popup · "+v.source30d.exitIntent+" exit intent" : "");
         }
       }
       renderAttention();
@@ -4033,8 +4030,8 @@
     var sig=state.signals&&state.signals.counts ? (state.signals.counts.hold+state.signals.counts.reprice)||0 : 0;
     if(sig>0) items.push({cls:"act", html:'<strong>'+plural(sig,"pricing signal")+'</strong> on your inventory', go:"See signals ›", fn:openSignals});
     var h=items.map(function(it,i){ return '<button type="button" class="att '+it.cls+'" data-att="'+i+'"><span>'+it.html+'</span><span class="go">'+it.go+'</span></button>'; }).join("");
-    if(v && !v.undeliveredOpen && v.crmMtd && v.crmMtd.total>0)
-      h+='<div class="att quiet"><span>CRM delivery: all '+plural(v.crmMtd.total,"VinPop lead")+' this month delivered</span><span class="go">All clear</span></div>';
+    if(v && !v.undeliveredOpen && v.crm30d && v.crm30d.total>0)
+      h+='<div class="att quiet"><span>CRM delivery: all '+plural(v.crm30d.total,"VinPop lead")+' in the last 30 days delivered</span><span class="go">All clear</span></div>';
     if(!h) h='<div class="att quiet"><span>'+((sum||ov)?"Nothing needs attention right now.":"Loading…")+'</span></div>';
     host.innerHTML=h;
     host.querySelectorAll("[data-att]").forEach(function(b){ b.addEventListener("click", function(){ items[+b.getAttribute("data-att")].fn(); }); });
