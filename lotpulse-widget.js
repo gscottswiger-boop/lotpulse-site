@@ -1840,6 +1840,11 @@
   // One <style> tag for the SRP button (pseudo-states and the dot's pulse
   // can't be done with inline styles). Prefixed + !important where dealer
   // themes commonly restyle generic <button>s.
+  var SRP_STACK_CSS =
+    ".lp-srp-btn{flex-direction:column!important;justify-content:center!important;gap:2px!important;padding:8px 10px!important}"
+    + ".lp-srp-r{font-size:12.5px;font-weight:600}"
+    + ".lp-srp-r svg{display:none}";
+
   function ensureSrpStyle() {
     if (document.getElementById("lp-srp-style")) return;
     var st = document.createElement("style");
@@ -1858,12 +1863,14 @@
       + ".lp-srp-dot{width:9px;height:9px;border-radius:50%;background:#22C55E;flex-shrink:0;animation:lpSrpPulse 1.8s infinite}"
       + "@keyframes lpSrpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}"
       + "@media (prefers-reduced-motion:reduce){.lp-srp-dot{animation:none}}"
-      + "@media (max-width:300px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}"
-      // AutoWall's .product-desc declares container-type:inline-size, and its
-      // cards are only ~230px inside — too narrow for both halves of the
-      // button. A container query hides the right half there. Inert on any
-      // platform whose card isn't a size container.
-      + "@container (max-width:290px){.lp-srp-r{display:none}.lp-srp-btn{justify-content:center}}";
+      // Narrow cards: instead of dropping the right half, stack the button on
+      // two lines ("Watch this car" / "For price drops!") so every store
+      // carries the same message. AutoWall's .product-desc declares
+      // container-type:inline-size and its cards are only ~230px inside; the
+      // container query catches that, the media query catches tiny phones.
+      // Inert on any platform whose card isn't a size container.
+      + "@media (max-width:300px){" + SRP_STACK_CSS + "}"
+      + "@container (max-width:290px){" + SRP_STACK_CSS + "}";
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -1881,7 +1888,7 @@
       // page instead of a foreign overlay. This is the slim, compelling
       // version: one clear line, no extra height.
       btn.setAttribute("data-lp-mode", "button");
-      btn.setAttribute("aria-label", "Watch this car \u2014 get price drop texts");
+      btn.setAttribute("aria-label", "Watch this car for price drops");
       // Option A "live outline" (Oct 2026): every other block in a dealer CTA
       // stack is a solid fill, so a white outlined button with a live green
       // dot is what contrasts instead of blending in as one more slab.
@@ -1890,7 +1897,7 @@
       btn.innerHTML =
         '<span class="lp-srp-l"><span class="lp-srp-dot" aria-hidden="true"></span>'
         + '<span>Watch this car</span></span>'
-        + '<span class="lp-srp-r">Price drop texts '
+        + '<span class="lp-srp-r">For price drops! '
         + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '
         + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></span>';
       // This stack is sized by Dealer Inspire to fit exactly the 2 buttons
