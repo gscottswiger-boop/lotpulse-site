@@ -1677,10 +1677,51 @@
       + '.btn:disabled{background:#C7D3EE;cursor:not-allowed}'
       + '.fine{font-size:10.5px;line-height:1.5;color:#9AA29C;margin-top:11px}'
       + '.err{color:#DE3730;font-size:13px;font-weight:600;margin-bottom:10px;display:none}'
+      // Post-submit confirmation panel, same as the VDP sheet's. Before Nov 17
+      // the SRP sheet just closed on submit, so a shopper who declined texts
+      // handed over a number and got nothing back: no confirmation, no name
+      // step, no MyDrive link.
+      + '.done{display:none;text-align:center;padding:6px 0 2px}'
+      + '.done .tick{width:52px;height:52px;border-radius:50%;background:#EAF6EF;color:#1E8E5A;'
+      +   'display:flex;align-items:center;justify-content:center;margin:0 auto 14px}'
+      + '.done h4{font-size:19px;font-weight:800;color:#14181D;margin:0 0 6px;letter-spacing:-.01em}'
+      + '.done p{font-size:13.5px;color:#5C6670;margin:0 0 16px;line-height:1.45}'
+      + '.mdbox{background:#F5F8FF;border:1px solid #D6E2FF;border-radius:13px;padding:14px;text-align:left}'
+      + '.mdbox .lbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;'
+      +   'color:#1F4FE0;margin-bottom:7px}'
+      + '.mdbox .url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;'
+      +   'color:#3A434D;word-break:break-all;line-height:1.45;margin-bottom:11px}'
+      + '.mdbtns{display:flex;gap:8px}'
+      + '.mdbtns a,.mdbtns button{flex:1;border:0;cursor:pointer;font-family:inherit;font-size:13.5px;'
+      +   'font-weight:700;padding:11px;border-radius:10px;text-align:center;text-decoration:none;'
+      +   'transition:background .14s}'
+      + '.mdbtns a{background:#1F4FE0;color:#fff}'
+      + '.mdbtns a:hover{background:#1740B8}'
+      + '.mdbtns button{background:#fff;color:#1F4FE0;border:1px solid #C7D4F8}'
+      + '.mdbtns button:hover{background:#EAF1FF}'
+      + '.nmbox{display:none;background:#fff;border:1px solid #E4E7E4;border-radius:13px;padding:13px 14px;'
+      +   'text-align:left;margin:0 0 12px}'
+      + '.nmbox .nmq{font-size:13.5px;color:#2A323A;line-height:1.4;margin:0 0 9px}'
+      + '.nmrow{display:flex;gap:8px}'
+      + '.nmrow input{flex:1;min-width:0;border:1.5px solid #E4E7E4;border-radius:10px;padding:10px 12px;'
+      +   'font-family:inherit;font-size:16px;font-weight:600;color:#14181D;background:#fff;outline:0;'
+      +   'transition:border-color .15s,box-shadow .15s}'
+      + '.nmrow input:focus{border-color:#1F4FE0;box-shadow:0 0 0 4px rgba(31,79,224,.12)}'
+      + '.nmrow button{border:0;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:700;'
+      +   'padding:0 16px;border-radius:10px;background:#1F4FE0;color:#fff;transition:background .14s}'
+      + '.nmrow button:hover{background:#1740B8}'
+      + '.nmrow button:disabled{background:#C7D3EE;cursor:default}'
+      + '.nmbox .nmerr{display:none;color:#DE3730;font-size:12.5px;font-weight:600;margin-top:7px}'
+      + '.nmbox .nmskip{font-size:11.5px;color:#9AA29C;margin-top:7px}'
+      + '.nmbox.saved{text-align:center;color:#1E8E5A;font-size:13.5px;font-weight:700}'
+      + '.donebtn{width:100%;margin-top:12px;border:1px solid #E4E7E4;background:#fff;color:#2A323A;'
+      +   'border-radius:13px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}'
+      + '.donebtn:hover{background:#F6F7F6}'
       + '</style>'
       + '<div class="scrim" id="s-scrim"></div>'
       + '<div class="sheet" id="s-sheet" role="dialog" aria-modal="true">'
       +   '<div class="grab"></div>'
+      +   '<div id="s-form">'
       +   '<h3>Get a text when this price drops</h3>'
       +   '<p class="psub">No forms to fill out. Just your number \u2014 and check the box below if you want the text alerts when the price drops.</p>'
       +   '<ul class="perks">'
@@ -1697,6 +1738,8 @@
       +     '<label for="s-consent" id="s-consent-label"></label></div>'
       +   '<button class="btn" id="s-confirm"><span id="s-confirm-lbl">Watch without texts</span></button>'
       +   '<div class="fine" id="s-fine"></div>'
+      +   '</div>'
+      +   '<div class="done" id="s-done"></div>'
       +   '<div class="fine" style="margin-top:4px">'
       +     '<a href="https://lotpulse.io/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy Policy</a>'
       +     ' &nbsp;·&nbsp; '
@@ -1737,7 +1780,15 @@
     }
     consent.addEventListener("change", syncConfirmLabel);
 
+    var form = root.getElementById("s-form");
+    var doneEl = root.getElementById("s-done");
+
     function open() {
+      // The sheet is shared by every card, so each open starts back on the
+      // form even if the last car's confirmation is still in it.
+      form.style.display = "block";
+      doneEl.style.display = "none";
+      doneEl.innerHTML = "";
       sheet.classList.add("open"); scrim.classList.add("open");
       markSheetOpen(true);
       consent.checked = false;
@@ -1802,9 +1853,17 @@
         vin: srpActiveVin, phone: raw, smsConsent: smsConsent,
         gclid: getGclid(), clientId: getClientId(), vid: getVinpopVid(),
       }).then(function (res) {
+        // A rejected watch used to fall through here too: the sheet closed and
+        // the card turned green as if it had worked. Mirror the VDP sheet.
+        if (!res || !res.ok) {
+          confirm.disabled = false;
+          err.textContent = (res && res.json && res.json.error) || "Something went wrong. Try again.";
+          err.style.display = "block";
+          return;
+        }
         srpSubmittedThisSession = true;
-        if (res && res.ok) markWatched(srpActiveVin);
-        var smsEnabled = !!(res && res.json && res.json.smsEnabled);
+        markWatched(srpActiveVin);
+        var smsEnabled = !!(res.json && res.json.smsEnabled);
         lpEvent("lp_watch_created", {
           item_id: srpActiveVin,
           page_type: ascPageType("srp"),
@@ -1817,11 +1876,17 @@
           sms_consent: smsEnabled,
           page_location: window.location.href,
         });
-        close();
+        showSrpDone(smsEnabled, (res.json && res.json.mydriveUrl) || null, !!(res.json && res.json.hasName));
         var el = document.querySelector('[data-lp-srp="' + srpActiveVin + '"]');
         if (el) {
           el.style.background = "#1E8E5A";
           if (el.getAttribute("data-lp-mode") === "button") {
+            // .lp-srp-btn sets background/color/border with !important, so a
+            // plain inline style never showed: the "watched" card stayed white.
+            el.style.setProperty("background", "#1E8E5A", "important");
+            el.style.setProperty("border-color", "#1E8E5A", "important");
+            el.style.setProperty("color", "#fff", "important");
+            el.style.setProperty("justify-content", "center", "important");
             el.textContent = smsEnabled ? "\u2713 Watching \u2014 We'll text you" : "\u2713 Watching this car";
           } else {
             el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" '
@@ -1829,12 +1894,124 @@
               + '<polyline points="20 6 9 17 4 12"/></svg>';
           }
         }
-      }).catch(function (e) {
+      }).catch(function () {
         confirm.disabled = false;
-        err.textContent = (e && e.message) || "Something went wrong. Try again.";
+        err.textContent = "Network error. Try again.";
         err.style.display = "block";
       });
     });
+
+    // Same confirmation as the VDP sheet: heading, MyDrive link, and the
+    // optional first-name step. Rebuilt on every success (the sheet is shared
+    // across cards), so no listeners or state leak from one car to the next.
+    function showSrpDone(smsEnabled, mydriveUrl, hasName) {
+      var m = mydriveUrl && /[?&]t=([0-9a-f]{32})/i.exec(mydriveUrl);
+      var askName = !!(m && !hasName);
+      doneEl.innerHTML = ''
+        + '<div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+        + '<h4 id="s-done-h"></h4>'
+        + '<p id="s-done-p"></p>'
+        + '<div class="nmbox" id="s-nm">'
+        +   '<div class="nmq">Add your first name to personalize your car list. The dealer will see it too.</div>'
+        +   '<div class="nmrow">'
+        +     '<input type="text" id="s-nm-in" maxlength="30" placeholder="First name (optional)" '
+        +       'autocomplete="given-name" name="given-name" enterkeyhint="done" aria-label="First name (optional)">'
+        +     '<button type="button" id="s-nm-save">Save</button>'
+        +   '</div>'
+        +   '<div class="nmerr" id="s-nm-err"></div>'
+        +   '<div class="nmskip" id="s-nm-skip"></div>'
+        + '</div>'
+        + '<div class="mdbox" id="s-md">'
+        +   '<div class="lbl">Your car list</div>'
+        +   '<div class="url" id="s-md-url"></div>'
+        +   '<div class="mdbtns">'
+        +     '<a id="s-md-open" href="#" target="_blank" rel="noopener">Open my list</a>'
+        +     '<button type="button" id="s-md-copy">Copy link</button>'
+        +   '</div>'
+        + '</div>'
+        + '<button type="button" class="donebtn" id="s-done-close">Keep browsing</button>';
+      root.getElementById("s-done-h").textContent = smsEnabled ? "You're all set" : "You're watching this car";
+      root.getElementById("s-done-p").textContent = smsEnabled
+        ? "We'll text you the moment this price drops. Reply STOP anytime."
+        : "No texts will be sent. Bookmark your list below to check back on this car.";
+
+      if (mydriveUrl) {
+        var urlEl = root.getElementById("s-md-url");
+        urlEl.textContent = mydriveUrl.replace(/^https?:\/\//, "");
+        root.getElementById("s-md-open").setAttribute("href", mydriveUrl
+          + (mydriveUrl.indexOf("?") === -1 ? "?" : "&")
+          + "utm_source=lotpulse&utm_medium=widget&utm_campaign=watch_confirm");
+        var copyBtn = root.getElementById("s-md-copy");
+        copyBtn.addEventListener("click", function () {
+          var done = function () { copyBtn.textContent = "Copied"; };
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(mydriveUrl).then(done, function () {});
+            } else {
+              var r = document.createRange();
+              r.selectNodeContents(urlEl);
+              var selc = window.getSelection(); selc.removeAllRanges(); selc.addRange(r);
+              done();
+            }
+          } catch (e) { /* leave the label alone if copy isn't available */ }
+        });
+      } else {
+        root.getElementById("s-md").style.display = "none";
+      }
+
+      if (askName) {
+        var token = m[1];
+        var box = root.getElementById("s-nm");
+        var input = root.getElementById("s-nm-in");
+        var save = root.getElementById("s-nm-save");
+        var nmErr = root.getElementById("s-nm-err");
+        root.getElementById("s-nm-skip").textContent = smsEnabled
+          ? "Skip it anytime. Your alerts are already on."
+          : "Skip it anytime. You're already watching this car.";
+        box.style.display = "block";
+        var submitName = function () {
+          var v = (input.value || "").replace(/\s+/g, " ").trim();
+          if (!v) {
+            nmErr.textContent = "Enter a first name, or just skip it.";
+            nmErr.style.display = "block";
+            return;
+          }
+          save.disabled = true;
+          apiPost("/v1/watch/name", { token: token, firstName: v }).then(function (r) {
+            if (!r.ok) {
+              save.disabled = false;
+              nmErr.textContent = "Couldn't save that. Try again.";
+              nmErr.style.display = "block";
+              return;
+            }
+            box.className = "nmbox saved";
+            box.textContent = "Saved. Your car list is personalized.";
+            lpEvent("lp_name_added", {
+              element_type: "form",
+              form_type: "alert",
+              event_action: "click",
+              event_action_result: "complete",
+              page_type: ascPageType("srp"),
+              page_location: window.location.href,
+            });
+          }).catch(function () {
+            save.disabled = false;
+            nmErr.textContent = "Network error. Try again.";
+            nmErr.style.display = "block";
+          });
+        };
+        input.addEventListener("input", function () { nmErr.style.display = "none"; });
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") { e.preventDefault(); submitName(); }
+        });
+        save.addEventListener("click", submitName);
+      }
+
+      root.getElementById("s-done-close").addEventListener("click", close);
+      form.style.display = "none";
+      doneEl.style.display = "block";
+      sheet.scrollTop = 0;
+    }
   }
 
   // One <style> tag for the SRP button (pseudo-states and the dot's pulse
