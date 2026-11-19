@@ -1861,7 +1861,7 @@
         };
         var geoIn=document.getElementById("set-geo");
         if(geoIn) body.storeLocation=geoIn.value.trim();
-        btn.disabled=true; btn.textContent="Saving…";
+        btn.disabled=true; btn.textContent=body.feedUrl?"Checking feed & syncing…":"Saving…";
         fetch(API+"/dash/"+SLUG+"/settings/update",{
           method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
         }).then(function(r){return r.json();}).then(function(res){
@@ -1872,6 +1872,20 @@
           }
           btn.textContent="✓ Saved"; btn.style.background="var(--win)";
           loadSummary(); // pick up any renamed dealer / refreshed freshness state
+          if(res.sync){
+            // A new feed URL synced right away. Say what happened, and leave the
+            // panel open long enough to read it.
+            var sy=res.sync;
+            if(sy.status==="failed"){
+              err.textContent="Feed URL saved, but the sync failed: "+(sy.error||"unknown error")+". It will retry at the next scheduled sync.";
+              err.style.display="block";
+              return;
+            }
+            btn.textContent="✓ Saved · synced "+sy.rowsInFeed+" in feed ("+sy.added+" added, "+sy.updated+" updated, "+sy.removed+" removed)";
+            if(typeof loadBoard==="function") loadBoard();
+            setTimeout(closeDetail, 3500);
+            return;
+          }
           setTimeout(closeDetail, 900);
         }).catch(function(){
           err.textContent="Network error. Try again."; err.style.display="block";
