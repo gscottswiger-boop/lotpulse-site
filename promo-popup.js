@@ -121,8 +121,9 @@
 // except in demo / test mode, where each page load starts covered again.
 // dataLayer gets lp_promo_revealed with method scratch / tap.
 //
-// SCRATCH THEMES (Nov 2026): a scratch offer carries `theme` (classic |
-// blackfriday | holiday | newyear | july4) and `banner` (the event-banner
+// SCRATCH THEMES (Nov 2026): a scratch offer carries `theme` (classic, plus
+// 16 seasonal ids: newyear valentine presidents tax stpatrick spring mothers
+// memorial fathers july4 labor halloween veterans thanksgiving blackfriday holiday) and `banner` (the event-banner
 // line, or null). A theme changes the foil, the card frame, the header
 // wording, the event banner under the header and the reveal effect (snow,
 // fireworks, stars, gold confetti on a canvas over the page). The header
@@ -694,35 +695,110 @@
 
   // ── Scratch themes ─────────────────────────────────────────────────────────
   var GOLD = "linear-gradient(135deg,#B38A2E,#F5DE8C 35%,#C9A24A 60%,#F2D27A 85%,#A67C24)";
+  function stripes(a, b) { return "repeating-linear-gradient(45deg," + a + " 0 9px,#FFFFFF 9px 18px," + b + " 18px 27px,#FFFFFF 27px 36px)"; }
+  // pat: foil pattern {k, a, b}. fx: reveal effect {t: burst | fall | fireworks
+  // | classic, s: particle shape, c: colors, n: count}.
   var THEMES = {
     classic: { cover: "Scratch to reveal your offer", revealed: "You uncovered {a} off",
       strip: { bg: "#14213D", color: "#FFFFFF", icon: "spark" },
       foil: ["#B8BFCA", "#EEF1F5", "#C2C8D2", "#E5E8EE", "#ADB4C0"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
-      titleColor: "#4A5266", subColor: "#5E6678", pattern: "dollar", effect: "classic" },
-    blackfriday: { cover: "Scratch to reveal your Black Friday deal", revealed: "Your Black Friday deal: {a} off",
-      strip: { bg: "#0E0E10", color: "#F2D27A", icon: "tag" },
-      foil: ["#141418", "#3A3A44", "#1C1C22", "#4A4636", "#121216"], foilTitle: "SCRATCH HERE", foilSub: "to see your deal",
-      titleColor: "#F2D27A", subColor: "#CFC4A0", pattern: "percent", dark: true,
-      ticketBg: "#121214", frame: GOLD, amount: "#F2D27A", line: "#FFFFFF",
-      effect: "confetti", fx: ["#F2D27A", "#C9A24A", "#FFFFFF", "#2A2A2E"] },
-    holiday: { cover: "Scratch to unwrap your holiday offer", revealed: "You unwrapped {a} off",
-      strip: { bg: "#1E6B3A", color: "#FFFFFF", icon: "flake" },
-      foil: ["#A87A22", "#F3D98B", "#C99A3A", "#F6E3A6", "#9C6F1C"], foilTitle: "SCRATCH TO UNWRAP", foilSub: "your holiday offer",
-      titleColor: "#5A3A06", subColor: "#6E4E14", pattern: "snow",
-      ticketBg: "#FFF9EE", frame: "repeating-linear-gradient(45deg,#C8102E 0 9px,#FFFFFF 9px 18px,#1E6B3A 18px 27px,#FFFFFF 27px 36px)",
-      amount: "#B3122A", line: "#1E3A2A", bow: true, effect: "snow" },
+      titleColor: "#4A5266", subColor: "#5E6678", pat: { k: "dollar", a: "rgba(20,33,61,.09)" }, fx: { t: "classic" } },
     newyear: { cover: "Scratch to start the new year with savings", revealed: "Happy New Year! {a} off",
       strip: { bg: "#0B1229", color: "#F2D27A", icon: "spark" },
-      foil: ["#0D1531", "#2B3B70", "#121C40", "#3A3360", "#0B1229"], foilTitle: "SCRATCH HERE", foilSub: "to ring in your offer",
-      titleColor: "#F2D27A", subColor: "#C9D2EE", pattern: "stars", dark: true,
+      foil: ["#0D1531", "#2B3B70", "#121C40", "#3A3360", "#0B1229"], foilTitle: "SCRATCH HERE", foilSub: "to ring in your offer", dark: true,
+      titleColor: "#F2D27A", subColor: "#C9D2EE", pat: { k: "starspark", a: "rgba(242,210,122,.38)", b: "rgba(255,255,255,.30)" },
       ticketBg: "#0E1733", frame: GOLD, amount: "#F2D27A", line: "#E8ECF8",
-      effect: "fireworks", fx: ["#F2D27A", "#FFFFFF", "#C9D2EE", "#F5B942"] },
+      fx: { t: "fireworks", c: ["#F2D27A", "#FFFFFF", "#C9D2EE", "#F5B942"] } },
+    valentine: { cover: "Scratch to fall in love with your next car", revealed: "Love at first sight: {a} off",
+      strip: { bg: "#B0183D", color: "#FFFFFF", icon: "heart" },
+      foil: ["#E8789A", "#F9C6D4", "#EC8DAA", "#FBD5DF", "#D9607F"], foilTitle: "SCRATCH HERE", foilSub: "to find your match",
+      titleColor: "#7A0F2C", subColor: "#8E2A47", pat: { k: "heart", a: "rgba(255,255,255,.55)", b: "rgba(176,24,61,.22)" },
+      ticketBg: "#FFF5F8", frame: stripes("#D61F4D", "#F48FB1"), amount: "#C2123F", line: "#5A1428",
+      fx: { t: "burst", s: "heart", c: ["#D61F4D", "#F48FB1", "#FFFFFF", "#B0183D"] } },
+    presidents: { cover: "Scratch to reveal your Presidents Day deal", revealed: "Your Presidents Day deal: {a} off",
+      strip: { bg: "#0E2A5C", color: "#FFFFFF", icon: "star", border: "#B22234" },
+      foil: ["#1A2D5A", "#3B5491", "#22386B", "#4A5F9A", "#16264D"], foilTitle: "SCRATCH HERE", foilSub: "to see your deal", dark: true,
+      titleColor: "#FFFFFF", subColor: "#C9D2EE", pat: { k: "star", a: "rgba(255,255,255,.30)", b: "rgba(255,255,255,.16)" },
+      ticketBg: "#FFFFFF", frame: stripes("#B22234", "#0E2A5C"), amount: "#0E2A5C", line: "#1D2B57",
+      fx: { t: "burst", s: "star", c: ["#B22234", "#FFFFFF", "#0E2A5C"] } },
+    tax: { cover: "Scratch to stretch your tax refund", revealed: "Your tax refund bonus: {a} off",
+      strip: { bg: "#14532D", color: "#FFFFFF", icon: "dollar" },
+      foil: ["#2F6B3F", "#7FB58A", "#3E7D4E", "#9CC7A5", "#285C36"], foilTitle: "SCRATCH HERE", foilSub: "to see your refund bonus",
+      titleColor: "#0F3D20", subColor: "#163F25", pat: { k: "dollar", a: "rgba(255,255,255,.28)" },
+      ticketBg: "#F3FAF4", frame: "linear-gradient(135deg,#14532D,#4C9A5F 50%,#14532D)", amount: "#14532D", line: "#1E3A2A",
+      fx: { t: "fall", s: "bill", c: ["#3E7D4E", "#7FB58A", "#14532D", "#B9DCC0"] } },
+    stpatrick: { cover: "Scratch to see how lucky you are", revealed: "Lucky you: {a} off",
+      strip: { bg: "#0B6E3B", color: "#FFFFFF", icon: "clover" },
+      foil: ["#1E7A44", "#7CC79A", "#2B8C53", "#9BD6B1", "#17683A"], foilTitle: "SCRATCH FOR LUCK", foilSub: "to see your offer",
+      titleColor: "#0B3D20", subColor: "#14532D", pat: { k: "clover", a: "rgba(255,255,255,.45)", b: "rgba(11,61,32,.20)" },
+      ticketBg: "#F4FBF6", frame: GOLD, amount: "#0B6E3B", line: "#1E3A2A",
+      fx: { t: "burst", s: "clovercoin", c: ["#1E7A44", "#2B8C53", "#F2D27A", "#C9A24A"] } },
+    spring: { cover: "Scratch to find your springtime offer", revealed: "You found {a} off",
+      strip: { bg: "#6A3FB5", color: "#FFFFFF", icon: "flower" },
+      foil: ["#B9A6E3", "#E9E1FA", "#C7B8EC", "#F1EBFC", "#A995DA"], foilTitle: "SCRATCH TO FIND", foilSub: "your springtime offer",
+      titleColor: "#4B2E83", subColor: "#5E4596", pat: { k: "egg", a: "#FDE7EE", b: "#FFF6C7", c: "#D7F0E2", d: "#DCE6FA" },
+      ticketBg: "#FFFDF5", frame: "repeating-linear-gradient(45deg,#F4A9C0 0 9px,#FFE57A 9px 18px,#8FD3B0 18px 27px,#9DB8F0 27px 36px)", amount: "#6A3FB5", line: "#3A2A55",
+      fx: { t: "burst", s: "egg", c: ["#F4A9C0", "#FFE57A", "#8FD3B0", "#9DB8F0", "#C9B2F2"] } },
+    mothers: { cover: "Scratch to reveal your Mother's Day offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#A33C6B", color: "#FFFFFF", icon: "flower" },
+      foil: ["#E9A7B8", "#FBE3E8", "#EFB7C5", "#FDEDF1", "#DC90A4"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#7A2346", subColor: "#8E3A5C", pat: { k: "flower", a: "rgba(255,255,255,.65)", b: "rgba(163,60,107,.25)" },
+      ticketBg: "#FFF7F9", frame: "linear-gradient(135deg,#E8A0B4,#FBE3E8 40%,#D987A0 70%,#F4C6D2)", amount: "#A33C6B", line: "#4A2034",
+      fx: { t: "fall", s: "petal", c: ["#F4A7BB", "#FBD5DF", "#E8789A", "#FFFFFF"] } },
+    memorial: { cover: "Scratch to reveal your Memorial Day offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#1B2A55", color: "#FFFFFF", icon: "star", border: "#7A1424" },
+      foil: ["#2B2F3A", "#5A6072", "#353A47", "#6B7182", "#262A34"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer", dark: true,
+      titleColor: "#F1F3F7", subColor: "#C5CAD6", pat: { k: "star", a: "rgba(255,255,255,.22)", b: "rgba(255,255,255,.12)" },
+      ticketBg: "#F7F7F4", frame: "linear-gradient(90deg,#7A1424,#1B2A55)", amount: "#7A1424", line: "#1B2A55",
+      fx: { t: "burst", s: "star", c: ["#7A1424", "#FFFFFF", "#1B2A55"], n: 24 } },
+    fathers: { cover: "Scratch to reveal your Father's Day offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#1F3A5F", color: "#FFFFFF", icon: "tie" },
+      foil: ["#3E5A7E", "#8BA4C4", "#4A6A92", "#A3B8D2", "#34506F"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#0E1E33", subColor: "#13263F", pat: { k: "plaid", a: "rgba(255,255,255,.16)", b: "rgba(15,30,51,.14)" },
+      ticketBg: "#F5F8FB", frame: "linear-gradient(135deg,#1F3A5F,#8BA4C4 50%,#1F3A5F)", amount: "#1F3A5F", line: "#2A2F38",
+      fx: { t: "burst", s: "rect", c: ["#1F3A5F", "#8BA4C4", "#C9A24A", "#FFFFFF"] } },
     july4: { cover: "Scratch to reveal your 4th of July offer", revealed: "You uncovered {a} off",
       strip: { bg: "#1D3A8A", color: "#FFFFFF", icon: "star", border: "#B22234" },
       foil: ["#AEBBD3", "#EEF2F9", "#B9C5DB", "#E6ECF6", "#A3B1CC"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
-      titleColor: "#1D2B57", subColor: "#3B4A75", pattern: "flagstars",
-      ticketBg: "#FFFFFF", frame: "repeating-linear-gradient(45deg,#B22234 0 9px,#FFFFFF 9px 18px,#1D3A8A 18px 27px,#FFFFFF 27px 36px)",
-      amount: "#1D3A8A", line: "#1D2B57", effect: "stars", fx: ["#B22234", "#FFFFFF", "#1D3A8A"] }
+      titleColor: "#1D2B57", subColor: "#3B4A75", pat: { k: "star", a: "rgba(178,34,52,.30)", b: "rgba(29,58,138,.28)" },
+      ticketBg: "#FFFFFF", frame: stripes("#B22234", "#1D3A8A"), amount: "#1D3A8A", line: "#1D2B57",
+      fx: { t: "burst", s: "star", c: ["#B22234", "#FFFFFF", "#1D3A8A"] } },
+    labor: { cover: "Scratch to reveal your Labor Day deal", revealed: "Your Labor Day deal: {a} off",
+      strip: { bg: "#1F4E8C", color: "#FFFFFF", icon: "sun" },
+      foil: ["#E07A1F", "#F6B66A", "#E58A2E", "#F8C886", "#D06A12"], foilTitle: "SCRATCH HERE", foilSub: "to see your deal",
+      titleColor: "#4A2203", subColor: "#5A2A08", pat: { k: "sun", a: "rgba(255,255,255,.45)", b: "rgba(120,50,0,.18)" },
+      ticketBg: "#FFF8F0", frame: "linear-gradient(135deg,#1F4E8C,#3A78C2 50%,#1F4E8C)", amount: "#1F4E8C", line: "#2A2A2A",
+      fx: { t: "burst", s: "rect", c: ["#E07A1F", "#1F4E8C", "#F6B66A", "#FFFFFF"] } },
+    halloween: { cover: "Scratch for a treat", revealed: "Treat unlocked: {a} off",
+      strip: { bg: "#1A1024", color: "#FF8A1F", icon: "moon" },
+      foil: ["#1E1230", "#4A2A6B", "#2A1A40", "#5A3A20", "#1A0F28"], foilTitle: "SCRATCH FOR A TREAT", foilSub: "no tricks, just savings", dark: true,
+      titleColor: "#FF8A1F", subColor: "#D9C6F0", pat: { k: "pumpkin", a: "rgba(255,138,31,.42)", b: "rgba(255,255,255,.16)" },
+      ticketBg: "#1B1226", frame: "repeating-linear-gradient(45deg,#FF7A00 0 9px,#1B1226 9px 18px)", amount: "#FF8A1F", line: "#F1E6FF",
+      fx: { t: "burst", s: "bat", c: ["#FF7A00", "#7B3FB8", "#1A1024", "#9BE15D"] } },
+    veterans: { cover: "Scratch to reveal your Veterans Day offer", revealed: "You uncovered {a} off",
+      strip: { bg: "#1B2A55", color: "#FFFFFF", icon: "star", border: "#7A1424" },
+      foil: ["#5B6146", "#9AA07E", "#6B7253", "#A9AE8E", "#4F553C"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#1A1F10", subColor: "#262C18", pat: { k: "star", a: "rgba(255,255,255,.32)", b: "rgba(27,42,85,.20)" },
+      ticketBg: "#FBFAF5", frame: "linear-gradient(90deg,#7A1424 0 33%,#FFFFFF 33% 66%,#1B2A55 66%)", amount: "#1B2A55", line: "#2A2F20",
+      fx: { t: "burst", s: "star", c: ["#7A1424", "#FFFFFF", "#1B2A55"], n: 24 } },
+    thanksgiving: { cover: "Scratch to reveal your Thanksgiving offer", revealed: "Something to be thankful for: {a} off",
+      strip: { bg: "#7A3A12", color: "#FFFFFF", icon: "leaf" },
+      foil: ["#A85A1E", "#E7A35C", "#B86A2A", "#EDB777", "#8F4A16"], foilTitle: "SCRATCH HERE", foilSub: "to see your offer",
+      titleColor: "#3A1803", subColor: "#4A2208", pat: { k: "leaf", a: "rgba(255,255,255,.42)", b: "rgba(90,30,0,.20)" },
+      ticketBg: "#FFF8EE", frame: "linear-gradient(135deg,#7A3A12,#D98A3A 35%,#A85A1E 60%,#E7A35C 85%,#7A3A12)", amount: "#8F3A0F", line: "#3E2412",
+      fx: { t: "fall", s: "leaf", c: ["#C0571A", "#E39B3B", "#8F3A0F", "#D6A13A"] } },
+    blackfriday: { cover: "Scratch to reveal your Black Friday deal", revealed: "Your Black Friday deal: {a} off",
+      strip: { bg: "#0E0E10", color: "#F2D27A", icon: "tag" },
+      foil: ["#141418", "#3A3A44", "#1C1C22", "#4A4636", "#121216"], foilTitle: "SCRATCH HERE", foilSub: "to see your deal", dark: true,
+      titleColor: "#F2D27A", subColor: "#CFC4A0", pat: { k: "percent", a: "rgba(242,210,122,.16)" },
+      ticketBg: "#121214", frame: GOLD, amount: "#F2D27A", line: "#FFFFFF",
+      fx: { t: "burst", s: "rect", c: ["#F2D27A", "#C9A24A", "#FFFFFF", "#2A2A2E"] } },
+    holiday: { cover: "Scratch to unwrap your holiday offer", revealed: "You unwrapped {a} off",
+      strip: { bg: "#1E6B3A", color: "#FFFFFF", icon: "flake" },
+      foil: ["#A87A22", "#F3D98B", "#C99A3A", "#F6E3A6", "#9C6F1C"], foilTitle: "SCRATCH TO UNWRAP", foilSub: "your holiday offer",
+      titleColor: "#5A3A06", subColor: "#6E4E14", pat: { k: "snow", a: "rgba(255,255,255,.62)" },
+      ticketBg: "#FFF9EE", frame: stripes("#C8102E", "#1E6B3A"), amount: "#B3122A", line: "#1E3A2A", bow: true,
+      fx: { t: "fall", s: "flake", c: ["#FFFFFF"] } }
   };
   function th() { return THEMES[CFG && CFG.theme] || THEMES.classic; }
   function themeId() { return CFG && THEMES[CFG.theme] ? CFG.theme : "classic"; }
@@ -731,7 +807,15 @@
     flake: '<svg viewBox="-10 -10 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5"/></svg>',
     star: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0-9.5 2.6-3.1 9.5-3 4.1 1.3 5.9 8 0 4.2-5.9 8-4.1 1.3-9.5-3-2.6-3.1Z"/></svg>',
     spark: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0-10 2.2-2.2 10 0 2.2 2.2 0 10-2.2 2.2-10 0-2.2-2.2Z"/></svg>',
-    tag: '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h6.1c.4 0 .8.2 1.1.4l7 7a1.5 1.5 0 0 1 0 2.1l-6.1 6.1a1.5 1.5 0 0 1-2.1 0l-7-7A1.5 1.5 0 0 1 2 9.6ZM6.5 8a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>'
+    tag: '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h6.1c.4 0 .8.2 1.1.4l7 7a1.5 1.5 0 0 1 0 2.1l-6.1 6.1a1.5 1.5 0 0 1-2.1 0l-7-7A1.5 1.5 0 0 1 2 9.6ZM6.5 8a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>',
+    heart: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0 8C-11 1-8-9 0-4C8-9 11 1 0 8Z"/></svg>',
+    clover: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><circle cx="0" cy="-4.5" r="4.2"/><circle cx="-4.2" cy="1.5" r="4.2"/><circle cx="4.2" cy="1.5" r="4.2"/><path d="M-.8 2h1.6L2 10H.4Z"/></svg>',
+    flower: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><circle cx="0" cy="-5" r="3.6"/><circle cx="4.8" cy="-1.5" r="3.6"/><circle cx="3" cy="4.2" r="3.6"/><circle cx="-3" cy="4.2" r="3.6"/><circle cx="-4.8" cy="-1.5" r="3.6"/></svg>',
+    sun: '<svg viewBox="-10 -10 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="0" cy="0" r="4" fill="currentColor"/><path d="M0-9.5V-7M0 7V9.5M-9.5 0H-7M7 0H9.5M-6.7-6.7-5-5M5 5 6.7 6.7M-6.7 6.7-5 5M5-5 6.7-6.7"/></svg>',
+    leaf: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M-7 7C-8-4 0-9 8-8C9 0 4 8-7 7Z"/></svg>',
+    moon: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M3-9A9 9 0 1 0 9 3 7 7 0 0 1 3-9Z"/></svg>',
+    tie: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M-3-9H3L1.6-5.5 4 6 0 9.5-4 6-1.6-5.5Z"/></svg>',
+    dollar: '<svg viewBox="-10 -10 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M0-9.5V9.5M5-5C4-7 2-7.5 0-7.5S-5-6.5-5-4 0-1.5 0-.5 5 1.5 5 4.5 2 7.5 0 7.5-4 7-5 5"/></svg>'
   };
   var BOW_SVG = '<svg class="bow" viewBox="0 0 64 40" aria-hidden="true">'
     + '<path d="M32 20 C22 2,4 4,6 14 C8 24,24 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/>'
@@ -1196,23 +1280,7 @@
         ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
       }
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      if (t.pattern === "dollar") {
-        ctx.font = "700 17px " + SF; ctx.fillStyle = "rgba(20,33,61,.09)";
-        for (var y = 14; y < h; y += 30) for (var x = (Math.round(y / 30) % 2 ? 18 : 2); x < w; x += 34) ctx.fillText("$", x, y);
-      } else {
-        for (var y2 = 14, row = 0; y2 < h + 10; y2 += 30, row++) {
-          for (var x2 = (row % 2 ? 19 : 2), col = 0; x2 < w + 10; x2 += 34, col++) {
-            var alt = (row + col) % 2;
-            if (t.pattern === "percent") { ctx.font = "800 16px " + SF; ctx.fillStyle = "rgba(242,210,122,.16)"; ctx.fillText("%", x2, y2); }
-            else if (t.pattern === "snow") { ctx.strokeStyle = "rgba(255,255,255,.62)"; ctx.lineWidth = 1.3; drawFlake(ctx, x2, y2, alt ? 6 : 4.5); }
-            else if (t.pattern === "stars") {
-              if (alt) { ctx.fillStyle = "rgba(242,210,122,.38)"; starPath(ctx, x2, y2, 5.5); ctx.fill(); }
-              else { ctx.fillStyle = "rgba(255,255,255,.30)"; starPath(ctx, x2, y2, 5, 0.22, 4); ctx.fill(); }
-            }
-            else if (t.pattern === "flagstars") { ctx.fillStyle = alt ? "rgba(178,34,52,.30)" : "rgba(29,58,138,.28)"; starPath(ctx, x2, y2, 5.5); ctx.fill(); }
-          }
-        }
-      }
+      drawPattern(ctx, t, w, h, SF);
       if (t !== THEMES.classic) {
         // A soft plate behind the words so they read over the pattern.
         ctx.font = "800 21px " + SF;
@@ -1226,7 +1294,10 @@
       ctx.font = "500 13px " + SF;
       ctx.fillStyle = t.subColor;
       ctx.fillText(t.foilSub, w / 2, h / 2 + 16);
+      // The brush erases by its alpha, so it must be fully opaque (the
+      // pattern leaves a faint stroke color behind).
       ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "#000"; ctx.fillStyle = "#000"; ctx.globalAlpha = 1;
       ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = BRUSH * 2;
       return true;
     }
@@ -1272,6 +1343,7 @@
     c.addEventListener("touchmove", function (e) { if (!REVEALED) e.preventDefault(); }, { passive: false });
   }
 
+  // ── Theme shapes: foil patterns and reveal particles ──
   function drawFlake(c, x, y, r) {
     c.save(); c.translate(x, y); c.lineCap = "round";
     for (var i = 0; i < 6; i++) {
@@ -1295,10 +1367,86 @@
     c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
     c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
   }
+  function heartPath(c, x, y, r) {
+    c.beginPath(); c.moveTo(x, y + r * 0.9);
+    c.bezierCurveTo(x - r * 1.7, y - r * 0.1, x - r * 0.7, y - r * 1.35, x, y - r * 0.45);
+    c.bezierCurveTo(x + r * 0.7, y - r * 1.35, x + r * 1.7, y - r * 0.1, x, y + r * 0.9);
+    c.closePath();
+  }
+  function cloverShape(c, x, y, r) {
+    c.beginPath();
+    [[0, -0.48], [-0.46, 0.2], [0.46, 0.2]].forEach(function (p) { c.moveTo(x + p[0] * r + r * 0.42, y + p[1] * r); c.arc(x + p[0] * r, y + p[1] * r, r * 0.42, 0, Math.PI * 2); });
+    c.fill();
+    c.beginPath(); c.moveTo(x, y + r * 0.2); c.quadraticCurveTo(x + r * 0.2, y + r * 0.7, x + r * 0.35, y + r); c.lineWidth = Math.max(1, r * 0.16); c.stroke();
+  }
+  function eggPath(c, x, y, r) { c.beginPath(); c.ellipse(x, y, r * 0.7, r, 0, 0, Math.PI * 2); }
+  function flowerShape(c, x, y, r) {
+    c.beginPath();
+    for (var i = 0; i < 5; i++) { var a = -Math.PI / 2 + i * Math.PI * 2 / 5; c.moveTo(x + Math.cos(a) * r * 0.5 + r * 0.4, y + Math.sin(a) * r * 0.5); c.arc(x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.5, r * 0.4, 0, Math.PI * 2); }
+    c.fill();
+  }
+  function leafShape(c, x, y, r, rot) {
+    c.save(); c.translate(x, y); c.rotate(rot || 0);
+    c.beginPath(); c.moveTo(0, -r); c.quadraticCurveTo(r * 0.8, -r * 0.1, 0, r); c.quadraticCurveTo(-r * 0.8, -r * 0.1, 0, -r); c.fill();
+    c.restore();
+  }
+  function sunShape(c, x, y, r) {
+    c.beginPath(); c.arc(x, y, r * 0.42, 0, Math.PI * 2); c.fill();
+    c.lineWidth = Math.max(1, r * 0.14); c.lineCap = "round"; c.beginPath();
+    for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4; c.moveTo(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62); c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+    c.stroke();
+  }
+  function pumpkinShape(c, x, y, r) {
+    c.beginPath(); c.ellipse(x - r * 0.38, y, r * 0.45, r * 0.7, 0, 0, Math.PI * 2); c.ellipse(x + r * 0.38, y, r * 0.45, r * 0.7, 0, 0, Math.PI * 2); c.ellipse(x, y, r * 0.5, r * 0.75, 0, 0, Math.PI * 2); c.fill();
+    c.fillRect(x - r * 0.08, y - r * 1.05, r * 0.18, r * 0.35);
+  }
+  function batShape(c, x, y, r) {
+    c.beginPath(); c.moveTo(x, y - r * 0.2);
+    c.quadraticCurveTo(x - r * 0.5, y - r * 0.8, x - r * 1.3, y - r * 0.4);
+    c.quadraticCurveTo(x - r * 0.9, y - r * 0.1, x - r, y + r * 0.3);
+    c.quadraticCurveTo(x - r * 0.6, y + r * 0.05, x - r * 0.45, y + r * 0.35);
+    c.quadraticCurveTo(x - r * 0.2, y + r * 0.1, x, y + r * 0.45);
+    c.quadraticCurveTo(x + r * 0.2, y + r * 0.1, x + r * 0.45, y + r * 0.35);
+    c.quadraticCurveTo(x + r * 0.6, y + r * 0.05, x + r, y + r * 0.3);
+    c.quadraticCurveTo(x + r * 0.9, y - r * 0.1, x + r * 1.3, y - r * 0.4);
+    c.quadraticCurveTo(x + r * 0.5, y - r * 0.8, x, y - r * 0.2);
+    c.fill();
+  }
+  // Foil pattern for a theme: a staggered grid of small shapes (or plaid).
+  function drawPattern(ctx, t, w, h, SF) {
+    var p = t.pat || { k: "dollar", a: "rgba(20,33,61,.09)" };
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (p.k === "plaid") {
+      for (var px = 0; px < w; px += 26) { ctx.fillStyle = p.a; ctx.fillRect(px, 0, 8, h); ctx.fillStyle = p.b; ctx.fillRect(px + 14, 0, 3, h); }
+      for (var py = 0; py < h; py += 26) { ctx.fillStyle = p.a; ctx.fillRect(0, py, w, 8); ctx.fillStyle = p.b; ctx.fillRect(0, py + 14, w, 3); }
+      return;
+    }
+    for (var y = 14, row = 0; y < h + 10; y += 30, row++) {
+      for (var x = (row % 2 ? 19 : 2), col = 0; x < w + 10; x += 34, col++) {
+        var alt = (row + col) % 2, colr = alt && p.b ? p.b : p.a;
+        ctx.fillStyle = colr; ctx.strokeStyle = colr;
+        if (p.k === "dollar") { ctx.font = "700 17px " + SF; ctx.fillText("$", x, y); }
+        else if (p.k === "percent") { ctx.font = "800 16px " + SF; ctx.fillText("%", x, y); }
+        else if (p.k === "snow") { ctx.lineWidth = 1.3; drawFlake(ctx, x, y, alt ? 6 : 4.5); }
+        else if (p.k === "starspark") { if (alt) { ctx.fillStyle = p.a; starPath(ctx, x, y, 5.5); } else { ctx.fillStyle = p.b; starPath(ctx, x, y, 5, 0.22, 4); } ctx.fill(); }
+        else if (p.k === "star") { starPath(ctx, x, y, 5.5); ctx.fill(); }
+        else if (p.k === "heart") { heartPath(ctx, x, y, alt ? 5 : 6.5); ctx.fill(); }
+        else if (p.k === "clover") { cloverShape(ctx, x, y, alt ? 6 : 7.5); }
+        else if (p.k === "egg") {
+          ctx.fillStyle = [p.a, p.b, p.c, p.d][(row * 3 + col) % 4]; eggPath(ctx, x, y, 6.5); ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x - 4.2, y); ctx.lineTo(x + 4.2, y); ctx.stroke();
+        }
+        else if (p.k === "flower") { flowerShape(ctx, x, y, alt ? 6 : 7.5); }
+        else if (p.k === "sun") { sunShape(ctx, x, y, alt ? 6 : 7.5); }
+        else if (p.k === "leaf") { leafShape(ctx, x, y, alt ? 6 : 7.5, (row * 7 + col * 3) % 6 - 3); }
+        else if (p.k === "pumpkin") { if (alt) { ctx.fillStyle = p.a; pumpkinShape(ctx, x, y, 6.5); } else { ctx.fillStyle = p.b; starPath(ctx, x, y, 3.5, 0.3, 4); ctx.fill(); } }
+      }
+    }
+  }
 
   // Themed reveal effects on a canvas over the whole page (inside our shadow
-  // root). Snow drifts down; fireworks burst in turn; stars and gold confetti
-  // fly out of the card. It stops itself, and on close. Reduced motion: none.
+  // root): a burst of shapes out of the card, shapes drifting down, or
+  // fireworks. It stops itself, and on close. Reduced motion: none.
   var FX = { cv: null, parts: [], raf: 0, timers: [] };
   function fxStop() {
     FX.parts = []; FX.timers.forEach(clearTimeout); FX.timers = [];
@@ -1306,9 +1454,27 @@
     if (FX.cv && FX.cv.parentNode) FX.cv.parentNode.removeChild(FX.cv);
     FX.cv = null;
   }
+  function drawParticle(c, p) {
+    var s = p.s;
+    c.fillStyle = p.col; c.strokeStyle = p.col;
+    switch (p.shape) {
+      case "rect": c.fillRect(-s / 2, -s * 0.8, s, s * 1.6); break;
+      case "star": starPath(c, 0, 0, s); c.fill(); if (p.col === "#FFFFFF") { c.strokeStyle = "#1D3A8A"; c.lineWidth = 1; c.stroke(); } break;
+      case "heart": heartPath(c, 0, 0, s); c.fill(); if (p.col === "#FFFFFF") { c.strokeStyle = "#D61F4D"; c.lineWidth = 1; c.stroke(); } break;
+      case "clover": c.lineWidth = 1.5; cloverShape(c, 0, 0, s * 1.2); break;
+      case "coin": c.beginPath(); c.arc(0, 0, s * 0.8, 0, Math.PI * 2); c.fill(); c.strokeStyle = "#A67C24"; c.lineWidth = 1.4; c.stroke(); break;
+      case "egg": eggPath(c, 0, 0, s); c.fill(); c.strokeStyle = "rgba(255,255,255,.85)"; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-s * 0.62, 0); c.lineTo(s * 0.62, 0); c.stroke(); break;
+      case "petal": c.beginPath(); c.ellipse(0, 0, s * 0.45, s * 0.9, 0, 0, Math.PI * 2); c.fill(); break;
+      case "leaf": leafShape(c, 0, 0, s * 1.1, 0); break;
+      case "bill": c.fillRect(-s * 1.1, -s * 0.55, s * 2.2, s * 1.1); c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1; c.strokeRect(-s * 0.8, -s * 0.32, s * 1.6, s * 0.64); break;
+      case "bat": batShape(c, 0, 0, s); break;
+      case "flake": c.shadowColor = "rgba(40,60,90,.55)"; c.shadowBlur = 2; c.strokeStyle = "#FFFFFF"; c.lineWidth = 1.4; drawFlake(c, 0, 0, s + 1.5); break;
+      case "dot": c.shadowColor = "rgba(40,60,90,.5)"; c.shadowBlur = 2; c.fillStyle = "#FFFFFF"; c.beginPath(); c.arc(0, 0, s * 0.6, 0, Math.PI * 2); c.fill(); break;
+    }
+  }
   function themedEffect() {
-    var t = th();
-    try { if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (e) {}
+    var t = th(), e = t.fx || {};
+    try { if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (err) {}
     fxStop();
     var cv = document.createElement("canvas"); cv.className = "fx"; cv.setAttribute("aria-hidden", "true");
     root.appendChild(cv); FX.cv = cv;
@@ -1317,24 +1483,28 @@
     var c = cv.getContext("2d"); c.setTransform(d, 0, 0, d, 0, 0);
     var tk = root.getElementById("tk"), ctr = { x: W / 2, y: H / 2 };
     if (tk) { var r = tk.getBoundingClientRect(); ctr = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
-    var i;
-    if (t.effect === "confetti" || t.effect === "stars") {
-      for (i = 0; i < (t.effect === "stars" ? 34 : 46); i++) {
-        var a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 5;
+    var cols = e.c || ["#FFFFFF"], i;
+    if (e.t === "burst") {
+      var n = e.n || (e.s === "rect" ? 46 : 34);
+      for (i = 0; i < n; i++) {
+        var a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 5, shape = e.s;
+        if (shape === "clovercoin") shape = i % 3 === 0 ? "coin" : "clover";
         FX.parts.push({ x: ctr.x, y: ctr.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3, g: 0.16, life: 0, max: 70 + Math.random() * 30,
-          s: t.effect === "stars" ? 5 + Math.random() * 4 : 4 + Math.random() * 3, col: t.fx[i % t.fx.length],
-          shape: t.effect === "stars" ? "star" : "rect", rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
+          s: shape === "rect" ? 4 + Math.random() * 3 : 5 + Math.random() * 4, col: shape === "coin" ? "#E7C25A" : cols[i % cols.length],
+          shape: shape, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
       }
-    } else if (t.effect === "snow") {
-      for (i = 0; i < 90; i++) {
-        FX.parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.9, vy: 0.9 + Math.random() * 1.6, life: 0, max: 600,
-          s: 2.5 + Math.random() * 4, shape: Math.random() < 0.55 ? "flake" : "dot", rot: Math.random() * 6,
-          vr: (Math.random() - 0.5) * 0.04, sway: Math.random() * 6, amp: 0.4 + Math.random() * 0.8 });
+    } else if (e.t === "fall") {
+      var snow = e.s === "flake", count = snow ? 90 : 46;
+      for (i = 0; i < count; i++) {
+        FX.parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.9, vy: 0.9 + Math.random() * 1.6, life: 0, max: 600, fall: true,
+          s: snow ? 2.5 + Math.random() * 4 : 5 + Math.random() * 4, col: cols[i % cols.length],
+          shape: snow ? (Math.random() < 0.55 ? "flake" : "dot") : e.s, rot: Math.random() * 6,
+          vr: (Math.random() - 0.5) * (snow ? 0.04 : 0.08), sway: Math.random() * 6, amp: 0.4 + Math.random() * 0.9 });
       }
-    } else if (t.effect === "fireworks") {
+    } else if (e.t === "fireworks") {
       [[0.3, 0.2], [0.72, 0.14], [0.5, 0.32], [0.22, 0.44], [0.78, 0.4]].forEach(function (p, k) {
         FX.timers.push(setTimeout(function () {
-          var col = t.fx[k % t.fx.length], bx = W * p[0], by = H * p[1];
+          var col = cols[k % cols.length], bx = W * p[0], by = H * p[1];
           for (var j = 0; j < 46; j++) {
             var a2 = j / 46 * Math.PI * 2 + Math.random() * 0.1, sp2 = 1.6 + Math.random() * 2.8;
             FX.parts.push({ x: bx, y: by, px: bx, py: by, vx: Math.cos(a2) * sp2, vy: Math.sin(a2) * sp2, g: 0.035, drag: 0.975,
@@ -1350,28 +1520,15 @@
       FX.parts = FX.parts.filter(function (p) { return p.life < p.max && p.y < H + 20; });
       FX.parts.forEach(function (p) {
         p.life++;
-        if (p.shape === "flake" || p.shape === "dot") { p.sway += 0.03; p.x += Math.sin(p.sway) * p.amp; p.y += p.vy; }
+        if (p.fall) { p.sway += 0.03; p.x += Math.sin(p.sway) * p.amp; p.y += p.vy; }
         else { p.px = p.x; p.py = p.y; if (p.drag) { p.vx *= p.drag; p.vy *= p.drag; } p.vy += p.g; p.x += p.vx; p.y += p.vy; }
         p.rot += p.vr || 0;
-        c.globalAlpha = p.shape === "flake" || p.shape === "dot" ? 1 : Math.max(0, 1 - p.life / p.max);
+        c.globalAlpha = p.fall ? 1 : Math.max(0, 1 - p.life / p.max);
         c.save();
         if (p.shape === "spark") {
           c.strokeStyle = p.col; c.lineWidth = p.s; c.lineCap = "round";
           c.beginPath(); c.moveTo(p.px, p.py); c.lineTo(p.x, p.y); c.stroke();
-        } else {
-          c.translate(p.x, p.y); c.rotate(p.rot || 0);
-          if (p.shape === "rect") { c.fillStyle = p.col; c.fillRect(-p.s / 2, -p.s * 0.8, p.s, p.s * 1.6); }
-          else if (p.shape === "star") {
-            c.fillStyle = p.col; starPath(c, 0, 0, p.s); c.fill();
-            if (p.col === "#FFFFFF") { c.strokeStyle = "#1D3A8A"; c.lineWidth = 1; c.stroke(); }
-          } else if (p.shape === "flake") {
-            c.shadowColor = "rgba(40,60,90,.55)"; c.shadowBlur = 2;
-            c.strokeStyle = "#FFFFFF"; c.lineWidth = 1.4; drawFlake(c, 0, 0, p.s + 1.5);
-          } else {
-            c.shadowColor = "rgba(40,60,90,.5)"; c.shadowBlur = 2;
-            c.fillStyle = "#FFFFFF"; c.beginPath(); c.arc(0, 0, p.s * 0.6, 0, Math.PI * 2); c.fill();
-          }
-        }
+        } else { c.translate(p.x, p.y); c.rotate(p.rot || 0); drawParticle(c, p); }
         c.restore();
       });
       c.globalAlpha = 1;
@@ -1380,7 +1537,7 @@
     }
     FX.raf = requestAnimationFrame(step);
     // Clean up the canvas once the effect has run its course.
-    FX.timers.push(setTimeout(fxStop, t.effect === "snow" ? 11000 : 6000));
+    FX.timers.push(setTimeout(fxStop, e.t === "fall" ? 11000 : 6000));
   }
 
   function confetti(host) {
