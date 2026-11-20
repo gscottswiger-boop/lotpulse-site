@@ -808,17 +808,75 @@
 </style>
 </head>
 <body>
-<div id="gate" style="position:fixed;inset:0;z-index:200;background:#14181D;display:flex;align-items:center;justify-content:center;padding:24px">
+<style>
+  .gin{width:100%;font-family:'Barlow',sans-serif;font-size:16px;color:#14181D;background:#fff;border:0;border-radius:11px;padding:14px 15px;margin-bottom:10px;outline:none;box-sizing:border-box}
+  .gbtn{width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:11px;padding:15px;font-family:'Barlow',sans-serif;font-weight:700;font-size:16px}
+  .gbtn:disabled{opacity:.6;cursor:default}
+  .glink{display:inline-block;background:none;border:0;color:#AAB2BB;font:600 13px 'Barlow',sans-serif;cursor:pointer;padding:10px 6px;text-decoration:underline;text-underline-offset:3px}
+  .glink:hover{color:#fff}
+  .gor{display:flex;align-items:center;gap:10px;color:#6B737C;font-size:12px;margin:4px 0 14px;text-transform:uppercase;letter-spacing:.1em}
+  .gor:before,.gor:after{content:"";flex:1;height:1px;background:#2A3038}
+  .gnote{color:#AAB2BB;font-size:13.5px;line-height:1.45;margin:0 0 14px}
+  .ggoogle{display:flex;justify-content:center;min-height:44px;margin-bottom:14px}
+  .ux-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+  .ux-tabs button{border:1px solid var(--line);background:var(--card);color:var(--slate);border-radius:9px;padding:8px 14px;font:700 13px 'Barlow',sans-serif;cursor:pointer}
+  .ux-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .ux-row{cursor:pointer}
+  .ux-row:hover{background:var(--porcelain)}
+  .ux-btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:9px 12px;font:600 13px 'Barlow',sans-serif;cursor:pointer}
+  .ux-btn.danger{color:var(--redline)}
+  .ux-btn:disabled{opacity:.5;cursor:default}
+  .ux-roofs{max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;padding:6px 10px;background:var(--porcelain)}
+  .ux-roofs label{display:flex!important;align-items:center;gap:8px;text-transform:none!important;letter-spacing:0!important;font-size:14px!important;color:var(--ink)!important;font-weight:500!important;margin:0!important;padding:6px 0;cursor:pointer}
+  .ux-roofs label input{width:auto!important;margin:0}
+  .ux-roofs .grp{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);padding:8px 0 2px}
+  .ux-err{display:none;color:var(--redline);font-size:13px;margin:0 0 10px}
+  .ux-ok{display:none;color:#0E7C66;font-size:13px;margin:0 0 10px}
+  .ux-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ux-inline select,.ux-inline input{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--porcelain);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
+</style>
+<div id="gate" style="position:fixed;inset:0;z-index:200;background:#14181D;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
   <div style="width:100%;max-width:340px;text-align:center">
     <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:13px;background:#fff;margin-bottom:18px">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 13 6 13 9 5 14 19 17 13 22 13"/></svg>
     </div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:#fff;letter-spacing:.02em">LotPulse<sup class="tm">&trade;</sup></div>
-    <div style="color:#8A929B;font-size:14px;margin:6px 0 22px">Enter your access code</div>
-    <input id="gateInput" type="password" inputmode="text" autocapitalize="none" autocorrect="off" placeholder="Access code" autocomplete="off"
-      style="width:100%;font-family:'Barlow',sans-serif;font-size:17px;text-align:center;letter-spacing:.1em;color:#14181D;background:#fff;border:0;border-radius:11px;padding:15px;margin-bottom:10px;outline:none">
-    <div id="gateErr" style="color:#FF8A84;font-size:13px;height:18px;margin-bottom:8px"></div>
-    <button id="gateBtn" style="width:100%;border:0;cursor:pointer;background:#1F4FE0;color:#fff;border-radius:11px;padding:15px;font-family:'Barlow',sans-serif;font-weight:700;font-size:16px">Unlock dashboard</button>
+    <div id="gSub" style="color:#8A929B;font-size:14px;margin:6px 0 22px">Sign in to your dashboard</div>
+
+    <div id="gvLogin">
+      <div id="gGoogle" class="ggoogle" style="display:none"></div>
+      <div id="gOr" class="gor" style="display:none">or</div>
+      <input id="gEmail" class="gin" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" placeholder="Email">
+      <input id="gPass" class="gin" type="password" autocomplete="current-password" placeholder="Password">
+      <button id="gLoginBtn" class="gbtn">Sign in</button>
+      <div><button id="gForgotLink" class="glink" type="button">Forgot password?</button></div>
+      <div><button id="gCodeLink" class="glink" type="button" style="display:none">Use an access code instead</button></div>
+    </div>
+
+    <div id="gvForgot" style="display:none">
+      <p class="gnote">Enter your email and we'll send a link to choose a new password.</p>
+      <input id="gFEmail" class="gin" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" placeholder="Email">
+      <button id="gForgotBtn" class="gbtn">Send reset link</button>
+      <div><button class="glink gBack" type="button">Back to sign in</button></div>
+    </div>
+
+    <div id="gvSet" style="display:none">
+      <p class="gnote" id="gSetNote"></p>
+      <div id="gGoogle2" class="ggoogle" style="display:none"></div>
+      <div id="gOr2" class="gor" style="display:none">or set a password</div>
+      <input id="gNew1" class="gin" type="password" autocomplete="new-password" placeholder="New password (10+ characters)">
+      <input id="gNew2" class="gin" type="password" autocomplete="new-password" placeholder="Confirm password">
+      <button id="gSetBtn" class="gbtn">Save password &amp; sign in</button>
+      <div><button class="glink gBack" type="button">Back to sign in</button></div>
+    </div>
+
+    <div id="gvCode" style="display:none">
+      <input id="gateInput" class="gin" type="password" inputmode="text" autocapitalize="none" autocorrect="off" placeholder="Access code" autocomplete="off" style="text-align:center;letter-spacing:.1em">
+      <button id="gateBtn" class="gbtn">Unlock dashboard</button>
+      <div><button class="glink gBack" type="button">Sign in with email instead</button></div>
+    </div>
+
+    <div id="gateErr" style="color:#FF8A84;font-size:13px;min-height:18px;margin-top:10px;line-height:1.4"></div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -855,6 +913,12 @@
         </button>
         <button id="promoBtn" title="VinPop" aria-label="VinPop settings" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
           <span data-pmark="vp"></span><span class="tl">VinPop settings</span>
+        </button>
+        <button id="usersBtn" title="Users &amp; access" aria-label="Users and access" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="tl">Users</span>
+        </button>
+        <button id="acctBtn" title="Your account" aria-label="Your account" style="display:none;background:none;border:0;cursor:pointer;padding:2px;color:var(--slate)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><span class="tl">Account</span>
         </button>
         <a href="#" id="signOut" style="display:none">Sign out</a>
       </div>
@@ -983,6 +1047,35 @@
   var SLUG = new URLSearchParams(location.search).get("dealer") || "big-o-cdjr";
   var API = "https://lotpulse-q249.onrender.com";
 
+  // ── Personal logins (Nov 2026) ──
+  // The session token lives in localStorage and rides on every API call as a
+  // Bearer header (the API is on a different site, so no cookies). A 401 from
+  // a data route triggers one /auth/me check; if the session is gone, the
+  // token is dropped and the page reloads to the sign-in screen.
+  var LP_TOK="lp_session";
+  function lpTok(){ try{ return localStorage.getItem(LP_TOK)||""; }catch(e){ return ""; } }
+  function lpSetTok(t){ try{ if(t) localStorage.setItem(LP_TOK,t); else localStorage.removeItem(LP_TOK); }catch(e){} }
+  (function(){
+    var _fetch=window.fetch.bind(window), checking=false;
+    window.fetch=function(u,o){
+      var t=lpTok();
+      if(!t || typeof u!=="string" || u.indexOf(API)!==0) return _fetch(u,o);
+      o=o||{};
+      var h=new Headers(o.headers||{});
+      if(!h.has("Authorization")) h.set("Authorization","Bearer "+t);
+      o.headers=h;
+      return _fetch(u,o).then(function(r){
+        if(r.status===401 && !checking && u.indexOf(API+"/auth/")!==0){
+          checking=true;
+          _fetch(API+"/auth/me",{ headers:{ Authorization:"Bearer "+t } }).then(function(m){
+            if(m.status===401){ lpSetTok(""); location.reload(); } else { checking=false; }
+          }).catch(function(){ checking=false; });
+        }
+        return r;
+      });
+    };
+  })();
+
   // ── Product marks (VinPop / VinWatch icons) ──
   var PMARK_SVG = {
     vp: '<svg viewBox="14 11.5 92 92" xmlns="http://www.w3.org/2000/svg"><g transform="translate(8.00 6.00) scale(1.00000) translate(-8 -6)"><path fill-rule="evenodd" fill="#1447FF" d="M43 13H77Q79.4 13 80.9 14.9L92.6 29.6Q94 31.4 94 33.6V90A12 12 0 0 1 82 102H38A12 12 0 0 1 26 90V33.6Q26 31.4 27.4 29.6L39.1 14.9Q40.6 13 43 13Z M53.5 33A6.5 6.5 0 1 0 66.5 33A6.5 6.5 0 1 0 53.5 33Z"/><path fill="#FFFFFF" d="M61.32 92.38V96.7H57.92V92.27Q51.98 91.73 48.23 88.65Q44.48 85.57 44.26 80.28H55.55Q55.76 83.04 57.92 83.9V76.99Q53.38 75.75 50.79 74.69Q48.2 73.64 46.18 71.26Q44.15 68.89 44.15 64.78Q44.15 61.38 45.96 58.87Q47.77 56.36 50.9 54.98Q54.03 53.61 57.92 53.39V49.02H61.32V53.39Q67.32 53.82 70.85 56.85Q74.39 59.87 74.77 65.16H63.38Q63.16 62.68 61.32 61.87V68.73L62.67 69.16Q66.56 70.24 69.13 71.4Q71.69 72.56 73.53 74.86Q75.36 77.15 75.36 80.88Q75.36 83.95 73.72 86.52Q72.07 89.08 68.91 90.65Q65.75 92.22 61.32 92.38ZM57.92 67.48V61.54Q55.44 61.98 55.44 64.3Q55.44 66.24 57.92 67.48ZM64.13 81.15Q64.13 79.26 61.32 78.07V84.17Q62.62 83.9 63.38 83.12Q64.13 82.33 64.13 81.15Z"/></g></svg>',
@@ -1004,6 +1097,9 @@
     so.style.display="block";
     so.onclick=function(e){
       e.preventDefault();
+      // Personal login: end the session server-side, then forget the token.
+      var tok=lpTok();
+      lpSetTok("");
       // Clear every LotPulse session flag (agency + any per-dealer unlocks),
       // then reload — the gate reappears, URL and dealer selection intact.
       try{
@@ -1014,47 +1110,376 @@
         }
         kill.forEach(function(k){ sessionStorage.removeItem(k); });
       }catch(err){}
-      location.reload();
+      if(tok){
+        fetch(API+"/auth/logout",{ method:"POST", headers:{ Authorization:"Bearer "+tok } })
+          .catch(function(){}).then(function(){ location.reload(); });
+      } else location.reload();
     };
     if(!window.__lpStarted){ window.__lpStarted=true; refresh(); setInterval(loadSummary,30000); setInterval(loadOverview,60000); }
   }
 
-  // Agency scope: swap the static dealer name for a rooftop switcher.
-  function applyAgency(agency, dealers){
+  // Rooftop switcher + agency tools. Used by personal logins and by the old
+  // agency access code. opts: { label, dealers:[{slug,name,agencyName}],
+  // admin (show agency tools), group (optgroups by agency) }.
+  function applyScope(opts){
+    var dealers=opts.dealers||[];
     var sel=document.getElementById("dealerSwitch");
-    sel.innerHTML="";
-    dealers.forEach(function(d){
-      var o=document.createElement("option"); o.value=d.slug; o.textContent=d.name; sel.appendChild(o);
-    });
     var slugs=dealers.map(function(d){return d.slug;});
-    // Keep the current ?dealer= if it belongs to this agency; else first rooftop.
-    if(slugs.indexOf(SLUG)===-1 && dealers.length){ SLUG=dealers[0].slug; }
-    sel.value=SLUG;
-    sel.style.display="block";
-    document.getElementById("dealerName").style.display="none";
-    var tag=document.getElementById("agencyTag");
-    tag.textContent=agency.name+" · "+dealers.length+" rooftop"+(dealers.length===1?"":"s");
-    tag.style.display="block";
-    // The settings gear is agency-scope only — a per-dealer code never sees
-    // it, since one of the fields it edits is a live inventory feed token.
-    document.getElementById("settingsGear").style.display="inline-flex";
-    var _alb=document.getElementById("accessLogBtn"); if(_alb) _alb.style.display="inline-flex";
-    var _mbb=document.getElementById("matchbackBtn"); if(_mbb) _mbb.style.display="inline-flex";
-    var _aob=document.getElementById("agencyOverviewBtn"); if(_aob) _aob.style.display="inline-flex";
-    var _prb=document.getElementById("promoBtn"); if(_prb) _prb.style.display="inline-flex";
-    sel.onchange=function(){
-      SLUG=sel.value;
+    // Keep the current ?dealer= if it's in scope; else the first rooftop.
+    if(slugs.indexOf(SLUG)===-1 && dealers.length){
+      SLUG=dealers[0].slug;
       try{ history.replaceState(null,"","?dealer="+SLUG+location.hash); }catch(e){}
-      refresh();
-    };
+    }
+    if(opts.admin || dealers.length>1){
+      sel.innerHTML="";
+      var groups={}, order=[];
+      dealers.forEach(function(d){
+        var o=document.createElement("option"); o.value=d.slug; o.textContent=d.name;
+        var g=opts.group ? (d.agencyName||"No agency") : "";
+        if(!groups[g]){ groups[g]=[]; order.push(g); }
+        groups[g].push(o);
+      });
+      order.forEach(function(g){
+        if(!g || order.length===1){ groups[g].forEach(function(o){ sel.appendChild(o); }); return; }
+        var og=document.createElement("optgroup"); og.label=g;
+        groups[g].forEach(function(o){ og.appendChild(o); });
+        sel.appendChild(og);
+      });
+      sel.value=SLUG;
+      sel.style.display="block";
+      document.getElementById("dealerName").style.display="none";
+      sel.onchange=function(){
+        SLUG=sel.value;
+        try{ history.replaceState(null,"","?dealer="+SLUG+location.hash); }catch(e){}
+        refresh();
+      };
+    }
+    var tag=document.getElementById("agencyTag");
+    if(opts.label){ tag.textContent=opts.label; tag.style.display="block"; }
+    if(opts.admin){
+      // Agency tools: never for a dealer login, since one of the settings
+      // fields is a live inventory feed token.
+      ["settingsGear","accessLogBtn","matchbackBtn","agencyOverviewBtn","promoBtn"].forEach(function(id){
+        var b=document.getElementById(id); if(b) b.style.display="inline-flex";
+      });
+    }
   }
+  function applyAgency(agency, dealers){
+    applyScope({ label: agency.name+" · "+dealers.length+" rooftop"+(dealers.length===1?"":"s"),
+      dealers: dealers, admin: true });
+  }
+  function applySession(me){
+    window.__lpMe=me;
+    var n=(me.dealers||[]).length, roofs=n+" rooftop"+(n===1?"":"s");
+    var label = me.user.role==="super_admin" ? "Super admin · "+roofs
+      : me.user.role==="agency_admin" ? ((me.agency&&me.agency.name)||"Agency")+" · "+roofs
+      : (n>1 ? roofs : "");
+    applyScope({ label: label, dealers: me.dealers||[], admin: !!me.canManage, group: me.user.role==="super_admin" });
+    var ub=document.getElementById("usersBtn"); if(ub) ub.style.display = me.canManage ? "inline-flex" : "none";
+    var ab=document.getElementById("acctBtn"); if(ab) ab.style.display="inline-flex";
+  }
+  // Resolve the stored session; true = dashboard unlocked.
+  function bootSession(){
+    if(!lpTok()) return Promise.resolve(false);
+    return fetch(API+"/auth/me?dealer="+encodeURIComponent(SLUG)).then(function(r){
+      if(r.status===401){ lpSetTok(""); return null; }
+      return r.json();
+    }).then(function(me){
+      if(!me || !me.ok) return false;
+      if(!(me.dealers||[]).length){
+        lpSetTok("");
+        document.getElementById("gateErr").textContent="Your login isn't connected to any rooftop yet. Ask your agency to add one.";
+        return false;
+      }
+      applySession(me);
+      unlockApp();
+      return true;
+    }).catch(function(){ return false; });
+  }
+
+  // ── Users (super + agency admins) ──
+  var ROLE_NAMES={ super_admin:"Super admin", agency_admin:"Agency admin", dealer_user:"Dealer" };
+  var _ux={ tab:"users", d:null };
+  function uxPost(path, body){
+    return fetch(API+"/auth/manage"+path,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body||{}) })
+      .then(function(r){ return r.json().catch(function(){ return { ok:false, error:"Unexpected response ("+r.status+")" }; }); });
+  }
+  function uxShell(inner){
+    var modal=document.getElementById("modal");
+    modal.innerHTML='<div class="mbody"><button class="mclose mclose-dark" onclick="closeDetail()" aria-label="Close">×</button>'+inner+'</div>';
+    return modal;
+  }
+  function openUsers(tab){
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    if(tab) _ux.tab=tab;
+    modal.innerHTML='<div class="state">Loading…</div>';
+    modal.classList.add("open"); scrim.classList.add("open");
+    fetch(API+"/auth/manage/overview").then(function(r){return r.json();}).then(function(d){
+      if(!d.ok){ uxShell('<div class="state">'+escapeHtml(d.error||"Could not load users")+'</div>'); return; }
+      _ux.d=d; renderUsers();
+    }).catch(function(e){ uxShell('<div class="state">Could not load: '+escapeHtml(e.message)+'</div>'); });
+  }
+  function uxWhen(iso){ return iso ? timeAgo(iso) : "never"; }
+  function uxStatusPill(u){
+    if(u.status==="disabled") return '<span class="scorepill hot">Off</span>';
+    if(u.status==="invited") return '<span class="scorepill warm">Invited</span>';
+    return '<span class="scorepill" style="background:var(--new-soft);color:var(--new)">Active</span>';
+  }
+  function uxDealerNames(ids){
+    var by={}; (_ux.d.dealers||[]).forEach(function(x){ by[x.id]=x.name; });
+    return (ids||[]).map(function(i){ return by[i]||"(removed)"; }).join(", ");
+  }
+  function renderUsers(){
+    var d=_ux.d, tab=_ux.tab;
+    if(!d.isSuper && tab!=="users") tab=_ux.tab="users";
+    var tabs = d.isSuper
+      ? '<div class="ux-tabs">'
+          +['users|Users','agencies|Agencies','dealers|Rooftops'].map(function(t){ var p=t.split("|");
+            return '<button data-uxtab="'+p[0]+'" class="'+(tab===p[0]?"on":"")+'">'+p[1]+'</button>'; }).join("")
+        +'</div>'
+      : "";
+    var body="";
+    if(tab==="users"){
+      body+='<div class="ux-inline" style="justify-content:space-between;margin-bottom:10px">'
+        +'<span style="font-size:13px;color:var(--slate)">'+d.users.length+' login'+(d.users.length===1?"":"s")+'</span>'
+        +'<button class="ux-btn" id="uxAdd">+ Add user</button></div>';
+      var rows="";
+      d.users.forEach(function(u){
+        var scope = u.role==="super_admin" ? "Everything"
+          : u.role==="agency_admin" ? (u.agencyName||"")+" · all rooftops"
+          : uxDealerNames(u.dealerIds);
+        rows+='<div class="wrow ux-row" data-uxuser="'+u.id+'" tabindex="0"><div class="wrl">'
+          +'<span style="font-size:14px;font-weight:600">'+escapeHtml(u.name||u.email)+' '+uxStatusPill(u)+'</span>'
+          +(u.name?'<span class="wsince">'+escapeHtml(u.email)+'</span>':'')
+          +'<span class="wsince">'+escapeHtml(ROLE_NAMES[u.role]||u.role)+' · '+escapeHtml(scope)+'</span>'
+          +'<span class="wsince">Last sign-in: '+uxWhen(u.lastLoginAt)+(u.hasGoogle?' · Google':'')+'</span>'
+          +'</div><span style="color:var(--slate);font-size:18px">›</span></div>';
+      });
+      body+='<div class="wlist">'+(rows||'<div class="state" style="padding:24px 0">No logins yet.</div>')+'</div>';
+    } else if(tab==="agencies"){
+      body+='<div class="ux-inline" style="margin-bottom:12px"><input id="uxAgName" placeholder="New agency name" style="flex:1;min-width:160px">'
+        +'<button class="ux-btn" id="uxAgAdd">Add agency</button></div><div class="ux-err" id="uxErr"></div>';
+      var ar="";
+      d.agencies.forEach(function(a){
+        ar+='<div class="wrow"><div class="wrl" style="flex:1">'
+          +'<input data-agname="'+a.id+'" value="'+escapeHtml(a.name)+'" style="font:600 14px Barlow,sans-serif;border:1px solid transparent;background:none;padding:3px 4px;border-radius:6px;width:100%">'
+          +'<span class="wsince">'+escapeHtml(a.slug)+' · '+a.rooftops+' rooftop'+(a.rooftops===1?"":"s")+'</span></div>'
+          +'<div class="ux-inline"><select data-agstatus="'+a.id+'">'
+          +['active','paused','churned'].map(function(s){ return '<option'+(a.status===s?' selected':'')+'>'+s+'</option>'; }).join("")
+          +'</select></div></div>';
+      });
+      body+='<div class="wlist">'+(ar||'<div class="state">No agencies.</div>')+'</div>';
+    } else {
+      body+='<div class="ux-err" id="uxErr"></div>';
+      var dr="";
+      d.dealers.forEach(function(x){
+        dr+='<div class="wrow"><div class="wrl" style="flex:1"><span style="font-size:14px;font-weight:600">'+escapeHtml(x.name)+'</span>'
+          +'<span class="wsince">'+escapeHtml(x.slug)+'</span></div>'
+          +'<div class="ux-inline"><select data-dlagency="'+x.id+'"><option value="">No agency</option>'
+          +d.agencies.map(function(a){ return '<option value="'+a.id+'"'+(String(a.id)===String(x.agencyId)?' selected':'')+'>'+escapeHtml(a.name)+'</option>'; }).join("")
+          +'</select><select data-dlstatus="'+x.id+'">'
+          +['pilot','active','paused','churned'].map(function(s){ return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>'; }).join("")
+          +'</select></div></div>';
+      });
+      body+='<p style="font-size:12.5px;color:var(--slate);margin:0 0 10px">Paused or churned rooftops drop off the dashboard switcher. New rooftops are added with the launch form.</p>'
+        +'<div class="wlist">'+(dr||'<div class="state">No rooftops.</div>')+'</div>';
+    }
+    var modal=uxShell('<div class="mph-title" style="margin-top:0">'+(d.isSuper?"Users &amp; access":"Users")+'</div>'+tabs+body);
+    Array.prototype.forEach.call(modal.querySelectorAll("[data-uxtab]"),function(b){
+      b.addEventListener("click",function(){ _ux.tab=b.getAttribute("data-uxtab"); renderUsers(); });
+    });
+    var add=document.getElementById("uxAdd"); if(add) add.addEventListener("click",function(){ editUser(null); });
+    Array.prototype.forEach.call(modal.querySelectorAll("[data-uxuser]"),function(r){
+      function go(){ var id=r.getAttribute("data-uxuser"); editUser(d.users.filter(function(u){return u.id===id;})[0]); }
+      r.addEventListener("click",go);
+      r.addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
+    });
+    function uxFail(res){ var e=document.getElementById("uxErr"); if(e){ e.textContent=(res&&res.error)||"Save failed."; e.style.display="block"; } }
+    var agAdd=document.getElementById("uxAgAdd");
+    if(agAdd) agAdd.addEventListener("click",function(){
+      var name=document.getElementById("uxAgName").value.trim(); if(!name) return;
+      agAdd.disabled=true;
+      uxPost("/agencies/create",{ name:name }).then(function(res){ if(res.ok) openUsers("agencies"); else { uxFail(res); agAdd.disabled=false; } });
+    });
+    Array.prototype.forEach.call(modal.querySelectorAll("[data-agname]"),function(i){
+      var orig=i.value;
+      i.addEventListener("change",function(){
+        if(!i.value.trim()){ i.value=orig; return; }
+        uxPost("/agencies/"+i.getAttribute("data-agname")+"/update",{ name:i.value.trim() }).then(function(res){ if(!res.ok){ uxFail(res); i.value=orig; } else orig=i.value; });
+      });
+    });
+    Array.prototype.forEach.call(modal.querySelectorAll("[data-agstatus]"),function(s){
+      s.addEventListener("change",function(){
+        uxPost("/agencies/"+s.getAttribute("data-agstatus")+"/update",{ status:s.value }).then(function(res){ if(!res.ok) uxFail(res); });
+      });
+    });
+    Array.prototype.forEach.call(modal.querySelectorAll("[data-dlagency],[data-dlstatus]"),function(s){
+      s.addEventListener("change",function(){
+        var id=s.getAttribute("data-dlagency")||s.getAttribute("data-dlstatus");
+        var body=s.hasAttribute("data-dlagency") ? { agencyId:s.value||null } : { status:s.value };
+        uxPost("/dealers/"+id+"/update",body).then(function(res){
+          if(!res.ok) uxFail(res);
+          else (_ux.d.dealers||[]).forEach(function(x){ if(x.id===id){ if(body.status) x.status=body.status; if("agencyId" in body) x.agencyId=body.agencyId; } });
+        });
+      });
+    });
+  }
+  function editUser(u){
+    var d=_ux.d, isNew=!u, self=u && u.id===d.selfId;
+    u=u||{ role: d.isSuper ? "agency_admin" : "dealer_user", dealerIds:[], agencyId: d.agencies[0] ? d.agencies[0].id : null };
+    var roles = d.isSuper ? ["super_admin","agency_admin","dealer_user"] : ["agency_admin","dealer_user"];
+    var roofs="", lastG=null;
+    d.dealers.forEach(function(x){
+      if(d.isSuper && (x.agencyName||"No agency")!==lastG){ lastG=x.agencyName||"No agency"; roofs+='<div class="grp">'+escapeHtml(lastG)+'</div>'; }
+      roofs+='<label><input type="checkbox" value="'+x.id+'"'+((u.dealerIds||[]).indexOf(x.id)>-1?' checked':'')+'> '+escapeHtml(x.name)
+        +(x.status==="paused"||x.status==="churned"?' <span style="color:var(--slate);font-size:12px">('+x.status+')</span>':'')+'</label>';
+    });
+    var html='<div class="mph-title" style="margin-top:0">'+(isNew?"Add user":"Edit user")+'</div>'
+      +'<div class="ux-err" id="uxErr"></div><div class="ux-ok" id="uxOk"></div>'
+      +(isNew
+        ? '<div class="setrow"><label>Email</label><input id="ux-email" type="email" autocapitalize="none" autocorrect="off" placeholder="name@dealership.com"></div>'
+        : '<div class="setrow"><label>Email</label><div style="font-size:15px;font-weight:600;padding:4px 0">'+escapeHtml(u.email)+' '+uxStatusPill(u)+'</div></div>')
+      +'<div class="setrow"><label>Name <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label><input id="ux-name" value="'+escapeHtml(u.name||"")+'"></div>'
+      +'<div class="setrow"><label>Access level</label><select id="ux-role"'+(self?' disabled':'')+'>'
+        +roles.map(function(r){ return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+ROLE_NAMES[r]+'</option>'; }).join("")
+      +'</select></div>'
+      +(d.isSuper ? '<div class="setrow" id="ux-agrow"><label>Agency</label><select id="ux-agency"'+(self?' disabled':'')+'>'
+        +d.agencies.map(function(a){ return '<option value="'+a.id+'"'+(String(a.id)===String(u.agencyId)?' selected':'')+'>'+escapeHtml(a.name)+'</option>'; }).join("")
+        +'</select></div>' : '')
+      +'<div class="setrow" id="ux-roofrow"><label>Rooftops this login can see</label><div class="ux-roofs" id="ux-roofs">'+(roofs||'<div class="wsince">No rooftops.</div>')+'</div></div>'
+      +'<p id="ux-help" style="font-size:12.5px;color:var(--slate);margin:-4px 0 14px"></p>'
+      +(isNew ? '<div class="consent" style="margin:2px 0 14px"><input type="checkbox" id="ux-invite" checked><span class="cbx" aria-hidden="true"></span><label for="ux-invite" style="cursor:pointer">Email them an invite now</label></div>' : '')
+      +'<button class="mlink" id="ux-save" style="width:100%;border:0;cursor:pointer">'+(isNew?"Add user":"Save changes")+'</button>'
+      +'<div class="ux-inline" style="margin-top:12px;justify-content:space-between">'
+        +'<button class="ux-btn" id="ux-back">‹ Back</button>'
+        +(isNew||self ? '' : '<span class="ux-inline">'
+          +(u.status!=="disabled" ? '<button class="ux-btn" id="ux-invite-again">'+(u.status==="invited"?"Resend invite":"Send password link")+'</button>' : '')
+          +'<button class="ux-btn" id="ux-toggle">'+(u.status==="disabled"?"Turn login on":"Turn login off")+'</button>'
+          +'<button class="ux-btn danger" id="ux-del">Delete</button></span>')
+      +'</div>';
+    var modal=uxShell(html);
+    var roleSel=document.getElementById("ux-role");
+    function syncRole(){
+      var r=roleSel.value;
+      var ag=document.getElementById("ux-agrow"); if(ag) ag.style.display = r==="agency_admin" ? "block" : "none";
+      document.getElementById("ux-roofrow").style.display = r==="dealer_user" ? "block" : "none";
+      document.getElementById("ux-help").textContent =
+        r==="super_admin" ? "Super admins see and manage every agency, rooftop and user."
+        : r==="agency_admin" ? "Agency admins see every rooftop in their agency, use the agency tools, and manage that agency's users."
+        : "Dealers see only the dashboards of the rooftops checked above. With more than one, they get a store switcher.";
+    }
+    roleSel.addEventListener("change",syncRole); syncRole();
+    function fail(res){ var e=document.getElementById("uxErr"); e.textContent=(res&&res.error)||"Save failed."; e.style.display="block"; document.getElementById("uxOk").style.display="none"; modal.scrollTop=0; }
+    function okMsg(t){ var o=document.getElementById("uxOk"); o.textContent=t; o.style.display="block"; document.getElementById("uxErr").style.display="none"; }
+    document.getElementById("ux-back").addEventListener("click",function(){ openUsers("users"); });
+    document.getElementById("ux-save").addEventListener("click",function(){
+      var b=this, body={ name: document.getElementById("ux-name").value.trim() };
+      if(!self){
+        body.role=roleSel.value;
+        var ag=document.getElementById("ux-agency"); if(ag) body.agencyId=ag.value;
+        body.dealerIds=Array.prototype.map.call(document.querySelectorAll("#ux-roofs input:checked"),function(c){ return c.value; });
+      }
+      var path;
+      if(isNew){
+        body.email=document.getElementById("ux-email").value.trim();
+        body.sendInvite=document.getElementById("ux-invite").checked;
+        path="/users/create";
+      } else path="/users/"+u.id+"/update";
+      b.disabled=true;
+      uxPost(path,body).then(function(res){
+        b.disabled=false;
+        if(!res.ok) return fail(res);
+        if(isNew && res.inviteError){ fail({ error:"User added, but the invite email failed: "+res.inviteError+". Use “Resend invite”." }); return; }
+        openUsers("users");
+      }).catch(function(){ b.disabled=false; fail(); });
+    });
+    var inv=document.getElementById("ux-invite-again");
+    if(inv) inv.addEventListener("click",function(){
+      inv.disabled=true;
+      uxPost("/users/"+u.id+"/invite").then(function(res){ inv.disabled=false; if(res.ok) okMsg("Email sent to "+u.email+"."); else fail(res); });
+    });
+    var tg=document.getElementById("ux-toggle");
+    if(tg) tg.addEventListener("click",function(){
+      tg.disabled=true;
+      uxPost("/users/"+u.id+"/update",{ status: u.status==="disabled" ? "active" : "disabled" }).then(function(res){
+        if(res.ok) openUsers("users"); else { tg.disabled=false; fail(res); }
+      });
+    });
+    var del=document.getElementById("ux-del");
+    if(del) del.addEventListener("click",function(){
+      if(del.getAttribute("data-sure")!=="1"){ del.setAttribute("data-sure","1"); del.textContent="Tap again to delete"; return; }
+      del.disabled=true;
+      uxPost("/users/"+u.id+"/delete").then(function(res){ if(res.ok) openUsers("users"); else { del.disabled=false; fail(res); } });
+    });
+    if(isNew) setTimeout(function(){ var e=document.getElementById("ux-email"); if(e) e.focus(); },60);
+  }
+  // ── Account (everyone signed in) ──
+  function openAccount(){
+    var me=window.__lpMe; if(!me) return;
+    var modal=document.getElementById("modal"), scrim=document.getElementById("scrim");
+    modal.classList.add("open"); scrim.classList.add("open");
+    uxShell('<div class="mph-title" style="margin-top:0">Your account</div>'
+      +'<div style="font-size:15px;font-weight:600">'+escapeHtml(me.user.name||me.user.email)+'</div>'
+      +'<div class="wsince" style="margin-bottom:16px">'+escapeHtml(me.user.email)+' · '+escapeHtml(me.roleLabel||"")+'</div>'
+      +'<div class="mph-title">Change password</div>'
+      +'<div class="ux-err" id="uxErr"></div><div class="ux-ok" id="uxOk"></div>'
+      +'<div class="setrow"><label>Current password <span style="font-weight:400;color:var(--slate);text-transform:none">(blank if you only use Google)</span></label><input id="ac-cur" type="password" autocomplete="current-password"></div>'
+      +'<div class="setrow"><label>New password (10+ characters)</label><input id="ac-new" type="password" autocomplete="new-password"></div>'
+      +'<button class="mlink" id="ac-save" style="width:100%;border:0;cursor:pointer">Save password</button>'
+      +'<p style="font-size:12.5px;color:var(--slate);margin:12px 0 0">Saving signs you out on your other devices.</p>');
+    document.getElementById("ac-save").addEventListener("click",function(){
+      var b=this; b.disabled=true;
+      fetch(API+"/auth/password",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ current:document.getElementById("ac-cur").value, password:document.getElementById("ac-new").value })
+      }).then(function(r){return r.json();}).then(function(res){
+        b.disabled=false;
+        var e=document.getElementById("uxErr"), o=document.getElementById("uxOk");
+        if(res.ok){ o.textContent="Password saved."; o.style.display="block"; e.style.display="none";
+          document.getElementById("ac-cur").value=""; document.getElementById("ac-new").value=""; }
+        else { e.textContent=res.error||"Couldn't save."; e.style.display="block"; o.style.display="none"; }
+      }).catch(function(){ b.disabled=false; });
+    });
+  }
+  (function(){
+    var ub=document.getElementById("usersBtn"); if(ub) ub.addEventListener("click",function(){ openUsers("users"); });
+    var ab=document.getElementById("acctBtn"); if(ab) ab.addEventListener("click",openAccount);
+  })();
 
   (function gate(){
     var input=document.getElementById("gateInput"), btn=document.getElementById("gateBtn"), err=document.getElementById("gateErr");
+    var cfg={ googleClientId:null, legacyCodes:true, minPassword:10 };
+    var params=new URLSearchParams(location.search);
+    var linkToken=params.get("invite")||params.get("reset");
+    var VIEWS=["gvLogin","gvForgot","gvSet","gvCode"];
+    function show(v){
+      VIEWS.forEach(function(id){ document.getElementById(id).style.display = id===v ? "block" : "none"; });
+      err.textContent="";
+      var sub=document.getElementById("gSub");
+      sub.textContent = v==="gvCode" ? "Enter your access code" : v==="gvForgot" ? "Reset your password" : v==="gvSet" ? "Set your password" : "Sign in to your dashboard";
+    }
+    function post(path, body){
+      return fetch(API+path,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body||{}) })
+        .then(function(r){ return r.json().catch(function(){ return { ok:false, error:"Unexpected response ("+r.status+")" }; }); });
+    }
+    function dropLinkParam(){
+      try{
+        params.delete("invite"); params.delete("reset");
+        var qs=params.toString();
+        history.replaceState(null,"",location.pathname+(qs?"?"+qs:"")+location.hash);
+      }catch(e){}
+    }
+    // A login response carries the session token; /auth/me then loads the scope.
+    function signedIn(res){
+      if(res && res.ok && res.token){
+        lpSetTok(res.token);
+        dropLinkParam();
+        return bootSession().then(function(ok){ if(!ok) err.textContent="Signed in, but the dashboard didn't load. Refresh to try again."; return ok; });
+      }
+      err.textContent=(res && res.error) || "Sign-in failed. Try again.";
+      return Promise.resolve(false);
+    }
 
-    // One endpoint resolves whatever was typed: an agency code unlocks every
-    // rooftop (and the switcher); a dealer code unlocks just that store —
-    // identical to the original per-store behavior.
+    // ── Legacy access codes (while LEGACY_CODES_ENABLED is on) ──
     function resolveWith(code, silent){
       return fetch(API+"/dash/resolve-code",{
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -1075,33 +1500,135 @@
           err.textContent = res.error || "Incorrect code. Try again.";
           input.value=""; input.focus();
         }
+        if(silent){ try{ sessionStorage.removeItem("lp_agency"); }catch(e){} }
         return false;
       }).catch(function(){
         if(!silent) err.textContent="Couldn't reach LotPulse. Check your connection.";
         return false;
       });
     }
-
-    // Re-hydrate this browser session: agency first, then per-dealer flag.
-    var rehydrated=false;
-    try{
-      var agRaw=sessionStorage.getItem("lp_agency");
-      if(agRaw){
-        var agCode=(JSON.parse(agRaw)||{}).code;
-        if(agCode){ rehydrated=true; resolveWith(agCode,true); }
-      }
-    }catch(e){}
-    if(!rehydrated){
-      try{ if(sessionStorage.getItem("lp_ok_"+SLUG)==="1"){ window.__lpUnlock=true; } }catch(e){}
-    }
-
-    function attempt(){
+    function attemptCode(){
       btn.disabled=true;
       resolveWith(input.value,false).then(function(){ btn.disabled=false; });
     }
-    btn.addEventListener("click",attempt);
-    input.addEventListener("keydown",function(e){ if(e.key==="Enter") attempt(); });
-    setTimeout(function(){ input.focus(); },200);
+    btn.addEventListener("click",attemptCode);
+    input.addEventListener("keydown",function(e){ if(e.key==="Enter") attemptCode(); });
+
+    // ── Email + password ──
+    var em=document.getElementById("gEmail"), pw=document.getElementById("gPass"), lb=document.getElementById("gLoginBtn");
+    function attemptLogin(){
+      if(!em.value.trim() || !pw.value){ err.textContent="Enter your email and password."; return; }
+      lb.disabled=true; lb.textContent="Signing in…"; err.textContent="";
+      post("/auth/login",{ email:em.value.trim(), password:pw.value }).then(signedIn)
+        .catch(function(){ err.textContent="Couldn't reach LotPulse. Check your connection."; })
+        .then(function(){ lb.disabled=false; lb.textContent="Sign in"; });
+    }
+    lb.addEventListener("click",attemptLogin);
+    pw.addEventListener("keydown",function(e){ if(e.key==="Enter") attemptLogin(); });
+    em.addEventListener("keydown",function(e){ if(e.key==="Enter") pw.focus(); });
+
+    // ── Forgot password ──
+    document.getElementById("gForgotLink").addEventListener("click",function(){
+      document.getElementById("gFEmail").value=em.value.trim(); show("gvForgot");
+    });
+    document.getElementById("gForgotBtn").addEventListener("click",function(){
+      var b=this, e=document.getElementById("gFEmail").value.trim();
+      if(!e){ err.textContent="Enter your email."; return; }
+      b.disabled=true;
+      post("/auth/forgot",{ email:e }).then(function(res){
+        if(res.ok){ err.style.color="#8FE3C4"; err.textContent="If that email has a LotPulse login, a reset link is on its way. Check your inbox."; }
+        else err.textContent=res.error||"Couldn't send the link.";
+      }).catch(function(){ err.textContent="Couldn't reach LotPulse. Check your connection."; })
+        .then(function(){ b.disabled=false; setTimeout(function(){ err.style.color=""; },8000); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".gBack"),function(b){
+      b.addEventListener("click",function(){ dropLinkParam(); linkToken=null; show("gvLogin"); });
+    });
+    document.getElementById("gCodeLink").addEventListener("click",function(){ show("gvCode"); setTimeout(function(){ input.focus(); },50); });
+
+    // ── Invite / reset link: choose a password ──
+    document.getElementById("gSetBtn").addEventListener("click",function(){
+      var b=this, a=document.getElementById("gNew1").value, c=document.getElementById("gNew2").value;
+      if(a.length < cfg.minPassword){ err.textContent="Use at least "+cfg.minPassword+" characters."; return; }
+      if(a!==c){ err.textContent="The two passwords don't match."; return; }
+      b.disabled=true;
+      post("/auth/set-password",{ token:linkToken, password:a }).then(signedIn)
+        .catch(function(){ err.textContent="Couldn't reach LotPulse. Check your connection."; })
+        .then(function(){ b.disabled=false; });
+    });
+
+    // ── Google ──
+    function renderGoogle(){
+      if(!cfg.googleClientId) return;
+      var s=document.createElement("script");
+      s.src="https://accounts.google.com/gsi/client"; s.async=true; s.defer=true;
+      s.onload=function(){
+        try{
+          google.accounts.id.initialize({
+            client_id: cfg.googleClientId,
+            callback: function(resp){
+              err.textContent="";
+              post("/auth/google",{ credential: resp.credential }).then(signedIn)
+                .catch(function(){ err.textContent="Couldn't reach LotPulse. Check your connection."; });
+            },
+            ux_mode: "popup", auto_select: false, cancel_on_tap_outside: true,
+          });
+          var opts={ theme:"filled_black", size:"large", shape:"pill", text:"signin_with", width:300, logo_alignment:"center" };
+          google.accounts.id.renderButton(document.getElementById("gGoogle"), opts);
+          document.getElementById("gGoogle").style.display="flex";
+          document.getElementById("gOr").style.display="flex";
+          if(linkToken && params.get("invite")){
+            google.accounts.id.renderButton(document.getElementById("gGoogle2"), { theme:"filled_black", size:"large", shape:"pill", text:"continue_with", width:300 });
+            document.getElementById("gGoogle2").style.display="flex";
+            document.getElementById("gOr2").style.display="flex";
+          }
+        }catch(e){ console.warn("[LotPulse] Google sign-in unavailable:", e); }
+      };
+      document.head.appendChild(s);
+    }
+
+    // ── Boot ──
+    function startGate(){
+      if(cfg.legacyCodes) document.getElementById("gCodeLink").style.display="inline-block";
+      renderGoogle();
+      if(linkToken){
+        fetch(API+"/auth/link?token="+encodeURIComponent(linkToken)).then(function(r){return r.json();}).then(function(d){
+          show("gvSet");
+          if(d.ok){
+            document.getElementById("gSetNote").textContent = (d.kind==="invite" ? "Welcome to LotPulse! " : "")
+              + "Choose a password for " + d.email + ".";
+            em.value=d.email;
+          } else {
+            dropLinkParam(); linkToken=null; show("gvLogin");
+            err.textContent=d.error||"This link has expired. Ask for a new one.";
+          }
+        }).catch(function(){ show("gvLogin"); });
+        return;
+      }
+      // Legacy: rehydrate an agency code from this browser session.
+      var rehydrated=false;
+      if(cfg.legacyCodes){
+        try{
+          var agRaw=sessionStorage.getItem("lp_agency");
+          if(agRaw){
+            var agCode=(JSON.parse(agRaw)||{}).code;
+            if(agCode){ rehydrated=true; resolveWith(agCode,true); }
+          }
+        }catch(e){}
+      }
+      // Legacy: this tab already unlocked this rooftop with its dealer code.
+      if(cfg.legacyCodes && !rehydrated){
+        try{ if(sessionStorage.getItem("lp_ok_"+SLUG)==="1"){ unlockApp(); return; } }catch(e){}
+      }
+      show("gvLogin");
+      if(!rehydrated) setTimeout(function(){ em.focus(); },200);
+    }
+    var cfgP=fetch(API+"/auth/config").then(function(r){return r.json();}).then(function(c){ if(c && c.ok) cfg=c; }).catch(function(){});
+    if(lpTok() && !linkToken){
+      bootSession().then(function(ok){ if(!ok) cfgP.then(startGate); });
+    } else {
+      cfgP.then(startGate);
+    }
   })();
 
   var state = { board: [], cond: "all", sort: "watchers", view: "list", signals: null, showAll: false, sum: null, ov: null };
@@ -1784,6 +2311,9 @@
 
   // ── Dealer settings (agency-scope only) ─────────────────────────────────────
   function agencyCode(){
+    // Signed-in admins: the server checks the session, not a code. Any
+    // truthy value keeps the agency-only UI paths working.
+    if(window.__lpMe && window.__lpMe.canManage) return "session";
     try{
       var raw=sessionStorage.getItem("lp_agency");
       return raw ? (JSON.parse(raw)||{}).code : null;
@@ -1945,7 +2475,7 @@
         var typePill = a.codeType==="dealer"
           ? '<span class="scorepill" style="background:var(--new-soft);color:var(--new)">Dealer</span>'
           : '<span class="scorepill cool">Agency</span>';
-        var loc = a.geo ? escapeHtml(a.geo) : "location unknown";
+        var loc = (a.userEmail ? escapeHtml(a.userEmail)+" · " : "") + (a.geo ? escapeHtml(a.geo) : "location unknown");
         var dev = deviceHint(a.userAgent);
         var meta = timeAgo(a.at)+" · "+abs+(dev?(" · "+dev):"");
         var ipline = a.ip
@@ -1968,7 +2498,7 @@
             +'<div class="mstat"><div class="n" style="font-size:15px">'+timeAgo(d.lastAgencyOpen)+'</div><div class="l">Agency<br>last opened</div></div>'
             +'<div class="mstat"><div class="n">'+(d.totalShown||0)+'</div><div class="l">Recent<br>opens</div></div>'
           +'</div>'
-          +'<p style="font-size:12.5px;color:var(--slate);margin:-2px 0 14px"><strong>Dealer</strong> = opened with this store\'s own code (the real usage signal). <strong>Agency</strong> = opened by you while viewing this rooftop. Location is approximate, from IP.</p>'
+          +'<p style="font-size:12.5px;color:var(--slate);margin:-2px 0 14px"><strong>Dealer</strong> = opened by the store (their login or code — the real usage signal). <strong>Agency</strong> = opened by an agency or super admin while viewing this rooftop. Location is approximate, from IP.</p>'
           +'<div class="wlist">'+rows+'</div>'
         +'</div>';
     }).catch(function(e){

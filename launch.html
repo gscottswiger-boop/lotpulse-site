@@ -256,6 +256,24 @@
 
 <script>
   var API = "https://lotpulse-q249.onrender.com";
+
+  // ── Super-admin login (Nov 2026) ─────────────────────────────────────────
+  // If this browser is signed in to the dashboard as a SUPER ADMIN, that
+  // session replaces both the agency code and the pasted ADMIN_TOKEN: the API
+  // accepts a super-admin session wherever it accepts the token.
+  var LP_SUPER = "";
+  function superSession(onReady){
+    var t = ""; try { t = localStorage.getItem("lp_session") || ""; } catch(e){}
+    if (!t) return;
+    fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + t } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(me){
+        if (!me || !me.ok || !me.user || me.user.role !== "super_admin") return;
+        LP_SUPER = t;
+        onReady(me);
+      }).catch(function(){});
+  }
+  var SESSION_MARK = "(super admin session)";
   // The agency whose code unlocked this page: the default in the Agency picker.
   var GATE_AGENCY = "";
 
@@ -311,6 +329,13 @@
     gBtn.addEventListener("click", tryUnlock);
     gCode.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
     setTimeout(function(){ gCode.focus(); }, 200);
+    superSession(function(me){
+      gate.style.display = "none";
+      app.style.display = "block";
+      var t = document.getElementById("token");
+      if (t) { t.value = ""; t.placeholder = "Signed in as super admin — not needed"; }
+      if (typeof loadLists === "function") loadLists(SESSION_MARK);
+    });
   })();
 
   // Auto-slugify the name into the slug field, but stop once the user edits
@@ -352,7 +377,9 @@
   function apiCall(path, token, body){
     return fetch(API + path, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: (token && token !== SESSION_MARK)
+        ? { "Content-Type": "application/json", "x-admin-token": token }
+        : { "Content-Type": "application/json", Authorization: "Bearer " + LP_SUPER },
       body: JSON.stringify(body || {})
     }).then(function(r){ return r.json().then(function(json){ return { ok: r.ok, status: r.status, json: json }; }); });
   }
@@ -455,7 +482,7 @@
     document.getElementById("steplog").innerHTML = "";
     document.getElementById("results").classList.remove("show");
 
-    var token = document.getElementById("token").value.trim();
+    var token = document.getElementById("token").value.trim() || (LP_SUPER ? SESSION_MARK : "");
     var name = document.getElementById("name").value.trim();
     var slug = document.getElementById("slug").value.trim();
     var platform = document.getElementById("platform").value;

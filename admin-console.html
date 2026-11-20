@@ -261,6 +261,23 @@
 (function(){
   var API = "https://lotpulse-q249.onrender.com";
 
+  // ── Super-admin login (Nov 2026) ─────────────────────────────────────────
+  // If this browser is signed in to the dashboard as a SUPER ADMIN, that
+  // session replaces both the agency code and the pasted ADMIN_TOKEN: the API
+  // accepts a super-admin session wherever it accepts the token.
+  var LP_SUPER = "";
+  function superSession(onReady){
+    var t = ""; try { t = localStorage.getItem("lp_session") || ""; } catch(e){}
+    if (!t) return;
+    fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + t } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(me){
+        if (!me || !me.ok || !me.user || me.user.role !== "super_admin") return;
+        LP_SUPER = t;
+        onReady(me);
+      }).catch(function(){});
+  }
+
   // ── Agency-code gate ─────────────────────────────────────────────────────
   // Validated SERVER-side by /dash/resolve-code, which already carries the
   // brute-force limiter used by the dashboard. Two things this is NOT:
@@ -315,6 +332,12 @@
   gBtn.addEventListener("click", tryUnlock);
   gCode.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
   setTimeout(function(){ gCode.focus(); }, 200);
+  superSession(function(me){
+    unlock();
+    var d = document.getElementById("tokDot"), m = document.getElementById("tokMsg");
+    if (d) d.classList.add("on");
+    if (m) m.textContent = "Signed in as super admin (" + me.user.email + ") — no token needed";
+  });
 
 
   // ── Token handling ───────────────────────────────────────────────────────
@@ -366,10 +389,10 @@
 
   // Every request carries the token in a HEADER. No query string, ever.
   function call(id, path, btn, onOk){
-    if (!TOKEN) { show(id, "Paste the admin token first.", true); return; }
+    if (!TOKEN && !LP_SUPER) { show(id, "Paste the admin token first.", true); return; }
     var label = btn.textContent;
     btn.disabled = true; btn.textContent = "Running\u2026";
-    fetch(API + path, { headers: { "x-admin-token": TOKEN } })
+    fetch(API + path, { headers: TOKEN ? { "x-admin-token": TOKEN } : { Authorization: "Bearer " + LP_SUPER } })
       .then(function(r){
         return r.text().then(function(t){
           var j; try { j = JSON.parse(t); } catch(e){ j = t; }
