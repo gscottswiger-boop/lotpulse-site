@@ -598,6 +598,9 @@
       + ".amt .off{font-size:34px;letter-spacing:.02em}"
       + ".subhl{display:block;font-size:19px;font-weight:600;line-height:1.3;margin-top:10px;opacity:.95}"
       + "@media (max-width:560px){.amt .n{font-size:52px}.amt .off{font-size:26px}.subhl{font-size:16px;margin-top:8px}}"
+      // Offer wording in place of "$X OFF": a sentence, so smaller and wrapping.
+      + ".amt.wd .n{font-size:34px;line-height:1.12;letter-spacing:-.01em}"
+      + "@media (max-width:560px){.amt.wd .n{font-size:26px}}"
       // Image mode: the dealer's own graphic replaces the colored band. Shown
       // uncropped (contain), since offer art usually has text near the edges.
       + ".art{position:relative;background:" + ACCENT + ";overflow:hidden;line-height:0}"
@@ -653,6 +656,8 @@
       + "text-align:center;padding:10px 14px}"
       + ".prize .pa{display:flex;align-items:baseline;gap:8px;color:" + (ON_ACCENT === INK ? INK : ACCENT) + ";font-weight:800;line-height:1}"
       + ".prize .pa .n{font-size:56px;letter-spacing:-.02em}.prize .pa .off{font-size:28px}"
+      + ".prize .pa.wd{display:block;text-align:center;padding:0 14px}.prize .pa.wd .n{font-size:28px;line-height:1.12;letter-spacing:-.01em}"
+      + "@media (max-width:560px){.prize .pa.wd .n{font-size:22px}}"
       + ".prize .pl{font-size:16px;font-weight:600;color:#2A303C;margin-top:8px;line-height:1.3}"
       + ".prize img{max-width:100%;max-height:100%;object-fit:contain;display:block}"
       + ".tk canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .45s ease}"
@@ -682,6 +687,18 @@
 
   function amountLabel() {
     return "$" + Math.round((CFG.offerCents || 0) / 100).toLocaleString("en-US");
+  }
+  // The offer's own wording, shown INSTEAD of "$X OFF" (e.g. "Get up to
+  // $2,000 Over Trade Value For Your Vehicle!"). "" = "$X OFF" as always.
+  function wordingText() {
+    return CFG && typeof CFG.wording === "string" ? CFG.wording.replace(/\s+/g, " ").trim() : "";
+  }
+  // The big amount block: "$X" + "OFF", or the wording on its own.
+  function amountHtml(cls, style) {
+    var w = wordingText();
+    return w
+      ? '<span class="' + cls + ' wd"' + (style || "") + '><span class="n">' + esc(w) + '</span></span>'
+      : '<span class="' + cls + '"' + (style || "") + '><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></span>';
   }
 
   // Line under the big amount. The agency's own line is shown as written. The
@@ -802,7 +819,11 @@
   };
   function th() { return THEMES[CFG && CFG.theme] || THEMES.classic; }
   function themeId() { return CFG && THEMES[CFG.theme] ? CFG.theme : "classic"; }
-  function revealedLine() { return th().revealed.replace("{a}", amountLabel()); }
+  // With offer wording the prize itself says what the offer is, so the line
+  // above it says "your offer" rather than "$X off".
+  function revealedLine() {
+    return wordingText() ? th().revealed.replace("{a} off", "your offer") : th().revealed.replace("{a}", amountLabel());
+  }
   var STRIP_ICONS = {
     flake: '<svg viewBox="-10 -10 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5"/></svg>',
     star: '<svg viewBox="-10 -10 20 20" fill="currentColor" aria-hidden="true"><path d="M0-9.5 2.6-3.1 9.5-3 4.1 1.3 5.9 8 0 4.2-5.9 8-4.1 1.3-9.5-3-2.6-3.1Z"/></svg>',
@@ -847,7 +868,7 @@
     var t = th(), themed = !!t.frame;
     var inner = useImage
       ? '<img src="' + esc(API + CFG.imagePath) + '" alt="' + esc(CFG.headline) + '">'
-      : '<div class="pa"' + (themed ? ' style="color:' + t.amount + '"' : "") + '><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></div>'
+      : amountHtml("pa", themed ? ' style="color:' + t.amount + '"' : "").replace(/^<span/, "<div").replace(/<\/span>$/, "</div>")
         + (subheadText() ? '<div class="pl"' + (themed ? ' style="color:' + t.line + '"' : "") + '>' + esc(subheadText()) + '</div>' : "");
     // Themed card: the frame is a gradient border (padding-box / border-box).
     var tkStyle = themed ? ' style="border:3px solid transparent;background:linear-gradient(' + t.ticketBg + ',' + t.ticketBg
@@ -876,7 +897,7 @@
     return '<div class="band">'
       + (dealer ? '<p class="dealer">' + dealer + '</p>' : "")
       + '<h2 class="hl" id="hl">'
-      +   '<span class="amt"><span class="n">' + esc(amountLabel()) + '</span><span class="off">OFF</span></span>'
+      +   amountHtml("amt")
       +   '<span class="subhl">' + esc(subheadText()) + '</span>'
       + '</h2>'
       + close + '</div>';
@@ -1126,7 +1147,8 @@
       + "@media print{.wrap{display:none}}"
       + "</style>"
       + '<div class="wrap" id="w">'
-      +   '<button class="tab" id="t" type="button" aria-label="' + (hidden ? "Reopen your scratch-off offer" : "Reopen offer: " + esc(amount) + " off") + '">'
+      +   '<button class="tab" id="t" type="button" aria-label="' + (hidden ? "Reopen your scratch-off offer"
+            : "Reopen offer: " + esc(wordingText() || amount + " off")) + '">'
       +     '<span class="n' + (hidden ? " w" : "") + '">' + esc(amount) + '</span></button>'
       +   '<button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button>'
       + '</div>';
@@ -1166,12 +1188,15 @@
     var veh = v.vehicle || {};
     var title = [veh.year, veh.make, veh.model, veh.trim].filter(Boolean).join(" ");
     var amount = "$" + Math.round((v.offerCents || 0) / 100).toLocaleString("en-US");
+    // Offer wording replaces "$X OFF" on the voucher too (it's what the
+    // shopper was shown). Comes from the server's saved offer, not the page.
+    var wording = typeof v.wording === "string" ? v.wording.replace(/\s+/g, " ").trim() : "";
     function row(label, val) {
       return val ? '<tr><th>' + label + '</th><td>' + esc(val) + '</td></tr>' : "";
     }
     return '<!doctype html><html lang="en"><head><meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-      + '<title>' + esc(amount + " off — " + (v.dealerName || "Offer")) + '</title><style>'
+      + '<title>' + esc((wording || amount + " off") + " — " + (v.dealerName || "Offer")) + '</title><style>'
       + '*{box-sizing:border-box}body{margin:0;padding:28px 18px;background:#fff;color:#14171F;'
       + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;'
       + '-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -1179,6 +1204,7 @@
       + '.d{font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#3A4150}'
       + '.a{font-size:68px;font-weight:800;line-height:1;margin:10px 0 2px;color:' + (ON_ACCENT === INK ? INK : ACCENT) + ';letter-spacing:-.02em}'
       + '.a small{font-size:30px;letter-spacing:.02em;margin-left:8px}'
+      + '.a.wd{font-size:40px;line-height:1.12;letter-spacing:-.01em}'
       + '.c{font-size:20px;font-weight:700;margin:14px 0 2px}'
       + 'table{border-collapse:collapse;width:100%;margin:10px 0 0}'
       + 'th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#5A6272;'
@@ -1199,7 +1225,7 @@
       + (v.demo ? '<div class="demo">Demo voucher · not a real offer · not valid at the dealership</div>' : "")
       + '<div class="v">'
       + '<div class="d">' + esc(v.dealerName || "") + '</div>'
-      + '<div class="a">' + esc(amount) + '<small>OFF</small></div>'
+      + (wording ? '<div class="a wd">' + esc(wording) + '</div>' : '<div class="a">' + esc(amount) + '<small>OFF</small></div>')
       + (title ? '<div class="c">' + esc(title) + '</div>' : (v.offerLine ? '<div class="c">' + esc(v.offerLine) + '</div>' : ""))
       + '<table>'
       + (veh.stockNumber ? '<tr><th>Stock #</th><td class="mono">' + esc(veh.stockNumber) + '</td></tr>' : "")

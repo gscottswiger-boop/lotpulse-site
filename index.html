@@ -430,6 +430,7 @@
   .pv-dealer{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
   .pv-amt{display:flex;align-items:baseline;gap:7px;font-weight:800;line-height:.95}
   .pv-amt .n{font-size:46px;letter-spacing:-.02em}.pv-amt .off{font-size:23px}
+  .pv-amt.wd .n{font-size:25px;line-height:1.12;letter-spacing:-.01em}
   .pv-sub{font-size:14.5px;font-weight:600;margin-top:7px;opacity:.95}
   .pv-img{display:block;width:100%;height:auto;max-height:240px;object-fit:contain;background:#1F2A44}
   .pv-cap{font-size:11px;color:var(--slate);background:var(--porcelain);padding:7px 12px;border-radius:0 0 12px 12px}
@@ -439,6 +440,7 @@
   .pv-tk{position:relative;height:120px;border-radius:10px;overflow:hidden;border:2px dashed #C7CDD8;background:#F7F8FB;
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   .pv-tk .pa{font-weight:800;font-size:38px;line-height:1;letter-spacing:-.02em;color:#1F2A44}.pv-tk .pa small{font-size:19px;margin-left:5px}
+  .pv-tk .pa.wd{font-size:21px;line-height:1.12;letter-spacing:-.01em;text-align:center;padding:0 10px}
   .pv-tk .pl{font-size:13px;font-weight:600;color:#2A303C;margin-top:5px}
   .pv-tk .foil{position:absolute;inset:0;background:linear-gradient(135deg,#B8BFCA,#EEF1F5 32%,#C2C8D2 52%,#E5E8EE 78%,#ADB4C0);
     display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4A5266;font-weight:800;font-size:17px;letter-spacing:.02em;
@@ -3210,7 +3212,7 @@
       return '<div class="ocard" data-oid="'+escapeHtml(o.id)+'">'
         +'<div class="ohead"><span class="opri">'+(idx+1)+'</span>'
           +'<div class="oname"><div class="on1">'+escapeHtml(o.name)+'</div>'
-            +'<div class="osub">'+escapeHtml(promoDollars(o.offerCents))+' off · '+(site?'Site-wide':escapeHtml(o.targets))+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')
+            +'<div class="osub">'+(o.wording?'“'+escapeHtml(o.wording)+'” ('+escapeHtml(promoDollars(o.offerCents))+')':escapeHtml(promoDollars(o.offerCents))+' off')+' · '+(site?'Site-wide':escapeHtml(o.targets))+(area?' · '+escapeHtml(o.areaLabel):'')+(o.image?' · graphic':'')
               +(site?'<span class="chipsite">Site-wide</span>':'')+(o.reveal==="scratch"?'<span class="chipsite">Scratch-off'+(o.theme&&o.theme!=="classic"?' · '+escapeHtml(((d.themes||[]).filter(function(t){return t.key===o.theme;})[0]||{label:o.theme}).label):'')+'</span>':'')+'</div></div>'
           +prStatusPill(o.status)+'</div>'
         +'<div class="ometa">'+cov+' · 7 days: '+(o7.impressions||0)+' views, '+(o7.submits||0)+' leads, '+prPct(o7.conversionRate)+'</div>'
@@ -3524,11 +3526,14 @@
     var d=_pr.d, tz=d.dealer.timezone, isNew=!o;
     o=o||{ name:"", enabled:true, offerCents:d.defaults.offerCents, headline:"", disclaimer:"",
            startAt:null, endAt:null, vehicleFilter:null, image:null,
-           placement:"vehicle", reveal:"standard", showOn:null, theme:"classic", banner:null };
+           placement:"vehicle", reveal:"standard", showOn:null, theme:"classic", banner:null, wording:null };
     // Where it shows (vehicle pages vs site-wide) and how it reveals.
     var placement=o.placement==="site"?"site":"vehicle", reveal=o.reveal==="scratch"?"scratch":"standard";
     var showOn=o.showOn||{home:true,listings:false,vehicles:false,other:true,urls:[]};
     var siteReady=d.siteReady!==false, themeReady=d.themeReady!==false;
+    // Offer wording: replaces "$X OFF" on the popup and voucher (e.g. a trade
+    // bonus). false = /admin/patch hasn't added the column yet.
+    var wordingReady=d.wordingReady!==false, WORDING_MAX=d.wordingMax||60;
     // Scratch-off theme + event banner (only used with Scratch to reveal).
     var theme=o.theme||"classic", bannerOwn=o.banner||"";
     var THEME_LIST=d.themes||[{key:"classic",label:"Classic",banner:null}];
@@ -3619,13 +3624,19 @@
 
       +'<div class="psec">Offer</div>'
       +'<div class="setrow"><label>Offer amount ($)</label><input id="pr-offer" type="number" min="1" step="1" inputmode="numeric" value="'+Math.round((o.offerCents||0)/100)+'"></div>'
+      +(wordingReady
+        ? '<div class="setrow"><label for="pr-wording">Offer wording <span style="font-weight:400;color:var(--slate)">(optional · replaces “$X OFF” on the popup and voucher · up to '+WORDING_MAX+' characters)</span></label>'
+          +'<input id="pr-wording" maxlength="'+WORDING_MAX+'" value="'+escapeHtml(o.wording||"")+'" placeholder="e.g. Get up to $2,000 Over Trade Value For Your Vehicle!">'
+          +'<div class="pnote" style="margin:4px 0 0" id="pr-wording-n"></div></div>'
+          +'<p class="pnote">Use this when the offer isn’t a discount off the car. Shoppers see this sentence instead of the amount; the amount above is still what reports and the CRM lead record.</p>'
+        : '<div class="pwarn" style="margin-top:6px">Custom offer wording turns on after a database update. Run <code>/admin/patch</code>, then reopen this screen.</div>')
       +'<div class="setrow"><label>Line under the offer amount <span style="font-weight:400;color:var(--slate)">(optional)</span></label>'
         +'<input id="pr-headline" maxlength="120" value="'+escapeHtml(o.headline||"")+'" placeholder=""></div>'
       +'<div class="setrow"><label>Offer graphic <span style="font-weight:400;color:var(--slate)">(optional · replaces the colored header · about 1200×600 works best)</span></label>'
         +(isNew?'<div class="pnote" style="margin:0">Save the offer first, then add a graphic.</div>'
                :'<input type="file" id="pr-image" accept="image/jpeg,image/png,image/webp"><div class="imgrow" id="pr-imgrow"></div>')
       +'</div>'
-      +'<p class="pnote">If you use a graphic, make sure it shows the same amount as <strong>Offer amount</strong> above. The CRM lead records that number, not whatever the picture says.</p>'
+      +'<p class="pnote">If you use a graphic, make sure it shows the same amount as <strong>Offer amount</strong> above (or the same <strong>Offer wording</strong>). The CRM lead records that number, not whatever the picture says.</p>'
       +'<div class="setrow"><label>Fine print <span style="font-weight:400;color:var(--slate)">(optional · get the dealer\'s approved wording)</span></label>'
         +'<textarea id="pr-disclaimer" maxlength="400" placeholder="">'+escapeHtml(o.disclaimer||"")+'</textarea></div>'
 
@@ -3890,6 +3901,9 @@
     function renderPreview(){
       var dollars=parseInt(document.getElementById("pr-offer").value,10);
       var sub=document.getElementById("pr-headline").value.trim()||(placement==="site"?"your next vehicle":"this 2024 Toyota Tacoma");
+      var wEl=document.getElementById("pr-wording"), wd=wEl?wEl.value.replace(/\s+/g," ").trim():"";
+      var wn=document.getElementById("pr-wording-n");
+      if(wn) wn.textContent=wd?(wd.length+" of "+WORDING_MAX+" characters"):"Blank = shows “"+promoDollars((dollars>0?dollars:0)*100)+" OFF”.";
       var el=document.getElementById("pr-preview");
       var racc=((d.settings||{}).tab||{}).accent||"";
       var roof='<div class="pv-roof'+(racc&&rtTextOn(racc)===RT_INK?' lt':'')+'"'+(racc?' style="background:'+escapeHtml(racc)+'"':'')+' aria-hidden="true"><i></i></div>';
@@ -3906,7 +3920,7 @@
           +'<div class="pv-body"><div class="pv-tkw">'+(T.bow&&themeReady?'<svg class="pv-bow" viewBox="0 0 64 40" aria-hidden="true"><path d="M32 20 C22 2,4 4,6 14 C8 24,24 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/><path d="M32 20 C42 2,60 4,58 14 C56 24,40 24,32 20Z" fill="#C8102E" stroke="#8E0B20" stroke-width="1.5"/><circle cx="32" cy="19" r="5.5" fill="#E0213F" stroke="#8E0B20" stroke-width="1.5"/></svg>':'')
           +'<div class="pv-tk"'+(themeReady?tkStyle:'')+'>'
             +(image?'<img src="'+escapeHtml(API+image.path)+'" alt="Offer graphic" style="max-width:100%;max-height:100%;object-fit:contain">'
-                   :'<div class="pa"'+(themeReady&&T.amt?' style="color:'+T.amt+'"':'')+'>'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'<small>OFF</small></div><div class="pl"'+(themeReady&&T.line?' style="color:'+T.line+'"':'')+'>'+escapeHtml(sub)+'</div>')
+                   :'<div class="pa'+(wd?' wd':'')+'"'+(themeReady&&T.amt?' style="color:'+T.amt+'"':'')+'>'+(wd?escapeHtml(wd):escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'<small>OFF</small>')+'</div><div class="pl"'+(themeReady&&T.line?' style="color:'+T.line+'"':'')+'>'+escapeHtml(sub)+'</div>')
             +'<div class="foil"'+(themeReady?' style="background:'+T.foil+';color:'+T.fc+'"':'')+'>'+escapeHtml(themeReady?T.ft:"SCRATCH HERE")+'<small'+(themeReady&&T.frame?' style="color:'+T.fc+';opacity:.85"':'')+'>'+escapeHtml(themeReady?T.fs:"to see your offer")+'</small></div></div></div>'
           +'<div class="pv-hint">Shoppers scratch with a finger or mouse (or tap “Tap to reveal”), then the form appears.</div></div>'
           +'<div class="pv-cap">'+(placement==="site"?'Site-wide: no car is named on the popup or the voucher.':'The car is named under the header on each vehicle page.')+'</div>';
@@ -3920,7 +3934,8 @@
         // popup too), else navy here and the site's GTM color on the site.
         var acc=((d.settings||{}).tab||{}).accent;
         el.innerHTML=roof+'<div class="pv-band"'+(acc?' style="background:'+escapeHtml(acc)+';color:'+rtTextOn(acc)+'"':'')+'><div class="pv-dealer">'+escapeHtml(currentDealerLabel())+'</div>'
-          +'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>'
+          +(wd?'<div class="pv-amt wd"><span class="n">'+escapeHtml(wd)+'</span></div>'
+              :'<div class="pv-amt"><span class="n">'+escapeHtml(promoDollars((dollars>0?dollars:0)*100))+'</span><span class="off">OFF</span></div>')
           +'<div class="pv-sub">'+escapeHtml(sub)+'</div></div>'
           +'<div class="pv-cap">'+(acc?'Header color is set under Reopen tab for this rooftop. '
             :'Header color comes from the site\'s GTM tag (accentColor), or the color set under Reopen tab. ')+(placement==="site"?'Site-wide: no car is named on the popup or the voucher.':'Vehicle name fills in per car.')+'</div>';
@@ -3940,7 +3955,7 @@
         });
       });
     }
-    ["pr-offer","pr-headline"].forEach(function(id){ document.getElementById(id).addEventListener("input", renderPreview); });
+    ["pr-offer","pr-headline","pr-wording"].forEach(function(id){ var e=document.getElementById(id); if(e) e.addEventListener("input", renderPreview); });
 
     // Where it shows / how it appears.
     function placeShow(){
@@ -4024,6 +4039,11 @@
         vehicleFilter: placement==="site"?null:fl,
         targetArea: arBody(),
       };
+      if(wordingReady){
+        var wv=(document.getElementById("pr-wording").value||"").replace(/\s+/g," ").trim();
+        if(/[<>{}]/.test(wv)) return showErr("Offer wording can’t contain < > { }.");
+        body.wording=wv;
+      }
       if(siteReady && themeReady && reveal==="scratch"){
         body.theme=theme; body.banner=(document.getElementById("th-banner").value||"").trim();
       }
