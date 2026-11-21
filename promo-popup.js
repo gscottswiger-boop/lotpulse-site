@@ -696,8 +696,7 @@
       // scratch card, so the whole form, button included, fits on screen.
       // Phones keep their own layout above.
       + "@media (min-width:561px) and (max-height:980px){"
-      + ".band{padding:10px 24px 13px}.dealer{margin-bottom:5px}.hl.sc{font-size:23px}"
-      + ".amt .n{font-size:56px}.amt .off{font-size:28px}.amt.wd .n{font-size:30px}.subhl{font-size:17px;margin-top:6px}"
+      + ".band{padding:10px 24px 13px}.dealer{margin-bottom:5px}"
       + ".veh{padding:7px 24px 8px}.veh .vt{font-size:15px}.veh .vm{margin-top:1px}"
       + ".body{padding:14px 24px 16px}.sub{font-size:14px;margin:0 0 10px}"
       + "label{margin:0 0 4px}input{padding:9px 12px;margin:0 0 9px}.err{margin:0 0 9px}"
