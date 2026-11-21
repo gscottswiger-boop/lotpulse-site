@@ -559,6 +559,12 @@
       + "filter:drop-shadow(0 22px 30px rgba(0,0,0,.30));transform:translate(-50%,-46%);opacity:0;"
       + "transition:transform .22s ease,opacity .22s ease}"
       + ".box.in{transform:translate(-50%,-50%);opacity:1}"
+      // No gray scroll bar beside the tag (Nov 2026): the card still scrolls
+      // (wheel, trackpad, touch, keyboard) when it's taller than the window;
+      // a white fade at the bottom of the card says there's more below. On a
+      // card that fits, the fade sits over the body's own bottom padding.
+      + ".box{scrollbar-width:none;-ms-overflow-style:none}.box::-webkit-scrollbar{display:none;width:0;height:0}"
+
       + ".box:focus{outline:none}"
       // Phones: a centered card 16px in from each edge (not a full-width
       // bottom sheet), so the dealer's page stays visible around it. Too tall
@@ -615,7 +621,10 @@
       + ".x:hover{background:" + (ON_ACCENT === INK ? "rgba(20,24,29,.18)" : "rgba(255,255,255,.28)") + "}"
       + ".x:focus-visible,.go:focus-visible,.no:focus-visible,input:focus-visible{outline:3px solid #7AA7FF;outline-offset:2px}"
       + ".body{padding:20px 24px 22px;background:#fff;border-radius:0 0 16px 16px}"
-      + "@media (max-width:560px){.body{padding:16px 18px 18px}.band{padding:12px 18px 16px}.veh{padding:10px 18px 11px}}"
+      + ".body::after{content:'';display:block;position:sticky;bottom:-22px;height:26px;margin:-4px -24px -22px;"
+      + "background:linear-gradient(rgba(255,255,255,0),#fff 85%);pointer-events:none;border-radius:0 0 16px 16px}"
+      + "@media (max-width:560px){.body{padding:16px 18px 18px}.band{padding:12px 18px 16px}.veh{padding:10px 18px 11px}"
+      + ".body::after{bottom:-18px;margin:-4px -18px -18px}}"
       + ".sub{font-size:15px;line-height:1.45;color:#3A4150;margin:0 0 16px}"
       + "label{display:block;font-size:13px;font-weight:600;color:#2A303C;margin:0 0 6px}"
       + "input{display:block;width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #CDD2DB;"
@@ -682,7 +691,25 @@
       + ".tkw{position:relative}"
       + ".tkw .bow{position:absolute;left:50%;top:-17px;width:64px;height:40px;margin-left:-32px;pointer-events:none;z-index:2;"
       + "filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}"
-      + ".fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647}";
+      + ".fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647}"
+      // Short desktop windows (most laptops): tighter spacing and a shorter
+      // scratch card, so the whole form, button included, fits on screen.
+      // Phones keep their own layout above.
+      + "@media (min-width:561px) and (max-height:980px){"
+      + ".band{padding:10px 24px 13px}.dealer{margin-bottom:5px}.hl.sc{font-size:23px}"
+      + ".amt .n{font-size:56px}.amt .off{font-size:28px}.amt.wd .n{font-size:30px}.subhl{font-size:17px;margin-top:6px}"
+      + ".veh{padding:7px 24px 8px}.veh .vt{font-size:15px}.veh .vm{margin-top:1px}"
+      + ".body{padding:14px 24px 16px}.sub{font-size:14px;margin:0 0 10px}"
+      + "label{margin:0 0 4px}input{padding:9px 12px;margin:0 0 9px}.err{margin:0 0 9px}"
+      + ".go{padding:11px 16px;font-size:16px}.no{margin:6px auto 0;padding:4px}.fine{margin:8px 0 0;font-size:11.5px}"
+      + ".tk{height:120px;margin:0 0 8px}.prize .pa .n{font-size:46px}.prize .pa .off{font-size:23px}"
+      + ".prize .pa.wd .n{font-size:24px}.prize .pl{font-size:14.5px;margin-top:4px}.hint{margin:0 0 4px}"
+      + ".code{margin:0 0 10px}.done p{margin:0 0 12px}"
+      + ".body::after{bottom:-16px;margin:-4px -24px -16px}}"
+      // Very short windows: the scratch card and form shrink a bit more.
+      + "@media (min-width:561px) and (max-height:800px){"
+      + ".tk{height:100px}.prize .pa .n{font-size:40px}.prize .pa .off{font-size:20px}.prize .pl{font-size:13.5px}"
+      + ".sub{margin:0 0 8px}input{padding:8px 12px;margin:0 0 7px}label{font-size:12.5px;margin:0 0 3px}}";
   }
 
   function amountLabel() {
