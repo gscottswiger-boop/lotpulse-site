@@ -3254,6 +3254,7 @@
       +wvBlockHtml(d)
 
       +rtBlockHtml(d)
+      +ptBlockHtml(d)
 
       +'<div class="psec">Rooftop settings</div>'
       +'<div class="consent" style="margin:0 0 14px"><input type="checkbox" id="pr-enabled"'+(s.enabled?' checked':'')+'>'
@@ -3295,6 +3296,7 @@
     document.getElementById("pr-add").addEventListener("click", function(){ prRenderEditor(null); });
     wvWire(d, showErr);
     rtWire(d);
+    ptWire(d);
 
     prModal().querySelectorAll(".ocard").forEach(function(card){
       var id=card.getAttribute("data-oid");
@@ -3521,12 +3523,39 @@
     });
   }
 
+  // ── Phones: hang tag first (rooftop switch, agency-only) ──
+  // On: on a phone, the first automatic open shows a small hanging price tag
+  // on the left edge instead of the full popup; the shopper taps it to open
+  // the popup. Closing either one leaves the normal reopen tab. The tag uses
+  // the reopen tab's color and position, and each offer's "Phone tag label".
+  function ptBlockHtml(d){
+    var ready=d.phoneTagReady!==false, on=!!(d.settings&&d.settings.phoneTag);
+    return '<div class="psec">Phones <span class="newtag">New</span></div>'
+      +(!ready?'<div class="pwarn">Run /admin/patch first. Until then phones get the popup as usual and this can\'t be saved.</div>':'')
+      +'<div class="rt-row"><label class="wv-sw"><input type="checkbox" id="pt-on"'+(on?' checked':'')+(ready?'':' disabled')+' aria-label="On phones, show a small offer tag first"><i></i></label>'
+        +'<div class="txt">On phones, show a small offer tag first<small>The shopper taps the tag to open the full popup. Desktop doesn\'t change. The tag uses the reopen tab\'s color and position, and each offer\'s <strong>Phone tag label</strong>.</small></div></div>'
+      +'<div class="err" id="pt-err" style="display:none"></div>'
+      +'<button class="mlink" id="pt-save" style="width:100%;border:0;margin-top:8px;cursor:pointer'+(!ready?';opacity:.5;cursor:default':'')+'"'+(!ready?' disabled':'')+'>Save phone setting</button>';
+  }
+  function ptWire(d){
+    var b=document.getElementById("pt-save"); if(!b) return;
+    b.addEventListener("click", function(){
+      var err=document.getElementById("pt-err"), on=document.getElementById("pt-on").checked;
+      err.style.display="none"; b.disabled=true; b.textContent="Saving…";
+      function fail(m){ b.disabled=false; b.textContent="Save phone setting"; err.textContent=m; err.style.display="block"; }
+      promoPost("/promo-settings/update",{ phoneTag:on }).then(function(res){
+        if(!res.ok) return fail(res.error||"Save failed.");
+        prReload(function(){ prRenderList(on?"Saved. Phones now see the offer tag first.":"Saved. Phones get the popup as usual."); });
+      }).catch(function(){ fail("Network error. Try again."); });
+    });
+  }
+
   // ── Editor view ──
   function prRenderEditor(o){
     var d=_pr.d, tz=d.dealer.timezone, isNew=!o;
     o=o||{ name:"", enabled:true, offerCents:d.defaults.offerCents, headline:"", disclaimer:"",
            startAt:null, endAt:null, vehicleFilter:null, image:null,
-           placement:"vehicle", reveal:"standard", showOn:null, theme:"classic", banner:null, wording:null };
+           placement:"vehicle", reveal:"standard", showOn:null, theme:"classic", banner:null, wording:null, tagLabel:null };
     // Where it shows (vehicle pages vs site-wide) and how it reveals.
     var placement=o.placement==="site"?"site":"vehicle", reveal=o.reveal==="scratch"?"scratch":"standard";
     var showOn=o.showOn||{home:true,listings:false,vehicles:false,other:true,urls:[]};
@@ -3534,6 +3563,7 @@
     // Offer wording: replaces "$X OFF" on the popup and voucher (e.g. a trade
     // bonus). false = /admin/patch hasn't added the column yet.
     var wordingReady=d.wordingReady!==false, WORDING_MAX=d.wordingMax||60;
+    var tagReady=d.phoneTagReady!==false, TAG_MAX=d.tagLabelMax||20;
     // Scratch-off theme + event banner (only used with Scratch to reveal).
     var theme=o.theme||"classic", bannerOwn=o.banner||"";
     var THEME_LIST=d.themes||[{key:"classic",label:"Classic",banner:null}];
@@ -3630,6 +3660,11 @@
           +'<div class="pnote" style="margin:4px 0 0" id="pr-wording-n"></div></div>'
           +'<p class="pnote">Use this when the offer isn’t a discount off the car. Shoppers see this sentence instead of the amount; the amount above is still what reports and the CRM lead record.</p>'
         : '<div class="pwarn" style="margin-top:6px">Custom offer wording turns on after a database update. Run <code>/admin/patch</code>, then reopen this screen.</div>')
+      +(tagReady
+        ? '<div class="setrow"><label for="pr-tag">Phone tag label <span style="font-weight:400;color:var(--slate)">(optional · the line under the amount on the small phone tag · up to '+TAG_MAX+' characters)</span></label>'
+          +'<input id="pr-tag" maxlength="'+TAG_MAX+'" value="'+escapeHtml(o.tagLabel||"")+'" placeholder="e.g. Trade bonus"></div>'
+          +'<p class="pnote">Only used when <strong>Phones → show a small offer tag first</strong> is on. Blank shows “Off” (or “Special offer” when the offer has wording).</p>'
+        : '')
       +'<div class="setrow"><label>Line under the offer amount <span style="font-weight:400;color:var(--slate)">(optional)</span></label>'
         +'<input id="pr-headline" maxlength="120" value="'+escapeHtml(o.headline||"")+'" placeholder=""></div>'
       +'<div class="setrow"><label>Offer graphic <span style="font-weight:400;color:var(--slate)">(optional · replaces the colored header · about 1200×600 works best)</span></label>'
@@ -4043,6 +4078,11 @@
         var wv=(document.getElementById("pr-wording").value||"").replace(/\s+/g," ").trim();
         if(/[<>{}]/.test(wv)) return showErr("Offer wording can’t contain < > { }.");
         body.wording=wv;
+      }
+      if(tagReady){
+        var tv=(document.getElementById("pr-tag").value||"").replace(/\s+/g," ").trim();
+        if(/[<>{}]/.test(tv)) return showErr("Phone tag label can’t contain < > { }.");
+        body.tagLabel=tv;
       }
       if(siteReady && themeReady && reveal==="scratch"){
         body.theme=theme; body.banner=(document.getElementById("th-banner").value||"").trim();
