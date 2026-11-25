@@ -33,6 +33,11 @@
 // popup itself is being held back, so the offer never becomes unreachable.
 // The tab has its own small × ; closing it hides it for the don't-show-again
 // window. It never shows after a submit, or on a car the shopper is watching.
+// PHONE HANG TAG (rooftop setting, Nov 2026): config phoneTag: true makes the
+// first automatic open on a phone (≤560px wide) a small hanging price tag on
+// the left edge ("$2,000 / TRADE BONUS / Tap here"; the middle line is the
+// offer's tagLabel). Tapping it opens the full popup. Closing the tag, or the
+// popup it opened, leaves the normal reopen tab. The tag counts as the view.
 // VEHICLE: the popup shows the exact car the offer is for — year, make, model,
 // trim, stock number and VIN — under the header, in both text and graphic mode.
 //
@@ -1016,10 +1021,15 @@
       return;
     }
     lastTrigger = trigger;
+    // Phone hang tag (rooftop setting): the first automatic open on a phone
+    // shows the small hanging tag instead; tapping it opens this popup.
+    if (useHangTag()) { showHang(trigger); return; }
     }
 
     removeTab();
-    if (reopen) viaTab = true;
+    removeHang();
+    if (reopen === "tag") viaHang = true;
+    else if (reopen) viaTab = true;
     shown = true;
     ssSet("lp_promo_shown_" + SKEY, "1");
     ssSet("lp_promo_shown_any", "1");
@@ -1054,6 +1064,18 @@
       }, 240);
     });
 
+    if (reopen === "tag") {
+      // Tapped the hang tag. The view was already counted when the tag
+      // appeared, so this is not another impression.
+      promoEvent("lp_promo_tag_opened", {
+        item_id: VIN, page_type: evPage(), element_type: "popup",
+        event_action_result: "popup",
+        offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
+        page_location: window.location.href,
+      });
+      log("opened from hang tag");
+      return;
+    }
     if (reopen) {
       promoEvent("lp_promo_reopened", {
         item_id: VIN, page_type: evPage(), element_type: "popup",
@@ -1130,7 +1152,7 @@
     tabHost = null;
   }
   function showTab() {
-    if (!TAB_ON || tabHost || host || !CFG || submitted || offerGone) return;
+    if (!TAB_ON || tabHost || host || hangHost || !CFG || submitted || offerGone) return;
     // Never after a submit (this visit or within the window), never on a car
     // the shopper is already watching, never once they've closed the tab.
     if (!TEST && (ssGet("lp_promo_submitted_s")
@@ -1189,6 +1211,106 @@
       promoEvent("lp_promo_tab_dismissed", { item_id: VIN, page_type: evPage(), page_location: window.location.href });
     });
     log("reopen tab shown");
+  }
+
+  // ── Phone hang tag (Nov 2026) ──────────────────────────────────────────────
+  // Rooftop setting (config phoneTag: true). On a phone, the FIRST automatic
+  // open shows a small price tag hanging on the left edge of the page instead
+  // of the full popup: "$2,000 / TRADE BONUS / Tap here". Tapping it opens the
+  // full popup. Closing the tag (its ×) or closing the popup it opened both
+  // leave the normal side reopen tab, exactly as a closed popup does today.
+  // The tag appearing counts as the view (impression); the tap does not.
+  // Desktop, tablets and landscape phones wider than 560px are unchanged.
+  var hangHost = null, viaHang = false;
+  function isPhone() {
+    try { return window.matchMedia("(max-width:560px)").matches; } catch (e) { return false; }
+  }
+  function useHangTag() { return !!(CFG && CFG.phoneTag === true && isPhone()); }
+  function tagLabelText() {
+    return CFG && typeof CFG.tagLabel === "string" ? CFG.tagLabel.replace(/\s+/g, " ").trim() : "";
+  }
+  function removeHang() {
+    if (hangHost && hangHost.parentNode) hangHost.parentNode.removeChild(hangHost);
+    hangHost = null;
+  }
+  function showHang(trigger) {
+    if (hangHost || host) return;
+    shown = true;
+    ssSet("lp_promo_shown_" + SKEY, "1");
+    ssSet("lp_promo_shown_any", "1");
+    lsSet("lp_promo_seen_" + SKEY, String(Date.now()));
+
+    // A scratch offer that hasn't been uncovered keeps its secret on the tag.
+    var hidden = isScratch() && !REVEALED;
+    var big = hidden ? "Scratch" : amountLabel();
+    var label = hidden ? (tagLabelText() || "& reveal your offer")
+      : (tagLabelText() || (wordingText() ? "Special offer" : "Off"));
+    var hole = ON_ACCENT === INK ? "rgba(20,24,29,.18)" : "rgba(255,255,255,.38)";
+    hangHost = document.createElement("div");
+    hangHost.id = "lp-promo-hang-host";
+    var r = hangHost.attachShadow ? hangHost.attachShadow({ mode: "open" }) : hangHost;
+    r.innerHTML = "<style>"
+      + ":host{all:initial}"
+      + "*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}"
+      + ".wrap{position:fixed;left:10px;top:" + TAB_TOP + ";z-index:2147483000;transform:translate(-130%,-50%);"
+      + "transition:transform .4s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 6px 12px rgba(0,0,0,.30))}"
+      + ".wrap.in{transform:translate(0,-50%)}"
+      + ".sw{transform-origin:50% 14px}"
+      + ".wrap.in .sw{animation:sw 1.6s ease-in-out .45s 1}"
+      + "@keyframes sw{0%{transform:rotate(0)}20%{transform:rotate(7deg)}45%{transform:rotate(-5deg)}"
+      + "70%{transform:rotate(2.5deg)}100%{transform:rotate(0)}}"
+      // Same shape as the popup: angled top corners and a punched hole with a
+      // reinforcement ring.
+      + ".tag{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:0;cursor:pointer;"
+      + "width:104px;min-height:150px;padding:34px 8px 12px;text-align:center;line-height:1.05;"
+      + "background:radial-gradient(circle at 50% 15px," + hole + " 8px,transparent 8.6px)," + ACCENT + ";color:" + ON_ACCENT + ";"
+      + "clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 22px,100% 100%,0 100%,0 22px);"
+      + "-webkit-mask:radial-gradient(circle at 50% 15px,transparent 4.5px,#000 5px);"
+      + "mask:radial-gradient(circle at 50% 15px,transparent 4.5px,#000 5px)}"
+      + ".tag:focus-visible{outline:3px solid #7AA7FF;outline-offset:-3px}"
+      + ".n{display:block;font-size:25px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}"
+      + ".n.w{font-size:20px;letter-spacing:0}"
+      + ".l{display:block;margin-top:6px;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;"
+      + "overflow-wrap:anywhere;max-width:100%}"
+      + ".go{display:block;margin-top:auto;padding-top:12px;font-size:13px;font-weight:700;text-decoration:underline;"
+      + "text-underline-offset:2px}"
+      + ".tx{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;"
+      + "background:#2A303C;color:#fff;font-size:16px;line-height:20px;padding:0;cursor:pointer;text-align:center;z-index:1}"
+      + ".tx:focus-visible{outline:3px solid #7AA7FF}"
+      + "@media (prefers-reduced-motion:reduce){.wrap{transition:none}.wrap.in .sw{animation:none}}"
+      + "@media print{.wrap{display:none}}"
+      + "</style>"
+      + '<div class="wrap" id="w"><div class="sw">'
+      +   '<button class="tag" id="t" type="button" aria-label="' + esc(hidden ? "Open your scratch-off offer"
+            : "Open offer: " + (wordingText() || big + " " + label)) + '">'
+      +     '<span class="n' + (hidden ? " w" : "") + '">' + esc(big) + '</span>'
+      +     '<span class="l">' + esc(label) + '</span>'
+      +     '<span class="go">Tap here</span></button>'
+      + '</div><button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button></div>';
+    document.body.appendChild(hangHost);
+    requestAnimationFrame(function () { var w = r.getElementById("w"); if (w) w.classList.add("in"); });
+
+    r.getElementById("t").addEventListener("click", function () { show(trigger, "tag"); });
+    r.getElementById("tx").addEventListener("click", function () {
+      removeHang();
+      promoEvent("lp_promo_dismissed", {
+        item_id: VIN, page_type: evPage(), element_type: "hang_tag",
+        event_action_result: "close", close_method: "tag_close", page_location: window.location.href,
+      });
+      // Same as closing the popup: the normal side reopen tab takes over.
+      setTimeout(showTab, 300);
+    });
+
+    if (!DEMO) apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
+    beat();
+    promoEvent("lp_promo_view", {
+      item_id: VIN, page_type: evPage(), element_type: "hang_tag",
+      event_action_result: "tag", trigger_type: trigger,
+      offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
+      creative: (isScratch() ? "scratch_" : "") + "hang_tag",
+      page_location: window.location.href,
+    });
+    log("hang tag shown (" + trigger + ")");
   }
 
   var submitted = false;
@@ -1744,6 +1866,7 @@
           item_id: VIN, page_type: evPage(), element_type: "form", form_type: "offer",
           event_action_result: "complete", trigger_type: trigger,
           reopened_from_tab: viaTab ? "yes" : "no",
+          opened_from_tag: viaHang ? "yes" : "no",
           offer_amount: CFG.offerCents ? Math.round(CFG.offerCents / 100) : null,
           page_location: window.location.href,
         });
