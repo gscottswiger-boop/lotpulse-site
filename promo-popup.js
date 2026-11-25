@@ -1027,7 +1027,8 @@
     }
 
     removeTab();
-    removeHang();
+    if (reopen === "tag") setTimeout(removeHang, 250);
+    else removeHang();
     if (reopen === "tag") viaHang = true;
     else if (reopen) viaTab = true;
     shown = true;
@@ -1044,7 +1045,9 @@
     wire(lastTrigger);
 
     lastFocus = document.activeElement;
-    savedOverflow = document.documentElement.style.overflow;
+    // If the phone hang tag's dim is still up, it already locked scrolling:
+    // remember the page's own value from before the tag, not its "hidden".
+    savedOverflow = hangHost && hangPrevOverflow !== null ? hangPrevOverflow : document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     fitBox();
     window.addEventListener("resize", onResize);
@@ -1221,7 +1224,7 @@
   // leave the normal side reopen tab, exactly as a closed popup does today.
   // The tag appearing counts as the view (impression); the tap does not.
   // Desktop, tablets and landscape phones wider than 560px are unchanged.
-  var hangHost = null, viaHang = false;
+  var hangHost = null, viaHang = false, hangPrevOverflow = null;
   function isPhone() {
     try { return window.matchMedia("(max-width:560px)").matches; } catch (e) { return false; }
   }
@@ -1231,7 +1234,10 @@
   }
   function removeHang() {
     if (hangHost && hangHost.parentNode) hangHost.parentNode.removeChild(hangHost);
-    hangHost = null;
+    // Give the page its scrolling back, unless the full popup is now open
+    // (it locks scrolling itself).
+    if (hangHost && !host && hangPrevOverflow !== null) document.documentElement.style.overflow = hangPrevOverflow;
+    hangHost = null; hangPrevOverflow = null;
   }
   function showHang(trigger) {
     if (hangHost || host) return;
@@ -1252,6 +1258,10 @@
     r.innerHTML = "<style>"
       + ":host{all:initial}"
       + "*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}"
+      // Dimmed page behind the tag, same shade as the popup's. Tapping it is
+      // the same as the tag's ×: the normal side reopen tab takes over.
+      + ".scrim{position:fixed;inset:0;background:rgba(10,12,16,.55);z-index:2147482999;opacity:0;transition:opacity .25s}"
+      + ".scrim.in{opacity:1}"
       + ".wrap{position:fixed;left:10px;top:" + TAB_TOP + ";z-index:2147483000;transform:translate(-130%,-50%);"
       + "transition:transform .4s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 6px 12px rgba(0,0,0,.30))}"
       + ".wrap.in{transform:translate(0,-50%)}"
@@ -1277,9 +1287,10 @@
       + ".tx{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;"
       + "background:#2A303C;color:#fff;font-size:16px;line-height:20px;padding:0;cursor:pointer;text-align:center;z-index:1}"
       + ".tx:focus-visible{outline:3px solid #7AA7FF}"
-      + "@media (prefers-reduced-motion:reduce){.wrap{transition:none}.wrap.in .sw{animation:none}}"
-      + "@media print{.wrap{display:none}}"
+      + "@media (prefers-reduced-motion:reduce){.wrap,.scrim{transition:none}.wrap.in .sw{animation:none}}"
+      + "@media print{.wrap,.scrim{display:none}}"
       + "</style>"
+      + '<div class="scrim" id="sc"></div>'
       + '<div class="wrap" id="w"><div class="sw">'
       +   '<button class="tag" id="t" type="button" aria-label="' + esc(hidden ? "Open your scratch-off offer"
             : "Open offer: " + (wordingText() || big + " " + label)) + '">'
@@ -1288,18 +1299,26 @@
       +     '<span class="go">Tap here</span></button>'
       + '</div><button class="tx" id="tx" type="button" aria-label="Hide this offer">&times;</button></div>';
     document.body.appendChild(hangHost);
-    requestAnimationFrame(function () { var w = r.getElementById("w"); if (w) w.classList.add("in"); });
+    hangPrevOverflow = document.documentElement.style.overflow || "";
+    document.documentElement.style.overflow = "hidden";
+    requestAnimationFrame(function () {
+      var w = r.getElementById("w"), sc = r.getElementById("sc");
+      if (w) w.classList.add("in");
+      if (sc) sc.classList.add("in");
+    });
 
     r.getElementById("t").addEventListener("click", function () { show(trigger, "tag"); });
-    r.getElementById("tx").addEventListener("click", function () {
+    function closeHang(method) {
       removeHang();
       promoEvent("lp_promo_dismissed", {
         item_id: VIN, page_type: evPage(), element_type: "hang_tag",
-        event_action_result: "close", close_method: "tag_close", page_location: window.location.href,
+        event_action_result: "close", close_method: method, page_location: window.location.href,
       });
       // Same as closing the popup: the normal side reopen tab takes over.
       setTimeout(showTab, 300);
-    });
+    }
+    r.getElementById("tx").addEventListener("click", function () { closeHang("tag_close"); });
+    r.getElementById("sc").addEventListener("click", function () { closeHang("tag_backdrop"); });
 
     if (!DEMO) apiPost("/v1/promo/impression", { vin: VIN, offerId: CFG.offerId }).catch(function () {});
     beat();
